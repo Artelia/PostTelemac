@@ -40,7 +40,7 @@ repository=https://github.com/ArteliaTelemac/PostTelemac
 category=Plugins
 icon=icons/icon.png
 # experimental flag
-experimental=False
+experimental=True
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
