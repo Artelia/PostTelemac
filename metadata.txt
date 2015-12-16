@@ -8,9 +8,9 @@
 
 [general]
 name=PostTelemac
-about=Post traitment of Telemac results
+about=Post treatment of Telemac results
 qgisMinimumVersion=2.10.0
-description=Post Traitment for Telemac
+description=Post Treatment for Telemac
 version=0.1.00
 author=Artelia Eau et Environnement
 email=patrice.verchere@arteliagroup.com
@@ -34,9 +34,9 @@ changelog=
 # Tags are comma separated with spaces allowed
 tags=
 
-homepage=https://github.com/patricev/test1/wiki
-tracker=https://github.com/patricev/test1/issues
-repository=https://github.com/patricev/test1
+homepage=https://github.com/ArteliaTelemac/PostTelemac/wiki
+tracker=https://github.com/ArteliaTelemac/PostTelemac/issues
+repository=https://github.com/ArteliaTelemac/PostTelemac
 category=Plugins
 icon=icons/icon.png
 # experimental flag
