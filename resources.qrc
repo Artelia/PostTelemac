@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/plugins/PostTelemac" >
+        <file>icons/icon.png</file>
+        <file>icons/btn_plus.png</file>
+        <file>icons/btn_suppr.png</file>
+        <file>icons/btn_file.png</file>
+        <file>icons/btn_tools.png</file>
+        <file>icons/btn_calc.png</file>
+        <file>icons/btn_crs.png</file>
+    </qresource>
+</RCC>

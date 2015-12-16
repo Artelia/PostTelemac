@@ -1,0 +1,49 @@
+*****************************************************
+For developpers:
+
+
+1
+in the code :
+add a function in the class :
+
+    def tr(self, message):
+        return QCoreApplication.translate('""class_name""', message)
+        
+and add string in the code this way : self.tr('string to be traducted')
+
+
+2
+
+add the class path in the file 'posttelemac.pro':
+
+"""***
+FORMS = ../ui/properties.ui
+
+SOURCES = ../PostTelemac.py \
+../Post_Telemac_properties_dialog.py \
+../libs/post_telemac_pluginlayer.py \
+***PATH TO ADD***
+
+TRANSLATIONS = posttelemac_fr.ts \
+posttelemac_de.ts
+"""***
+
+if you need another language, add a .ts file in TRANSLATION part of the .pro file
+
+
+
+3
+
+run compil_ts.bat (for win)
+this create/update  the .ts files for the languages declared in .pro file
+
+*****************************************************
+For traductors :
+
+open the .ts file with ""qt linguist"", and do the traduction
+save file with ""qt linguist"", and do file/release (it creates the final .qml file)
+
+
+*******************************************************
+More :
+https://jamesinnorway.wordpress.com/2014/04/08/translation-of-qgis-plugins/

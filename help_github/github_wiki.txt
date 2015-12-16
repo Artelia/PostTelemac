@@ -1,0 +1,215 @@
+# Plugin PostTelemac
+    
+
+<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_title.png" alt="PostTelemac_title" width="700">
+<img src="https://github.com/patricev/test1/raw/master/help/images/ARTELIA.jpg" alt="PostTelemac_title" width="150">
+
+Summary:  
+<a href="#T1">1. General presentation   </a>  
+<a href="#T2">2. Installation    </a>      
+<a href="#T3">3. The PostTelemac Viewer   </a>     
+<a href="#T4">4. The PostTelemac tools</a>     
+* <a href="#T41">4.1 Values tool</a>     
+* <a href="#T42">4.2 Temporal Graph tool</a>  
+* <a href="#T43">4.3 Spatial Graph tool</a>  
+* <a href="#T44">4.4 Compare tool</a>  
+* <a href="#T45">4.5 Movie tool</a>  
+* <a href="#T46">4.6 Max tool</a> 
+* <a href="#T47">4.7 2shape - contour tool</a> 
+* <a href="#T48">4.8 2shape - mesh tool</a> 
+* <a href="#T49">4.9 2shape - mesh tool</a> 
+       
+***
+   
+<h1><a name="T2"></a>General presentation</h1>
+
+<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_intro.png" alt="PostTelemac_intro" width="400">
+    
+The plugin contains three main parts :
+    
+1. the telemac file loader. It’s here you load the selafin file you want to work with
+2. the working panel - three workings tabs are presents
+    1. the first for displaying selafin file ‘s data in the qgis map canvas    
+    2. the second to extract and compute data from file: selafin file's data query, temporal graph creation, comparaison of selafin files, shapefile creation,...    
+    3. A general log to show main messages or importants errors    
+
+***
+ 
+<h1><a name="T1"></a>Installation</h1>
+
+For Windows :
+Install QGis with « OSGeo4W Network installer” available <a href="http://www.qgis.org/en/site/forusers/download.html" target="_blank">here</a> 
+
+Install QGis this way :
+
+1. Launch « setup.exe »    
+2. Select « Advanced Install » – Click Next Button   
+3. Select « Just me », « Create an icon on desktop » and « Add icon to start menu » - Click Next Button    
+4. Select the internet connection you want – Click Next Button    
+5. In the « Select Packages » page, select
+    * In the deskptop tree item    
+        * Qgis : qgis desktop
+    * In the Libs tree item
+        * Matplotlib
+        * python-shapely
+        * networkx
+
+
+
+
+
+Click Next Button and wait for installation.
+
+In QGis, go to the Plugins Menu\Manage and install Plugins. Then select “PostTelemac” and click “Install Plugin”
+
+
+***
+
+<h1><a name="T3"></a>The PostTelemac Viewer</h1>
+
+<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_viewer.png" alt="PostTelemac_viewer" width="500">
+
+This panel aims to display selafin file data in the QGis map canvas. The function are descripted below :
+
+1. Loading a selafin file :
+    * click (1a) to load a telemac file in Qgis    
+    * The Selafin’CRS choser (1b). ****It’s important to set the CRS of selafin file here. Use the same CRS for the QGis project file because de plugin doesn’t handle with reprojection****.    
+2.   Choose the time to be seen in the map canvas here    
+3.  the contour viewer:   
+    * 3a : Choose the parameter to display in the map canvas here    
+    * 3b : Choose the palette here. The palettes shown here are the QGis palettes, configurables in Settings\Style Manager\color ramp    
+    * 3c Choose the type of classes to be used. You can choose :
+        * preset classes. The presets classes are configurable in the file " .qgis2\python\plugins\PostTelemac\classes.txt ". Use this convention to add reset classes : " classes’name=value;value;…;value "
+        * Equal interval classes : if balk if left, compute automatically min and max of the parameter.
+        * Advanced classes : in development    
+    * 3d :  The preset classes chooser
+    * 3e : You can offset the classes here
+    * 3f :  The classes adopted by the viewer are displayed here
+4. the velocity viewer. ****It's enabled only if the name of velocity U and V are declared in  qgis2\python\plugins\PostTelemac\parametres.txt****
+    * 4a : Chosse to display the velocity vectors here.
+    * 4b :The way the velocity vectors are rendered. Three mode are choosable
+        * Relative grid : you choose the number of velocity vector viewable in the height of the canvas
+        * Absolute grid : you choose the space step between vectors
+        * All the points : all the points are rendered
+    * 4c : The norm in meters of the velocity vector (in meters)
+    * 4d : the color ramp, with the same characteristics of 3c, but only with generics classes
+5. display the selafin file's mesh
+6. Choose the transparency here
+
+***
+<h1><a name="T4"></a>The PostTelemac tools</h1>
+
+<h2><a name="T41"></a>Values tool</h2>
+
+<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_viewer.png" alt="PostTelemac_viewer" width="500">
+
+Just click on a point in the map canvas to display the values of the parameters for this point and for the time choosen in the display tab
+
+<h2><a name="T42"></a>Temporal graph tool</h2>
+
+<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_temporal_graph.png" alt="PostTelemac_temporal_graph.png" width="400">
+
+This tool allows the user to plot a temporal serie. To do this :
+1. choose selection mode in (1). Selections mode are :
+* temporary point : just click on the canvas to plot the time serie of the clicked point
+* Points of active vector layer : select a point layer in the layer panel, and then click Calcul (3) to compute the time series of all the points included in the selected point layer
+2. choose the parameter to plot in (2)
+
+Once the graph is done in (4), you can :
+* copy the values to clipboard (7)
+* specify you don't want to clear the graph by checking (6). It enables to add more graph in (4)
+
+<h2><a name="T43"></a>Spatial graph tool</h2>
+
+Use the  <a href="http://hub.qgis.org/projects/profiletool/wiki" target="_blank">Profiletool plugin</a> . Select the selafin layer in the layer panel, and then launch the plugin by clicking on (1). 
+       
+A popup ask you the parameter to display. The parameter list match the parameter list in (2bis). You can add parameters by cliking on (3).    
+    
+Have a look on the profile tool plugin documenation for more information.    
+
+
+<h2><a name="T44"></a>Compare tool</h2>
+   
+<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_compare.png" alt="PostTelemac_compare" width="400">
+
+This tool allows the user to compare two selafin files.  
+       
+First load with (2) the selafin file you want to be compared with the selafin file in(1)     
+The characteristics of the two files are shown in (3a) for (1), an (3b) for (2). In 4 is displayed the matching parameters table for selafin 1 and 2 (based on the same parameter name).    
+      
+If the mesh is the same for the two selafin files, the plugin can easily compare the data. So click on compare (5). All the plugin is now based on the data of the comparaison between 1 and 2 (display, values tool, temporal graph tool, movie, 2Shape…).      
+     
+If it is not the same mesh between the two selafin files, the comparaison needs a long computational time, and prefer use this only for the comparaison of a single time step (max for exemple).     
+    
+<h2><a name="T45"></a>Movie tool</h2>
+
+<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_movie.png" alt="PostTelemac_movie" width="800">
+
+To make a movie :     
+1. create a composition, with a map focused on a part of the selafin layer, and others items (text,north arrow, legend..).    
+2. then go to the movie tool, and select the composition created in step a) with (1).     
+3. Then select the start iteration of the movie, and the end iteration (4).      
+4. the iteration step (5) let the user the possiblity to skip some iteration of the selafin file in the movie. For exemple, a value of 1 will keep in the movie all the iteration of the selafin file, and a value of 5 will keep only iterations 0,5,10,15,… in the movie      
+5. you can choose also the number of frame per second in the movie (6)     
+6. the (7) gives an estimation of the movie duration, computed with (4), (5) and (6) data.     
+7. You can launch the movie creation by clicking on (8). ****Don't touch anything during the movie creation !!****
+    
+Within the movie, you can add a graph with a moving line for showing the time of simulation. For so, before doing g) step, do this :    
+1. create a temporal graph or a flow graph. It's this graph that will be displayed in the movie.    
+2. add a image in the composer, and give it a ID's name (2bis)    
+3. finaly, select the choosen name in (2) with the type of graph you want (3). this will insert the graph in place of the composer's image.    
+     
+After the g) step, a first image is created in the selafin file's directory, to have a preview of the movie's appearence. At the end of the movie's creation, the movie is pasted in the selafin file's directory.
+     
+<h2><a name="T46"></a>Max tool</h2>
+****for Windows only****
+    
+Click (1) to generate  a selafin file containing the maximum of each parameters.     
+The file will be pased in the selafin file directory.
+
+
+<h2><a name="T47"></a>2shape - contour tool</h2>
+
+<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_shape_contour.png" alt="PostTelemac_shape_contour" width="400">
+
+This tool let the user extract the data displayed in the canvas to a shapefile format.    
+     
+Use(1) if you want to project the selafin file in other CRS than the initial CRS of the selafin file. 
+     
+Click on (3) to create the shapefile. It will be pasted in the selafin file directory. The name will be : « name of the selafin file »_« parameter name »_« time ». 
+     
+If you want to change the part of the name « « parameter name »_« time » », fill (2) with the appropriate string.
+      
+The shapefile will be automatically loaded in qgis once the generation is terminated.
+      
+<h2><a name="T48"></a>2shape - mesh tool</h2>
+
+<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_shape_mesh.png" alt="PostTelemac_shape_mesh" width="400">
+
+This tool let the user extract the mesh of the selafin file to a shapefile format.
+      
+Use(1) if you want to project the mesh of the selafin file in other CRS than the initial CRS of the selafin file. 
+      
+Click on (3) to create the shapefile. It will be pasted in the selafin file directory. The name will be : « name of the selafin file »_« mesh ». 
+      
+You can make an « hillshade » effect by cliking on (2). So you can choose z factor, Zenith and Azimuth of the light source used for the hillshade effect.
+      
+The shapefile will be automatically loaded in qgis once the generation is terminated.
+
+<h2><a name="T49"></a>2shape - point tool</h2>
+
+<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_shape_contour.png" alt="PostTelemac_shape_contour" width="400">
+
+This tool let the user extract the points of the selafin file to a shapefile format.
+     
+Use(1) if you want to project the points of the selafin file in other CRS than the initial CRS of the selafin file.
+      
+Click on (4) to create the shapefile. It will be pasted in the selafin file directory. The name will be : « name of the selafin file »_«points». 
+     
+You can extract all the points of the selafin file by chossing « 0 » in (2). Otherwise, you can have a grid with a horizontal spacing of (2) value if the value in (2) is > 0.
+     
+You can also choose to extract the velocity vectors by chacking (3).
+     
+The shapefile will be automatically loaded in qgis once the generation is terminated.
+
+
