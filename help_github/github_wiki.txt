@@ -1,8 +1,9 @@
 # Plugin PostTelemac
     
 
-<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_title.png" alt="PostTelemac_title" width="700">
-<img src="https://github.com/patricev/test1/raw/master/help/images/ARTELIA.jpg" alt="PostTelemac_title" width="150">
+
+<img src="https://github.com/ArteliaTelemac/QGIS/raw/master/help_github/images/PostTelemac_title.png" alt="PostTelemac_title" width="700">
+<img src="https://github.com/ArteliaTelemac/QGIS/raw/master/help_github/images/ARTELIA.jpg" alt="PostTelemac_title" width="150">
 
 Summary:  
 <a href="#T1">1. General presentation   </a>  
@@ -21,9 +22,9 @@ Summary:
        
 ***
    
-<h1><a name="T2"></a>General presentation</h1>
+<h1><a name="T1"></a>General presentation</h1>
 
-<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_intro.png" alt="PostTelemac_intro" width="400">
+<img src="https://github.com/ArteliaTelemac/QGIS/raw/master/help_github/images/PostTelemac_intro.png" alt="PostTelemac_intro" width="400">
     
 The plugin contains three main parts :
     
@@ -35,7 +36,7 @@ The plugin contains three main parts :
 
 ***
  
-<h1><a name="T1"></a>Installation</h1>
+<h1><a name="T2"></a>Installation</h1>
 
 For Windows :
 Install QGis with « OSGeo4W Network installer” available <a href="http://www.qgis.org/en/site/forusers/download.html" target="_blank">here</a> 
@@ -67,7 +68,7 @@ In QGis, go to the Plugins Menu\Manage and install Plugins. Then select “PostTel
 
 <h1><a name="T3"></a>The PostTelemac Viewer</h1>
 
-<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_viewer.png" alt="PostTelemac_viewer" width="500">
+<img src="https://github.com/ArteliaTelemac/QGIS/raw/master/help_github/images/PostTelemac_viewer.png" alt="PostTelemac_viewer" width="500">
 
 This panel aims to display selafin file data in the QGis map canvas. The function are descripted below :
 
@@ -101,13 +102,13 @@ This panel aims to display selafin file data in the QGis map canvas. The functio
 
 <h2><a name="T41"></a>Values tool</h2>
 
-<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_viewer.png" alt="PostTelemac_viewer" width="500">
+<img src="https://github.com/ArteliaTelemac/QGIS/raw/master/help_github/images/PostTelemac_viewer.png" alt="PostTelemac_viewer" width="500">
 
 Just click on a point in the map canvas to display the values of the parameters for this point and for the time choosen in the display tab
 
 <h2><a name="T42"></a>Temporal graph tool</h2>
 
-<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_temporal_graph.png" alt="PostTelemac_temporal_graph.png" width="400">
+<img src="https://github.com/ArteliaTelemac/QGIS/raw/master/help_github/images/PostTelemac_temporal_graph.png" alt="PostTelemac_temporal_graph.png" width="400">
 
 This tool allows the user to plot a temporal serie. To do this :
 1. choose selection mode in (1). Selections mode are :
@@ -130,7 +131,7 @@ Have a look on the profile tool plugin documenation for more information.
 
 <h2><a name="T44"></a>Compare tool</h2>
    
-<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_compare.png" alt="PostTelemac_compare" width="400">
+<img src="https://github.com/ArteliaTelemac/QGIS/raw/master/help_github/images/PostTelemac_compare.png" alt="PostTelemac_compare" width="400">
 
 This tool allows the user to compare two selafin files.  
        
@@ -143,7 +144,7 @@ If it is not the same mesh between the two selafin files, the comparaison needs 
     
 <h2><a name="T45"></a>Movie tool</h2>
 
-<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_movie.png" alt="PostTelemac_movie" width="800">
+<img src="https://github.com/ArteliaTelemac/QGIS/raw/master/help_github/images/PostTelemac_movie.png" alt="PostTelemac_movie" width="800">
 
 To make a movie :     
 1. create a composition, with a map focused on a part of the selafin layer, and others items (text,north arrow, legend..).    
@@ -170,7 +171,7 @@ The file will be pased in the selafin file directory.
 
 <h2><a name="T47"></a>2shape - contour tool</h2>
 
-<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_shape_contour.png" alt="PostTelemac_shape_contour" width="400">
+<img src="https://github.com/ArteliaTelemac/QGIS/raw/master/help_github/images/PostTelemac_shape_contour.png" alt="PostTelemac_shape_contour" width="400">
 
 This tool let the user extract the data displayed in the canvas to a shapefile format.    
      
@@ -184,7 +185,7 @@ The shapefile will be automatically loaded in qgis once the generation is termin
       
 <h2><a name="T48"></a>2shape - mesh tool</h2>
 
-<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_shape_mesh.png" alt="PostTelemac_shape_mesh" width="400">
+<img src="https://github.com/ArteliaTelemac/QGIS/raw/master/help_github/images/PostTelemac_shape_mesh.png" alt="PostTelemac_shape_mesh" width="400">
 
 This tool let the user extract the mesh of the selafin file to a shapefile format.
       
@@ -198,7 +199,7 @@ The shapefile will be automatically loaded in qgis once the generation is termin
 
 <h2><a name="T49"></a>2shape - point tool</h2>
 
-<img src="https://github.com/patricev/test1/raw/master/help/images/PostTelemac_shape_contour.png" alt="PostTelemac_shape_contour" width="400">
+<img src="https://github.com/ArteliaTelemac/QGIS/raw/master/help_github/images/PostTelemac_shape_contour.png" alt="PostTelemac_shape_contour" width="400">
 
 This tool let the user extract the points of the selafin file to a shapefile format.
      
@@ -211,5 +212,6 @@ You can extract all the points of the selafin file by chossing « 0 » in (2). Oth
 You can also choose to extract the velocity vectors by chacking (3).
      
 The shapefile will be automatically loaded in qgis once the generation is terminated.
+
 
 

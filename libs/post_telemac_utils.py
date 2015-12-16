@@ -36,13 +36,12 @@ from ..mpldatacursor import datacursor
 from selectlinetool import SelectLineTool
 #import libs
 from posttelemac_util_animation import *
-from posttelemac_util_subprocess_exe import *
 from posttelemac_util_extractshp import *
 from posttelemac_util_extractmesh import *
 from posttelemac_util_extractpts import *
 from posttelemac_util_graphtemp import *
 from posttelemac_util_flow import *
-
+from posttelemac_util_get_max import *
 
 
 class PostTelemacUtils():
@@ -654,20 +653,20 @@ class PostTelemacUtils():
         
         
     #****************************************************************************************************
-    #************* Tools - max res for windows ***********************************************************
+    #************* Tools - max res ***********************************************************
     #****************************************************************************************************
     def calculMaxRes(self):
-        self.initclass=initRunSubprocess()
+        self.initclass=initRunGetMax()
         self.initclass.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
         self.initclass.finished1.connect(self.chargerSelafin)
-        self.initclass.start(self.selafinlayer,os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','libs_exe','PPR.exe'))
+        self.initclass.start(self.selafinlayer.fname,self.selafinlayer.fname.split('.')[0] + '_Max.res',False,False)
+        
+        
         
 
     def chargerSelafin(self, path):
         if path and self.selafinlayer.propertiesdialog.checkBox_8.isChecked():
-            #slf = QgsPluginLayerRegistry.instance().createLayer('selafin_viewer')
             slf = QgsPluginLayerRegistry.instance().pluginLayerType('selafin_viewer').createLayer()
-            #slf = SelafinPluginLayer('max')
             slf.setCrs(iface.mapCanvas().mapSettings().destinationCrs()) 
             slf.load_selafin(path)
             QgsMapLayerRegistry.instance().addMapLayer(slf)
