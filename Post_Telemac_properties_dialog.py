@@ -809,7 +809,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         str1 = self.tr("Selafin file chooser")
         str2 = self.tr("Telemac files")
         str3 = self.tr("All files")  
-        fname = self.qfiledlg.getOpenFileName(None,str1,self.layer.loaddirectory, str2 + " (*.res *.geo *.init);;" + str3 + " (*)")
+        fname = self.qfiledlg.getOpenFileName(None,str1,self.layer.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
         #fname = self.qfiledlg.getOpenFileName(None,"Choix du fichier res",self.layer.loaddirectory, "Fichier_Telemac (*.res *.geo)")
         #Things
         self.lineEdit_5.setText(fname)

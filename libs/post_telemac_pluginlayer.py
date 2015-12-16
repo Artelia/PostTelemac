@@ -237,7 +237,7 @@ class SelafinPluginLayer(QgsPluginLayer):
             str2 = self.tr("Telemac files")
             str3 = self.tr("All files")     
             #tempname = self.propertiesdialog.qfiledlg.getOpenFileName(None,"Choix du fichier res",self.loaddirectory, "Fichiers Telemac (*.res *.geo *.init);;Tous les fichiers (*)")
-            tempname = self.propertiesdialog.qfiledlg.getOpenFileName(None,str1,self.loaddirectory, str2 + " (*.res *.geo *.init);;" + str3 + " (*)")
+            tempname = self.propertiesdialog.qfiledlg.getOpenFileName(None,str1,self.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
             if tempname:
                 self.fname = tempname
                 self.param_gachette = None
