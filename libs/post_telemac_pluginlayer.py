@@ -302,7 +302,8 @@ class SelafinPluginLayer(QgsPluginLayer):
             self.parametrevy = self.propertiesdialog.postutils.getParameterName("VITESSEV")[0]
             self.propertiesdialog.groupBox_vel.setEnabled(True)
         except Exception, e:
-            self.propertiesdialog.groupBox_8.setEnabled(False)
+            #self.propertiesdialog.groupBox_8.setEnabled(False)
+            self.propertiesdialog.groupBox_schowvel.setEnabled(False)
             #TODO : disable utils dependant on velocity (flow, show velocity)
         try:
             self.parametreh = self.propertiesdialog.postutils.getParameterName("HAUTEUR")[0]

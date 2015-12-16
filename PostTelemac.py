@@ -233,9 +233,9 @@ class PostTelemac:
         
     def showHelp(self):
         if sys.platform == 'linux2':
-            subprocess.call(["xdg-open", 'https://github.com/patricev/test1/wiki'])
+            subprocess.call(["xdg-open", 'https://github.com/ArteliaTelemac/PostTelemac/wiki'])
         else:
-            os.startfile('https://github.com/patricev/test1/wiki')
+            os.startfile('https://github.com/ArteliaTelemac/PostTelemac/wiki')
         
         
         
