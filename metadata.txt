@@ -8,10 +8,10 @@
 
 [general]
 name=PostTelemac
-about=Post treatment of Telemac results
+about= Post treatment of open Telemac-Mascaret results. Requires matplotlib, shapely, numpy and networkx libraries.
 qgisMinimumVersion=2.10.0
 description=Post Treatment for Telemac
-version=0.1.0
+version=0.1.1
 author=Artelia Eau et Environnement
 email=patrice.verchere@arteliagroup.com
 
@@ -21,6 +21,7 @@ email=patrice.verchere@arteliagroup.com
 
 # Uncomment the following line and add your changelog:
 changelog= 
+    0.1.1 : color management, faster rendering. Code still messy.
     0.1.0 : Beta version
     0.0.08 : virtuals parameters
     0.0.07 : velocities
@@ -38,7 +39,7 @@ homepage=https://github.com/ArteliaTelemac/PostTelemac/wiki
 tracker=https://github.com/ArteliaTelemac/PostTelemac/issues
 repository=https://github.com/ArteliaTelemac/PostTelemac
 category=Plugins
-icon=icons/icon.png
+icon=icons/posttelemac.png
 # experimental flag
 experimental=True
 
