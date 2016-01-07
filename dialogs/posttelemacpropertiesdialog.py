@@ -21,39 +21,27 @@ Versions :
  ***************************************************************************/
 """
 
-
-
-import os
+#import qgis
+from qgis.gui import *
+from qgis.core import *
+#import Qt
 from PyQt4 import uic
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from qgis.gui import *
-from qgis.core import *
-from libs.post_telemac_utils import *
-from libs.posttelemac_util_extractshp import *
-from libs.posttelemac_util_extractmesh import *
-from libs.posttelemac_util_getcomparevalue import *
-from libs.def_variable import *
-
-from time import ctime
-from matplotlib.colors import LinearSegmentedColormap
-
 #import matplotlib
 import matplotlib
 from matplotlib import *
-from matplotlib.path import Path
-import matplotlib.pyplot as plt
-from matplotlib import tri
-from matplotlib import colors
-import matplotlib.tri as tri
-from matplotlib.mlab import griddata
-import matplotlib.pyplot  as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+#other import
+import os
+from time import ctime
+#local import
+from ..libs.posttelemac_util import *
+from posttelemacvirtualparameterdialog import *
+from posttelemacusercolorrampdialog import *
 
-
-FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ui', 'properties.ui'))
-
+FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__),'..', 'ui', 'properties.ui'))
 
 
 class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
@@ -74,93 +62,81 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        #general variables
         self.layer = layer1                             #the associated selafin layer
         self.qfiledlg = QtGui.QFileDialog(self)         #the filedialog for opening res file
         self.predeflevels=[]                            #the levels in classes.txt
-        self.threadcompare = None                       #The compare file class
-
+        #self.threadcompare = None                       #The compare file class
         self.canvas = self.layer.canvas
         self.postutils = PostTelemacUtils(layer1)       #the utils class
-        
         self.maptooloriginal = self.canvas.mapTool()        #Initial map tool (ie mouse behaviour)
         self.clickTool = QgsMapToolEmitPoint(self.canvas)   #specific map tool (ie mouse behaviour)
+        self.crsselector = QgsGenericProjectionSelector()
+        self.loaddirectory = None       #the directory of "load telemac" button
         
         #********* ********** ******************************************
         #********* Connecting ******************************************
         #********* ********** ******************************************
-        
+        self.pushButton_loadslf.clicked.connect(self.loadSelafin)
+        self.pushButton_crs.clicked.connect(self.set_layercrs)
+
+        #********* ********** ******************************************
+        #tab  ************************************************
+        #********* ********** ******************************************
+        self.tabWidget.currentChanged.connect(self.mapToolChooser)
+
         #********* ********** ******************************************
         #Display tab  ************************************************
         #********* ********** ******************************************
-        self.pushButton_loadslf.clicked.connect(lambda: self.layer.load_selafin())
-        self.populatecombobox_lvl()
-        self.populatecombobox_colorpalette()
-        #param
-        #self.comboBox_param.currentIndexChanged.connect(self.layer.change_param)
-        self.treeWidget_parameters.itemSelectionChanged.connect(self.layer.change_param2)
+
+        #Time
+        self.horizontalSlider_time.sliderPressed.connect(self.sliderPressed)
+        self.horizontalSlider_time.sliderReleased.connect(self.sliderReleased)
+        self.comboBox_time.currentIndexChanged.connect(self.change_timetxt)
+        self.horizontalSlider_time.valueChanged.connect(self.change_timetxt)
+        #Contour box
+        #parameters
+        self.treeWidget_parameters.itemSelectionChanged.connect(self.change_param)
         self.treeWidget_parameters.header().setResizeMode(QtGui.QHeaderView.ResizeToContents)
         self.treeWidget_parameters.setColumnWidth(0,40)
         self.treeWidget_parameters.header().setResizeMode(0,QtGui.QHeaderView.Fixed)
-        self.horizontalSlider_time.sliderPressed.connect(self.layer.change1)
-        self.horizontalSlider_time.sliderReleased.connect(self.layer.change2)
-        #↔self.itmModel_param = QStandardItemModel()
-        #self.pushButton_manageParameter.clicked.connect(self.open_def_variables)
+        #virtual parameter
         self.pushButton_param_add.clicked.connect(self.open_def_variables)
         self.pushButton_param_edit.clicked.connect(self.open_def_variables)
         self.pushButton_param_delete.clicked.connect(self.delete_def_variables)
-        
-        #transparency
-        self.horizontalSlider_transp.valueChanged.connect(self.layer.changeAlpha)
-        self.horizontalSlider_transp.sliderPressed.connect(self.layer.change1)
-        self.horizontalSlider_transp.sliderReleased.connect(self.layer.change2)
         #levels and color ramp
-        self.comboBox_levelstype.currentIndexChanged.connect(self.change_cmchoosertype)
+        self.populatecombobox_lvl()
+        self.populatecombobox_colorpalette()
+        self.comboBox_levelstype.currentIndexChanged.connect(self.colorRampChooserType)
         self.comboBox_genericlevels.currentIndexChanged.connect(self.change_cmchoosergenericlvl)
-        self.comboBox_genericlevels_2.currentIndexChanged.connect(self.change_cmchoosergenericlvl_vel)
-        self.doubleSpinBox_levelshift.valueChanged.connect(self.decal_lvl)
+        self.InitMapRamp()
+        self.comboBox_clrramp_preset.currentIndexChanged.connect(self.loadMapRamp)
         self.pushButton_createsteplevel.clicked.connect(self.createstepclass)
-        self.pushButton_crs.clicked.connect(self.set_layercrs)
-        #time
-        self.comboBox_time.currentIndexChanged.connect(self.layer.change_timetxt)
-        self.horizontalSlider_time.valueChanged.connect(self.layer.change_timetxt)
-        #color palette
-        self.comboBox_clrgame.currentIndexChanged.connect(self.color_palette_changed)
-        #Affichage divers
-        self.groupBox_schowvel.toggled.connect(self.layer.changeAffichageVitesse)
-        self.comboBox_vel_method.currentIndexChanged.connect(self.layer.changeAffichageVitesse)
-        self.doubleSpinBox_vel_spatial_step.valueChanged.connect(self.layer.changeAffichageVitesse)
-        self.doubleSpinBox_vel_scale.valueChanged.connect(self.layer.changeAffichageVitesse)
-        self.spinBox_vel_relative.valueChanged.connect(self.layer.changeAffichageVitesse)
+        self.comboBox_clrgame.currentIndexChanged.connect(self.color_palette_changed_contour)
+        self.pushButton_editcolorramp.clicked.connect(self.openColorRampDialog)
+        #Velocity bpx
+        #Velocity
+        self.groupBox_schowvel.toggled.connect(self.setVelocityRendererParams)
+        self.comboBox_vel_method.currentIndexChanged.connect(self.setVelocityRendererParams)
+        self.doubleSpinBox_vel_spatial_step.valueChanged.connect(self.setVelocityRendererParams)
+        self.doubleSpinBox_vel_scale.valueChanged.connect(self.setVelocityRendererParams)
+        self.spinBox_vel_relative.valueChanged.connect(self.setVelocityRendererParams)
+        #colorramp
+        self.comboBox_genericlevels_2.currentIndexChanged.connect(self.change_cmchoosergenericlvl_vel)
         self.comboBox_clrgame_2.currentIndexChanged.connect(self.color_palette_changed_vel)
-        
+        #Mesh box
         self.checkBox_showmesh.stateChanged.connect(self.layer.showMesh)
+        #transparency box
+        self.horizontalSlider_transp.valueChanged.connect(self.layer.changeAlpha)
+        self.horizontalSlider_transp.sliderPressed.connect(self.sliderPressed)
+        self.horizontalSlider_transp.sliderReleased.connect(self.sliderReleased)
         
         #********* ********** ******************************************
         #Tools tab  *****************************************************
         #********* ********** ******************************************
         
+        #treewidget behaviour
         self.treeWidget_utils.itemSelectionChanged.connect(self.changepannelutils)
-        self.crsselector = QgsGenericProjectionSelector()
-
-        #Tools tab - Extraction .shp Contour
-        self.checkBox_contourcrs.stateChanged.connect(self.enablecheckbox)
-        self.pushButton_contourcrs.clicked.connect(self.set_utilcrs)
-        self.pushButton_contourcreate.clicked.connect(self.create_shp)
-        
-        #Tools tab - Extraction .shp Maillage
-        self.checkBox_3.stateChanged.connect(self.enablecheckbox)
-        self.checkBox_2.stateChanged.connect(self.enablecheckbox)
-        self.pushButton_7.clicked.connect(self.set_utilcrs)
-        self.pushButton_10.clicked.connect(self.create_shp_maillage)
-        
-        #Tools tab - Extraction .shp Points
-        self.checkBox_4.stateChanged.connect(self.enablecheckbox)
-        self.checkBox_5.stateChanged.connect(self.enablecheckbox)
-        self.pushButton_9.clicked.connect(self.set_utilcrs)
-        self.pushButton_2.clicked.connect(self.create_shp_points)
-        
-        #Tools tab - values
-        self.tabWidget.currentChanged.connect(self.mapToolChooser)
         self.treeWidget_utils.itemClicked.connect(self.mapToolChooser)
         
         #Tools tab - temporal graph
@@ -176,7 +152,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.canvas1.draw()
         self.frame.setLayout(layout)
         self.comboBox_2.currentIndexChanged.connect(self.mapToolChooser)
-        self.pushButton_limni.clicked.connect(self.postutils.computeGraph)
+        self.pushButton_limni.clicked.connect(self.postutils.computeGraphTemp)
         self.pushButton_graphtemp_pressepapier.clicked.connect(self.postutils.copygraphclipboard)
         
         #Tools tab- flow graph
@@ -195,7 +171,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         
         #Tools tab - compare
         self.pushButton_8.clicked.connect(self.initCompare)
-        self.checkBox_6.stateChanged.connect(self.compare1)
+        self.checkBox_6.stateChanged.connect(self.postutils.compare1)
         
         #Tools tab - movie  
         self.pushButton_film.clicked.connect(self.postutils.makeAnimation)
@@ -208,30 +184,31 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.spinBox_4.valueChanged.connect(self.postutils.filmEstimateLenght)
         self.spinBox_fps.valueChanged.connect(self.postutils.filmEstimateLenght)
             
-        #Tools tab- max ppr 
+        #Tools tab- max  
         self.pushButton_max_res.clicked.connect(self.postutils.calculMaxRes)
         
+        #2shape ***************************************************
 
-            
-            
+        #2shape Contour
+        self.checkBox_contourcrs.stateChanged.connect(self.enablecheckbox)
+        self.pushButton_contourcrs.clicked.connect(self.set_utilcrs)
+        self.pushButton_contourcreate.clicked.connect(self.create_shp)
+        #2shape mesh
+        self.checkBox_3.stateChanged.connect(self.enablecheckbox)
+        self.checkBox_2.stateChanged.connect(self.enablecheckbox)
+        self.pushButton_7.clicked.connect(self.set_utilcrs)
+        self.pushButton_10.clicked.connect(self.create_shp_maillage)
+        #2shape  Points
+        self.checkBox_4.stateChanged.connect(self.enablecheckbox)
+        self.checkBox_5.stateChanged.connect(self.enablecheckbox)
+        self.pushButton_9.clicked.connect(self.set_utilcrs)
+        self.pushButton_2.clicked.connect(self.create_shp_points)
         
         #final action
         self.initTreewidgettoolsindextab()
         self.treeWidget_utils.expandAll()
 
-    def eventFilter(self,target,event):
-        """
-        event for specific actions
-        Used only for movie utilities - update images in composer
-        """
-        #Action to update images in composer with movie tool
-        try:
-            if target == self.comboBox_8 and event.type() == QtCore.QEvent.MouseButtonPress:
-                self.reinitcomposeurimages()
-            return False
-        except Exception, e:
-            #print 'Property dialog eventFilter ' + str(e)
-            return False
+
 
         
     #*********************************************************************************
@@ -241,22 +218,18 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """
         update dialog when selafin layer changed
         """
-        if self.layer.fname is not None:
-            paramtemp = self.layer.param_gachette   #param_gachete deleted with clear - so save it
-            tempstemp = self.layer.temps_gachette
-            alphatemp = self.layer.alpha_gachette
+        if self.layer.selafinpath is not None:
+            paramtemp = self.layer.param_displayed   #param_gachete deleted with clear - so save it
+            tempstemp = self.layer.time_displayed
+            alphatemp = self.layer.alpha_displayed
             #nom
-            self.label_loadslf.setText(os.path.basename(self.layer.fname).split('.')[0])
+            self.label_loadslf.setText(os.path.basename(self.layer.selafinpath).split('.')[0])
             #param
             self.populatecombobox_param()
             if paramtemp:
-                #pass
                 self.setTreeWidgetIndex(self.treeWidget_parameters,0,paramtemp)
-                #self.comboBox_param.setCurrentIndex(paramtemp)
-                #self.treeWidget_parameters.
             else:
                 self.setTreeWidgetIndex(self.treeWidget_parameters,0,0)
-            #self.comboBox_param.setEnabled(True)
             self.groupBox_contour.setEnabled(True)
             self.groupBox_param.setEnabled(True)
             self.groupBox_time.setEnabled(True)
@@ -264,10 +237,10 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             #time
             self.horizontalSlider_time.setEnabled(True)
             self.comboBox_time.setEnabled(True)
-            self.horizontalSlider_time.setMaximum(self.layer.tempsmax)
-            self.horizontalSlider_time.setPageStep (int(self.layer.tempsmax/20) )
+            self.horizontalSlider_time.setMaximum(self.layer.selafinparser.itertimecount)
+            self.horizontalSlider_time.setPageStep(min(10,int(self.layer.selafinparser.itertimecount/20)))
             self.populatecombobox_time()
-            self.layer.change_timetxt(tempstemp)
+            self.change_timetxt(tempstemp)
             self.horizontalSlider_time.setValue(tempstemp)
             self.comboBox_time.setCurrentIndex(tempstemp)
             #transparency
@@ -275,19 +248,18 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             self.horizontalSlider_transp.setValue(alphatemp)
             #crs
             if self.layer.crs().authid():
-                #self.pushButton_crs.setText(self.layer.crs().authid())
                 self.label_selafin_crs.setText(self.layer.crs().authid())
             self.pushButton_crs.setEnabled(True)
             #utils
             self.textBrowser_2.clear()
             #compare
-            if self.threadcompare is not None:
-                self.threadcompare.compare.reset_dialog()
-                self.threadcompare = None
-            #film
+            if self.postutils.threadcompare is not None:
+                self.postutils.threadcompare.compare.reset_dialog()
+                self.postutils.threadcompare = None
+            #movie
             self.reinitcomposeurlist()
             self.reinitcomposeurimages(0)
-            maxiter = len(self.layer.slf.tags["times"])-1
+            maxiter = self.layer.selafinparser.itertimecount
             self.spinBox_3.setMaximum(maxiter)
             self.spinBox_2.setMaximum(maxiter)
             self.spinBox_3.setValue(maxiter)
@@ -302,26 +274,95 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.textBrowser_main.append(ctime() + ' - '+ str)
         self.textBrowser_main.setTextColor(QColor("black"))
         self.textBrowser_main.setFontWeight(QFont.Normal)
+        self.textBrowser_main.verticalScrollBar().setValue(self.textBrowser_main.verticalScrollBar().maximum())
         
     def normalMessage(self,str):
         self.textBrowser_main.append(ctime() + ' - '+ str)
         self.textBrowser_main.setTextColor(QColor("black"))
         self.textBrowser_main.setFontWeight(QFont.Normal)
+        self.textBrowser_main.verticalScrollBar().setValue(self.textBrowser_main.verticalScrollBar().maximum())
                 
     #*********************************************************************************
-    #Display tools****************************************************************
+    #General tools****************************************************************
     #*********************************************************************************
     
+    def loadSelafin(self):
+        str1 = self.tr("Result file chooser")
+        str2 = self.tr("Telemac files")
+        str3 = self.tr("All files")     
+        tempname = self.qfiledlg.getOpenFileName(None,str1,self.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
+        if tempname:
+            self.loaddirectory = os.path.dirname(tempname)
+            self.layer.clearParameters()
+            self.layer.load_selafin(tempname)
+            nom = os.path.basename(tempname).split('.')[0]
+            self.normalMessage(self.tr('File ') +  str(nom) +  self.tr(" loaded"))
+        else:
+            self.label_loadslf.setText(self.tr('No file selected'))
 
-    def decal_lvl(self,int):
-        """
-        update classes when level offset is changed
-        """
-        leveltemp = self.predeflevels[self.comboBox_genericlevels.currentIndex()][1]
-        lvltemp1=[leveltemp[i]+self.doubleSpinBox_levelshift.value() for i in range(len(leveltemp))]
-        self.layer.change_lvl(lvltemp1)
+    
+    def set_layercrs(self):
+        source = self.sender()
+        self.crsselector.exec_()
+        crs = self.crsselector.selectedAuthId()
+        if source == self.pushButton_crs:
+            self.label_selafin_crs.setText(crs)
+        else:
+            source.setText(crs)
+        self.layer.setCrs(QgsCoordinateReferenceSystem(crs))
+        
+    """
+    #*********************************************************************************
+    #*********************************************************************************
+    #Display tools ****************************************************************
+    #*********************************************************************************
+    #*********************************************************************************
+    """
+    
+    #Display tools - time  ***********************************************
+    
+    def change_timetxt(self,intitmetireation):
+        """Associated with time modification"""
+        self.layer.changeTime(intitmetireation)
+        time2 = time.strftime("%j:%H:%M:%S", time.gmtime(self.layer.selafinparser.getTimes()[intitmetireation]))
+        
+        self.label_time.setText(self.tr("time (hours)") + " : " + str(time2) +"\n"+ 
+                                self.tr("time (iteration)") + " : "+ str(intitmetireation)+"\n"+
+                                self.tr("time (seconds)") + " : " + str(self.layer.selafinparser.getTimes()[intitmetireation]))
+            
+    def sliderReleased(self):
+        """Associated with slider behaviour"""
+        self.layer.draw=True
+        self.layer.triggerRepaint()
+        
+    def sliderPressed(self):
+        """Associated with slider behaviour"""
+        self.layer.draw=False
+        
+    #*********************************************************************************
+    #Display tools - contour  ***********************************************
+    #*********************************************************************************
+    
+    #Display tools - contour -  parameter ***********************************************
+        
+    def change_param(self,int1=None):
+        """When changing parameter value"""
+        position = self.getTreeWidgetSelectedIndex(self.treeWidget_parameters)
+        self.layer.changeParam(position[1])
+        if self.layer.parametres[position[1]][2]:
+            self.pushButton_param_edit.setEnabled(True)
+            self.pushButton_param_delete.setEnabled(True)
+        else:
+            self.pushButton_param_edit.setEnabled(False)
+            self.pushButton_param_delete.setEnabled(False)
+                
+
+    #Display tools - contour -  virtual parameter ***********************************************
         
     def open_def_variables(self, lst_param):
+        """
+        Create or edit virtual parameter, based on raw parameter of selafin file
+        """
         source = self.sender()
         if source == self.pushButton_param_add:
             lst_param = ["", "", ""]
@@ -332,39 +373,17 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             else:
                 return False
         
-        """
-        lst_var = []
-        mdl = self.list_variables.model()
-        for i in range(mdl.rowCount()):
-            itm = mdl.item(i)
-            lst_var.append(itm.text())
-        """
         lst_var = [param for param in self.layer.parametres if not param[2]]
-        
+        #launch dialog
         self.dlg_dv = DefVariablesDialog(lst_param, lst_var)
         self.dlg_dv.setWindowModality(2)
     
         r = self.dlg_dv.exec_()
         
-        """
-        with open(os.path.dirname(os.path.realpath(__file__)) + '\\classes','rb') as fichier:
-            mon_depickler = pickle.Unpickler(fichier)
-            self.classe_val = mon_depickler.load()
-        """
+        #Process new/edited param
         if r == 1:
-            """
-            if len(self.tab_variables_creer.selectedItems()) > 0:
-                self.supprimer_var()
-            """
             itms = []
             new_var = self.dlg_dv.dialogIsFinished()
-            #print str(new_var)
-            """
-            param_name = [param[1] for param in self.layer.parametres]
-            if new_var[0] in param_name:
-                pass
-            else:
-            """
             if source == self.pushButton_param_add:
                 self.layer.parametres.append([len(self.layer.parametres),new_var[0],new_var[1]])
                 self.populatecombobox_param()
@@ -379,43 +398,34 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
                 self.layer.temps_identify = None
                 self.layer.updateSelafinValues(True)
                 self.setTreeWidgetIndex(self.treeWidget_parameters,0,index)
-            #self.layer.triggerRepaint()
-                
-            """
-            self.itmModel = QStandardItemModel()
-            itm = QTreeWidgetItem()
-            itm.setText(0, new_var["nom"])
-            itm.setText(1, new_var["formule"])
-            itm.setText(2, new_var["classe"])
-            itms.append(itm)
-            self.tab_variables_creer.addTopLevelItems(itms)
-
-            self.tab_variables_creer.clearSelection()
-            """
             
     def delete_def_variables(self):
+        """
+        Delete virtual parameter
+        """
         index = self.getTreeWidgetSelectedIndex(self.treeWidget_parameters)[1]
         if self.layer.parametres[index][2]:
-            self.layer.param_gachette = index-1
+            self.layer.param_displayed = index-1
             self.layer.parametres[index:index+1] = []
             self.populatecombobox_param()
             self.setTreeWidgetIndex(self.treeWidget_parameters,0,index-1)
             self.layer.updateSelafinValues(True)
             #self.layer.triggerRepaint()
         
-        
+    #Display tools - contour - color ramp things ***********************************************
 
-    #Display tools - color ramp things ***********************************************
-
-    def change_cmchoosertype(self,item):
+    def colorRampChooserType(self,item):
         """
-        pass
+        main chooser of color ramp type (predef, step, user defined)
         """
         if item == 0:
-            #self.stackedWidget_colorramp.setCurrentIndex(0)
-            self.layer.change_lvl(self.predeflevels[self.comboBox_genericlevels.currentIndex()][1])
+            self.color_palette_changed_contour(0)
+            self.layer.change_lvl_contour(self.predeflevels[self.comboBox_genericlevels.currentIndex()][1])
         elif item == 1:
-            self.stackedWidget_colorramp.setCurrentIndex(1)
+            pass
+            #self.stackedWidget_colorramp.setCurrentIndex(1)
+        elif item == 2 :
+            self.loadMapRamp(self.comboBox_clrramp_preset.currentText())
         else:
             pass
             
@@ -423,32 +433,26 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """
         change levels of selafin layer when generics levels are changed
         """
-        self.layer.change_lvl(self.predeflevels[self.comboBox_genericlevels.currentIndex()][1])
+        self.layer.change_lvl_contour(self.predeflevels[self.comboBox_genericlevels.currentIndex()][1])
             
-            
-    def change_cmchoosergenericlvl_vel(self):
-        """
-        change levels of selafin layer when generics levels are changed
-        """
-        self.layer.change_lvl_vel(self.predeflevels[self.comboBox_genericlevels_2.currentIndex()][1])
             
     def createstepclass(self):
         """
         create steps classes and change levels of selafin layer when steps classes are changed
         """
         if self.lineEdit_levelmin.text()=="" : 
-            zmin=min(self.layer.slf.getVALUES(self.layer.temps_gachette)[self.layer.param_gachette] )
+            zmin=min(self.layer.selafinparser.getValues(self.layer.time_displayed)[self.layer.param_displayed] )
             self.lineEdit_levelmin.setText(str(round(float(zmin),3)))
         else : 
             zmin = float(self.lineEdit_levelmin.text())
         if self.lineEdit_levelmax.text()=="" : 
-            zmax=max(self.layer.slf.getVALUES(self.layer.temps_gachette)[self.layer.param_gachette] )
+            zmax=max(self.layer.selafinparser.getValues(self.layer.time_displayed)[self.layer.param_displayed] )
             self.lineEdit_levelmax.setText(str(round(float(zmax),3)))
         else : 
             zmax = float(self.lineEdit_levelmax.text())
 
-        pdn = float(self.lineEdit_levelstep.text())
-        zmin1=int(zmin)
+        pdn = round(float(self.lineEdit_levelstep.text()),len(self.lineEdit_levelstep.text().split('.')[1]))
+        zmin1=round(zmin,len(self.lineEdit_levelstep.text().split('.')[1]))
         while zmin1<=zmin:
             zmin1 = zmin1+  pdn
         zmin1 = zmin1 - pdn
@@ -462,87 +466,134 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         while temp<=zmax1:
             temp=round(temp+pdn,3)
             levels.append(temp)
-            
-        self.layer.change_lvl(levels)
+        self.layer.change_lvl_contour(levels)
         
-
-            
-    def color_palette_changed(self,int):
+    def color_palette_changed_contour(self,int):
         """
         change color map of selafin layer (matplotlib's style) when color palette combobox is changed
         """
         temp1 = QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame.currentText())
-        dict = self.getTupleColors(temp1)
-        self.layer.cmap = LinearSegmentedColormap('temp', dict)
-        self.layer.change_cm(self.layer.cmap)
+        #print str(self.comboBox_clrgame.currentText())
+        self.layer.cmap_mpl_contour_raw = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
+        #cmap = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
+        #print 'cmap1 ' + str(cmap)
+        self.layer.change_cm_contour(self.layer.cmap_mpl_contour_raw)
+
+
+    def openColorRampDialog(self):
+        """
+        open dialog for user defined color ramp and update color ramp
+        """
+
+        self.dlg_color = UserColorRampDialog(self.layer)
+        
+        self.dlg_color.setWindowModality(2)
+
+        r = self.dlg_color.exec_()
+        
+        colors,levels = self.dlg_color.dialogIsFinished()
+        if colors and levels:
+            #self.layer.cmap = self.layer.colormanager.arrayStepRGBAToCmap(colors)
+            self.layer.cmap_mpl_contour_raw = self.layer.colormanager.arrayStepRGBAToCmap(colors)
+            self.layer.change_lvl_contour(levels)
+
+    def saveMapRamp(self):
+        """
+        Save user defined color ramp on /config/"name"".clr
+        """
+        colors, levels = self.dlg_color.returnColorsLevels()
+        self.layer.colormanager.saveClrColorRamp(self.dlg_color.lineEdit_name.text(),colors,levels)
+        self.InitMapRamp()
+        int2 = self.comboBox_clrramp_preset.findText(self.dlg_color.lineEdit_name.text())
+        self.comboBox_clrramp_preset.setCurrentIndex(int2)
+        
+        
+    def deleteMapRamp(self):
+        """
+        delete user defined color ramp 
+        """
+        name = self.dlg_color.lineEdit_name.text()
+        if self.comboBox_clrramp_preset.findText(name) > -1 :
+            path = os.path.join(os.path.dirname(__file__),'..', 'config',name+'.clr')
+            os.remove(path)
+            self.dlg_color.close()
+            self.InitMapRamp()
+            
+        
+    def loadMapRamp(self,name,fullpath = False):
+        """
+        load clr file and apply it
+        """
+
+        if isinstance(name,int):
+            name = self.comboBox_clrramp_preset.currentText()
+            
+        if fullpath:
+            path = name
+        else:
+            path = os.path.join(os.path.dirname(__file__),'..', 'config',str(name)+'.clr')
+        if name : 
+            cmap, levels = self.layer.colormanager.readClrColorRamp(path)
+            if cmap and levels:
+                #self.layer.cmap = cmap
+                self.layer.cmap_mpl_contour_raw = cmap
+                self.layer.change_lvl_contour(levels)
+
+            
+    def InitMapRamp(self):
+        """
+        Load user defined color ramp in user defined color ramp combobox
+        """
+        self.comboBox_clrramp_preset.clear()
+        for file in os.listdir(os.path.join(os.path.dirname(__file__),'..', 'config')):
+            if file.endswith(".clr") and file.split('.')[0] :
+                self.comboBox_clrramp_preset.addItem(file.split('.')[0])
+            
+
+    #Display tools - velocity - user color ramp things ***********************************************
+            
+            
+    def setVelocityRendererParams(self):
+        """
+        set parameters for velocity rendering in layer.showvelocityparams like this :
+            [enabled Bool, type int , poinst step float , lenght of normal velocity float ]
+        """
+        if self.comboBox_vel_method.currentIndex() == 0 :
+            self.layer.showvelocityparams = {'show' : self.groupBox_schowvel.isChecked(),
+                                            'type' : self.comboBox_vel_method.currentIndex(),
+                                            'step' : self.spinBox_vel_relative.value(),
+                                            'norm' : 1/self.doubleSpinBox_vel_scale.value()}
+        elif self.comboBox_vel_method.currentIndex() == 1 :
+            self.layer.showvelocityparams = {'show' : self.groupBox_schowvel.isChecked(),
+                                            'type' : self.comboBox_vel_method.currentIndex(),
+                                            'step' : self.doubleSpinBox_vel_spatial_step.value(),
+                                            'norm' :1/self.doubleSpinBox_vel_scale.value()}
+        elif  self.comboBox_vel_method.currentIndex() == 2 :
+            self.layer.showvelocityparams = {'show' : self.groupBox_schowvel.isChecked(),
+                                            'type' : self.comboBox_vel_method.currentIndex(),
+                                            'step' : None,
+                                            'norm' : 1/self.doubleSpinBox_vel_scale.value()}
+        self.layer.showVelocity()
             
     def color_palette_changed_vel(self,int):
         """
         change color map of selafin layer (matplotlib's style) when color palette combobox is changed
         """
         temp1 = QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame_2.currentText())
-        dict = self.getTupleColors(temp1)
-        self.layer.cmap_vel = LinearSegmentedColormap('temp', dict)
-        self.layer.change_cm_vel(self.layer.cmap_vel)
-            
-            
-            
-    def getTupleColors(self,temp1):
-        if str(temp1.__class__.__name__) == 'QgsVectorGradientColorRampV2':
-            #first load colormap from qgis
-            #print str(temp1.properties())
-            firstcol = temp1.properties()['color1']
-            lastcol=temp1.properties()['color2']
-            try:
-                otherscol=temp1.properties()['stops'].split(":")
-                bool_stops = True
-            except Exception, e :
-                bool_stops = False
-            
-            #arrange it to fit dict of matplotlib:
-            """
-            http://matplotlib.org/examples/pylab_examples/custom_cmap.html
-            """
-            dict={}
-            identcolors=['red','green','blue','alpha']
-            for col in range(len(identcolors)):
-                dict[identcolors[col]]=[]
-                dict[identcolors[col]].append((0,float(firstcol.split(',')[col])/255.0,float(firstcol.split(',')[col])/255.0))
-                if bool_stops:
-                    lendict=len(otherscol)
-                    for i in range(lendict):
-                        dict[identcolors[col]].append((float(otherscol[i].split(';')[0]),float(otherscol[i].split(';')[1].split(',')[col])/255.0,float(otherscol[i].split(';')[1].split(',')[col])/255.0))
-                dict[identcolors[col]].append((1,float(lastcol.split(',')[col])/255.0,float(lastcol.split(',')[col])/255.0))
-                dict[identcolors[col]] = tuple(dict[identcolors[col]])
-        return dict
+        self.layer.cmap_mpl_vel_raw = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
+        #cmap_vel = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
+        self.layer.change_cm_vel(self.layer.cmap_mpl_vel_raw)
         
-    #Display tools - CRS things ***********************************************
-
-    def set_utilcrs(self):
-        self.crsselector.exec_()
-        crs = self.crsselector.selectedAuthId()
-        source = self.sender()
-        #print str(source.name())
-        if source == self.pushButton_crs:
-            self.label_selafin_crs.setText(crs)
-        else:
-            source.setText(crs)
+    def change_cmchoosergenericlvl_vel(self):
+        """
+        change levels of selafin layer when generics levels are changed
+        """
+        self.layer.change_lvl_vel(self.predeflevels[self.comboBox_genericlevels_2.currentIndex()][1])
         
-    def set_layercrs(self):
-        source = self.sender()
-        self.crsselector.exec_()
-        crs = self.crsselector.selectedAuthId()
-
-        #print str(source.name())
-        if source == self.pushButton_crs:
-            self.label_selafin_crs.setText(crs)
-        else:
-            source.setText(crs)
-        self.layer.setCrs(QgsCoordinateReferenceSystem(crs))
         
 
     #*********************************************************************************
-    #Display - Init things                          ******************************************
+    #Display tab - Init things                          ******************************************
     #*********************************************************************************
 
     def enablecheckbox(self,int1):
@@ -580,7 +631,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """
         Populate classes combobox on dialog creation
         """
-        f = open(os.path.join(os.path.dirname(__file__), 'classes.txt'), 'r')
+        f = open(os.path.join(os.path.dirname(__file__),'..', 'config','classes.txt'), 'r')
         for line in f:
                 tabtemp=[]
                 for txt in line.split("=")[1].split("\n")[0].split(";"):
@@ -595,16 +646,14 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         Populate time combobox on dialog update
         """
         self.comboBox_time.clear()
-        for i in range(len(self.layer.slf.tags["times"])):
-            self.comboBox_time.addItems([str(self.layer.slf.tags["times"][i])])
+        for i in range(self.layer.selafinparser.itertimecount + 1):
+            self.comboBox_time.addItems([str(self.layer.selafinparser.getTimes()[i])])
             
     def populatecombobox_param(self):
         """
         Populate parameters combobox on dialog update
         """
-        #self.comboBox_param.clear()
         self.comboBox_parametreschooser.clear()
-        
         for i in range(len(self.layer.parametres)):
             temp1 = [str(self.layer.parametres[i][0])+" : "+str(self.layer.parametres[i][1])]
             #self.comboBox_param.addItems(temp1)
@@ -621,15 +670,14 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
                 itm.setText(2, str(self.layer.parametres[i][2]))
             else:
                 itm.setText(2, self.tr('Raw data'))
-            """
-            if len( self.layer.parametres[i]) >2:
-                itm.setText(2, str(self.layer.parametres[i][2]))
-            else:
-                itm.setText(2, '/')
-            """
             itms.append(itm)
         self.treeWidget_parameters.addTopLevelItems(itms)
-
+        self.tableWidget_values.clearContents()
+        self.tableWidget_values.setRowCount(len(self.layer.parametres))
+        for i, param in enumerate(self.layer.parametres):
+            self.tableWidget_values.setItem(i, 0, QtGui.QTableWidgetItem(param[1]))
+        self.tableWidget_values.setFixedHeight((self.tableWidget_values.rowHeight(0) - 1)*(len(self.layer.parametres) + 1) + 1)
+ 
 
     def populatecombobox_colorpalette(self):
         """
@@ -642,32 +690,18 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             icon = QgsSymbolLayerV2Utils.colorRampPreviewIcon(ramp, rampIconSize)
             self.comboBox_clrgame.addItem(icon, rampName)
             self.comboBox_clrgame_2.addItem(icon, rampName)
+            self.comboBox_clrgame2.addItem(icon, rampName)
             
-    def getTreeWidgetSelectedIndex(self,widget):
-        getSelected = widget.selectedItems()
-        baseNode = getSelected[0]
-        position = [widget.indexFromItem(baseNode).parent().row(),widget.indexFromItem(baseNode).row()]
-        return position
-        
-    def setTreeWidgetIndex(self,widget,pos0,pos1):
-        """
-        """
-        #widget.setItemSelected(widget.itemAt(pos0,pos1),True)
-        #widget.itemAt(pos0,pos1).setSelected(True)
-        #widget.topLevelItem(pos1).setSelected(True)
-        widget.scrollToItem(widget.topLevelItem(pos1))
-        widget.setCurrentItem(widget.topLevelItem(pos1))
-        widget.setItemSelected(widget.topLevelItem(pos1), True)
-        
-        #widget.update()
-        #widget.repaint()
-        """
-        itemAt (self, int ax, int ay)
-        getSelected = widget.selectedItems()
-        baseNode = getSelected[0]
-        position = [widget.indexFromItem(baseNode).parent().row(),widget.indexFromItem(baseNode).row()]
-        return position
-        """
+            
+    """
+    #*********************************************************************************
+    #*********************************************************************************
+    #Tools tab ****************************************************************
+    #*********************************************************************************
+    #*********************************************************************************
+    """
+
+
 
 
     #*********************************************************************************
@@ -700,10 +734,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """
         Method to choose the stackedwidget page linked mith the tree item
         """
-        getSelected = self.treeWidget_utils.selectedItems()
-        baseNode = getSelected[0]
-        text = baseNode.text(0)
-        position = [self.treeWidget_utils.indexFromItem(baseNode).parent().row(),self.treeWidget_utils.indexFromItem(baseNode).row()]
+        position = self.getTreeWidgetSelectedIndex(self.treeWidget_utils)
         indextabtemp=[index[0] for index in self.treewidgettoolsindextab ]
         try:
             self.stackedWidget.setCurrentIndex(self.treewidgettoolsindextab[indextabtemp.index(position)][1])
@@ -712,23 +743,27 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         
 
             
+    #*********************************************************************************
+    #Tab / tool treewidget map tool activator ****************************************
+    #*********************************************************************************
+        
     def mapToolChooser(self,int=None):
         """
         Activate maptool (specific mouse behaviour) when specifics items in the utilities tree is clicked
         """
-        getSelected = self.treeWidget_utils.selectedItems()
-        try:
-            baseNode = getSelected[0]
-            position = [self.treeWidget_utils.indexFromItem(baseNode).parent().row(),self.treeWidget_utils.indexFromItem(baseNode).row()]
-            indextabtemp=[index[0] for index in self.treewidgettoolsindextab ]
+        position = self.getTreeWidgetSelectedIndex(self.treeWidget_utils)
+        indextabtemp=[index[0] for index in self.treewidgettoolsindextab ]
+        if position :
             itemname = self.treewidgettoolsindextab[indextabtemp.index(position)][2]
-        except Exception, e:
+        else:
             itemname = None
+
+        
         
         if (len(self.treeWidget_utils.selectedItems())>0 
             and itemname == 'Values' 
             and self.tabWidget.currentIndex() == 1):
-            #Click sur valeur
+            #Click on value tool item
             self.canvas.setMapTool(self.clickTool)
             try:self.clickTool.canvasClicked.disconnect()
             except Exception: pass
@@ -739,34 +774,34 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
                   and itemname == 'Temporal graph' 
                   and self.tabWidget.currentIndex() == 1
                   and self.comboBox_2.currentIndex() == 0):
-            #Click sur graphtemp - point temporaire
+            #Click on temopral graph + temporary point selection method
             if self.postutils.rubberband:
                 self.postutils.rubberband.reset(QGis.Point)
-            try:self.clickTool.canvasClicked.disconnect()
-            except Exception: pass
+            try : self.clickTool.canvasClicked.disconnect()
+            except Exception, e : pass
             self.pushButton_limni.setEnabled(False)
             self.canvas.setMapTool(self.clickTool)
-            self.clickTool.canvasClicked.connect(self.postutils.graphtemp_click)
+            self.clickTool.canvasClicked.connect(self.postutils.computeGraphTemp)
             
         elif (len(self.treeWidget_utils.selectedItems())>0 
                   and itemname == 'Flow graph' 
                   and self.tabWidget.currentIndex() == 1
                   and (self.comboBox_3.currentIndex() in [0] )):
-            #Click sur calcul debit - polyligne temporaire
+            #Click on flow computation - temporary polyline
             if self.postutils.rubberband:
                 self.postutils.rubberband.reset(QGis.Point)
-            try:self.clickTool.canvasClicked.disconnect()
-            except Exception: pass
+            try : self.clickTool.canvasClicked.disconnect()
+            except Exception, e :  pass
             self.pushButton_flow.setEnabled(False)
             self.postutils.computeFlow()
         else:
-            #Le reste....
+            #else...
             self.pushButton_limni.setEnabled(True)
             self.pushButton_flow.setEnabled(True)
             try: self.canvas.setMapTool(self.maptooloriginal)
             except Exception, e : pass
 
-        #Le systematique : reset du dessin temporaire au changement d element du treewidget
+        #All the time : rubberband reset when the treewidget item changes
         try:
             source = self.sender()
             if source == self.treeWidget_utils and self.postutils.rubberband:
@@ -800,6 +835,20 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """
         self.postutils.create_points()
         
+        
+
+    #Display tools - CRS things ***********************************************
+
+    def set_utilcrs(self):
+        self.crsselector.exec_()
+        crs = self.crsselector.selectedAuthId()
+        source = self.sender()
+        #print str(source.name())
+        if source == self.pushButton_crs:
+            self.label_selafin_crs.setText(crs)
+        else:
+            source.setText(crs)
+        
     
     #*********************************************************************************
     #*******************************Compare **************************************
@@ -809,17 +858,16 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         str1 = self.tr("Selafin file chooser")
         str2 = self.tr("Telemac files")
         str3 = self.tr("All files")  
-        fname = self.qfiledlg.getOpenFileName(None,str1,self.layer.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
+        fname = self.qfiledlg.getOpenFileName(None,str1,self.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
         #fname = self.qfiledlg.getOpenFileName(None,"Choix du fichier res",self.layer.loaddirectory, "Fichier_Telemac (*.res *.geo)")
         #Things
         self.lineEdit_5.setText(fname)
-        self.writeSelafinCaracteristics(self.textEdit_2,self.layer.slf)
+        self.writeSelafinCaracteristics(self.textEdit_2,self.layer.selafinparser.selafin)
         self.writeSelafinCaracteristics(self.textEdit_3,SELAFIN(fname))
         #Launch thread
         self.checkBox_6.setEnabled(False)
-        self.threadcompare = initgetCompareValue(self.layer)
-        self.threadcompare.compare.transmitvalues = False
-        self.threadcompare.start()
+        self.postutils.compareselafin()
+
         
     def writeSelafinCaracteristics(self,textedit,selafin):
         textedit.setText('')
@@ -828,34 +876,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         textedit.append("nombre d elements : "+str(len(selafin.getVALUES(0)[0])))
         
         
-    def compare1(self,int1):
-        if int1 == 2 :
-            for i in range(len(self.threadcompare.var_corresp)):
-                if self.threadcompare.var_corresp[i][1] is None:
-                    self.layer.propertiesdialog.treeWidget_parameters.topLevelItem(i).setFlags(Qt.ItemIsSelectable)
-            self.layer.temps_memoire = None
-            self.layer.param_memoire = None
-            self.threadcompare.compare.transmitvalues = True
-            self.layer.compare = True
-            self.threadcompare.run()
-            self.layer.updateSelafinValues()
-            self.layer.triggerRepaint()
-            
-        elif int1 == 0 :
-            #self.compare = None 
-            self.layer.compare = False
-            self.layer.temps_memoire = None
-            self.layer.param_memoire = None
-            self.populatecombobox_param()
-            """
-            for i in range(len(self.layer.parametres)):
-                #self.layer.propertiesdialog.comboBox_param.model().item(i).setEnabled(True)
-                self.layer.propertiesdialog.treeWidget_parameters.topLevelItem(i).setFlags(Qt.ItemIsSelectable)
-                self.layer.propertiesdialog.treeWidget_parameters.topLevelItem(i).setFlags(Qt.ItemIsUserCheckable)
-                self.layer.propertiesdialog.treeWidget_parameters.topLevelItem(i).setFlags(Qt.ItemIsEnabled)
-            """
-            self.layer.updateSelafinValues()
-            self.layer.triggerRepaint()
+
 
     #*********************************************************************************
     #Tools - movie *******************************************
@@ -895,7 +916,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             
             
     #****************************************************************************************************
-    #************translation                                        ***********************************
+    #************translation  / general method                                      ***********************************
     #****************************************************************************************************
 
     
@@ -905,8 +926,36 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         return QCoreApplication.translate('PostTelemacPropertiesDialog', message, None, QApplication.UnicodeUTF8)
 
             
-
+    def eventFilter(self,target,event):
+        """
+        event for specific actions
+        Used only for movie utilities - update images in composer
+        """
+        #Action to update images in composer with movie tool
+        try:
+            if target == self.comboBox_8 and event.type() == QtCore.QEvent.MouseButtonPress:
+                self.reinitcomposeurimages()
+            return False
+        except Exception, e:
+            #print 'Property dialog eventFilter ' + str(e)
+            return False
             
-
+            
+    def getTreeWidgetSelectedIndex(self,widget):
+        
+        getSelected = widget.selectedItems()
+        if getSelected:
+            baseNode = getSelected[0]
+            position = [widget.indexFromItem(baseNode).parent().row(),widget.indexFromItem(baseNode).row()]
+            return position
+        else :
+            return [-1,0]
+        
+    def setTreeWidgetIndex(self,widget,pos0,pos1):
+        """
+        """
+        widget.scrollToItem(widget.topLevelItem(pos1))
+        widget.setCurrentItem(widget.topLevelItem(pos1))
+        widget.setItemSelected(widget.topLevelItem(pos1), True)
         
         

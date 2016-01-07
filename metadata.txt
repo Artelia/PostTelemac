@@ -11,7 +11,7 @@ name=PostTelemac
 about=Post treatment of Telemac results
 qgisMinimumVersion=2.10.0
 description=Post Treatment for Telemac
-version=0.1.00
+version=0.1.0
 author=Artelia Eau et Environnement
 email=patrice.verchere@arteliagroup.com
 
@@ -21,7 +21,7 @@ email=patrice.verchere@arteliagroup.com
 
 # Uncomment the following line and add your changelog:
 changelog= 
-    0.1.00 : Beta version
+    0.1.0 : Beta version
     0.0.08 : virtuals parameters
     0.0.07 : velocities
     0.0.06 : bugs fixes

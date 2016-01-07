@@ -51,8 +51,8 @@ class PostTelemacAnimation(QtCore.QObject):
             
             #Cree les paths souhaités
             self.tempdir = tempfile.mkdtemp()   #path to temp dir where png are stored
-            dir = os.path.dirname(self.pluginlayer.fname)  #dir of sl file where movie will be put"
-            nameslf =  os.path.basename(self.pluginlayer.fname).split('.')[0]
+            dir = os.path.dirname(self.pluginlayer.selafinpath)  #dir of sl file where movie will be put"
+            nameslf =  os.path.basename(self.pluginlayer.selafinpath).split('.')[0]
             nameavi = os.path.join(dir,nameslf+'.avi')
 
             txt = ctime()+ ' - Film - creation du fichier ' + str(nameavi)
@@ -99,13 +99,13 @@ class PostTelemacAnimation(QtCore.QObject):
                 if i%pas==0:
                     if fig:
                         #modifying ax to show the time
-                        self.addtimelineonax(ax,self.pluginlayer.slf.tags["times"][i])
+                        self.addtimelineonax(ax,self.pluginlayer.selafinparser.getTimes()[i])
                         #saving the figure
                         matplotlibimagepath= os.path.join(self.tempdir,'test'+ "%04d"%compt +'.jpg')
                         fig.savefig(matplotlibimagepath,format='jpg',dpi = 80 )
                         composeurimage.setPicturePath(matplotlibimagepath)
-                    self.pluginlayer.change_timetxt(i)
-                    txt =ctime()+ ' - Film - iteration n '+ str(self.pluginlayer.temps_gachette)
+                    self.pluginlayer.changeTime(i)
+                    txt =ctime()+ ' - Film - iteration n '+ str(self.pluginlayer.time_displayed)
                     if self.outputtype:self.pluginlayer.propertiesdialog.textBrowser_2.append(txt)
                     else: self.status.emit(txt)
                     
@@ -163,8 +163,8 @@ class PostTelemacAnimation(QtCore.QObject):
         
         except Exception, e : 
             txt =str(e)
-            if self.outputtype:self.pluginlayer.propertiesdialog.textBrowser_2.append(txt)
-            else: self.status.emit(txt)
+            if self.outputtype : self.pluginlayer.propertiesdialog.textBrowser_2.append('make movie : ' + txt)
+            else : self.status.emit('make movie : ' + txt)
 
         if fig:
             if self.vline:

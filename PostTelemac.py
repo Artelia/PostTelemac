@@ -27,6 +27,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__),'libs_telemac'))
 
 from libs.post_telemac_pluginlayer import SelafinPluginLayer
 from libs.post_telemac_pluginlayer_type import SelafinPluginLayerType
+from dialogs.posttelemac_about import aboutDialog
 
 #Processing
 from processing.core.Processing import Processing
@@ -97,6 +98,8 @@ class PostTelemac:
         # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'PostTelemac')
         self.toolbar.setObjectName(u'PostTelemac')
+        
+        self.dlg_about = None
         
         #Processing
         if DOPROCESSING : self.provider = PostTelemacProvider()
@@ -192,7 +195,7 @@ class PostTelemac:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
         
-        icon_path = ':/plugins/PostTelemac/icons/icon.png'
+        icon_path = ':/plugins/PostTelemac/icons/posttelemac.png'
         self.add_action(
             icon_path,
             text=self.tr(u'PostTelemac'),
@@ -203,6 +206,12 @@ class PostTelemac:
             text=self.tr(u'PostTelemac Help'),
             add_to_toolbar=False,
             callback=self.showHelp,
+            parent=self.iface.mainWindow())
+        self.add_action(
+            icon_path,
+            text=self.tr(u'PostTelemac About'),
+            add_to_toolbar=False,
+            callback=self.showAbout,
             parent=self.iface.mainWindow())
         
             
@@ -237,6 +246,11 @@ class PostTelemac:
         else:
             os.startfile('https://github.com/ArteliaTelemac/PostTelemac/wiki')
         
+    def showAbout(self):
+        if not self.dlg_about:
+            self.dlg_about = aboutDialog()
+        self.dlg_about.setWindowModality(2)
+        r = self.dlg_about.exec_()
         
         
     #Specific functions

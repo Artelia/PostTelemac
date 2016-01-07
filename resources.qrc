@@ -1,11 +1,19 @@
 <RCC>
     <qresource prefix="/plugins/PostTelemac" >
-        <file>icons/icon.png</file>
-        <file>icons/btn_plus.png</file>
-        <file>icons/btn_suppr.png</file>
-        <file>icons/btn_file.png</file>
-        <file>icons/btn_tools.png</file>
-        <file>icons/btn_calc.png</file>
-        <file>icons/btn_crs.png</file>
+        <file>icons/posttelemac.png</file>
+        <file>icons/Add_48x48.png</file>
+        <file>icons/Cancel_48x48.png</file>
+        <file>icons/Check_48x48.png</file>
+        <file>icons/Delete_48x48.png</file>
+        <file>icons/Globe_48x48.png</file>
+        <file>icons/Information_48x48.png</file>
+        <file>icons/Open_48x48.png</file>
+        <file>icons/Play_48x48.png</file>
+        <file>icons/Remove_48x48.png</file>
+        <file>icons/Save_48x48.png</file>
+        <file>icons/Settings_48x48.png</file>
+        <file>icons/Stock Index Down_48x48.png</file>
+        <file>icons/Stock Index Up_48x48.png</file>
+        <file>icons/ARTELIA.jpg</file>
     </qresource>
 </RCC>

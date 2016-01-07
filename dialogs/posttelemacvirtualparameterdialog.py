@@ -50,17 +50,15 @@ class DefVariablesDialog(QtGui.QDialog, FORM_CLASS):
         self.setupUi(self)
         self.setFixedSize(400, 475)
 
-        icTool = QIcon(os.path.dirname(os.path.realpath(__file__)) + "\\icones\\btn_tools.png")
+        #icTool = QIcon(os.path.dirname(os.path.realpath(__file__)) + "\\icones\\btn_tools.png")
         #self.btn_open_classe.setIcon(icTool)
 
         lst_fn = ["+","-","*","/","**","abs()", "cos()", "int()", "sin()"]
 
         self.tab_variables.itemDoubleClicked.connect(self.add_variable)
         self.lst_fonctions.doubleClicked.connect(self.add_fonction)
-        #self.cb_classe.currentIndexChanged.connect(self.aff_classe)
         self.txt_nom_variable.textEdited.connect(self.active_bb_valide)
         self.txt_formule.textChanged.connect(self.active_bb_valide)
-        #self.btn_open_classe.clicked.connect(self.open_gestion_classe)
         self.finished.connect(self.dialogIsFinished)
 
         self.tab_variables.headerItem().setText(0, "Pos")
@@ -73,12 +71,6 @@ class DefVariablesDialog(QtGui.QDialog, FORM_CLASS):
 
         self.txt_nom_variable.setText(lst_param[0])
         self.txt_formule.setText(lst_param[1])
-        """
-        for i in range(self.cb_classe.count()):
-            if self.cb_classe.itemText(i) == lst_param[2]:
-                self.cb_classe.setCurrentIndex(i)
-                return
-        """
 
         self.active_bb_valide()
         

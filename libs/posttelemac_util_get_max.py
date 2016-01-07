@@ -41,7 +41,6 @@ class runGetMax(QtCore.QObject):
       """
 
         ## Creation de la variable au format Serafin
-        print 'run'
         try:
             resin = Serafin(name = self.name_res, mode = 'rb')
             resout = Serafin(name = self.name_res_out, mode = 'wb')

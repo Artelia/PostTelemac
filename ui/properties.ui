@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>484</width>
-    <height>709</height>
+    <height>744</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,7 +19,7 @@
   <property name="minimumSize">
    <size>
     <width>484</width>
-    <height>704</height>
+    <height>744</height>
    </size>
   </property>
   <property name="floating">
@@ -118,8 +118,8 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="../resources.qrc">
-            <normaloff>:/plugins/PostTelemac/icons/btn_file.png</normaloff>:/plugins/PostTelemac/icons/btn_file.png</iconset>
+           <iconset>
+            <normaloff>:/plugins/PostTelemac/icons/Open_48x48.png</normaloff>:/plugins/PostTelemac/icons/Open_48x48.png</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -184,8 +184,8 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="../resources.qrc">
-            <normaloff>:/plugins/PostTelemac/icons/btn_crs.png</normaloff>:/plugins/PostTelemac/icons/btn_crs.png</iconset>
+           <iconset>
+            <normaloff>:/plugins/PostTelemac/icons/Globe_48x48.png</normaloff>:/plugins/PostTelemac/icons/Globe_48x48.png</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -254,17 +254,23 @@
         <attribute name="title">
          <string>Display</string>
         </attribute>
-        <layout class="QGridLayout" name="gridLayout_6">
-         <item row="1" column="0" colspan="2">
+        <layout class="QGridLayout" name="gridLayout_6" columnstretch="4,1,0">
+         <item row="1" column="0" colspan="3">
           <widget class="QGroupBox" name="groupBox_contour">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>16777215</height>
+            </size>
            </property>
            <property name="font">
             <font>
@@ -409,8 +415,8 @@
                      <string/>
                     </property>
                     <property name="icon">
-                     <iconset resource="../resources.qrc">
-                      <normaloff>:/plugins/PostTelemac/icons/btn_plus.png</normaloff>:/plugins/PostTelemac/icons/btn_plus.png</iconset>
+                     <iconset>
+                      <normaloff>:/plugins/PostTelemac/icons/Add_48x48.png</normaloff>:/plugins/PostTelemac/icons/Add_48x48.png</iconset>
                     </property>
                    </widget>
                   </item>
@@ -423,8 +429,8 @@
                      <string/>
                     </property>
                     <property name="icon">
-                     <iconset resource="../resources.qrc">
-                      <normaloff>:/plugins/PostTelemac/icons/btn_tools.png</normaloff>:/plugins/PostTelemac/icons/btn_tools.png</iconset>
+                     <iconset>
+                      <normaloff>:/plugins/PostTelemac/icons/Settings_48x48.png</normaloff>:/plugins/PostTelemac/icons/Settings_48x48.png</iconset>
                     </property>
                    </widget>
                   </item>
@@ -437,8 +443,8 @@
                      <string/>
                     </property>
                     <property name="icon">
-                     <iconset resource="../resources.qrc">
-                      <normaloff>:/plugins/PostTelemac/icons/btn_suppr.png</normaloff>:/plugins/PostTelemac/icons/btn_suppr.png</iconset>
+                     <iconset>
+                      <normaloff>:/plugins/PostTelemac/icons/Delete_48x48.png</normaloff>:/plugins/PostTelemac/icons/Delete_48x48.png</iconset>
                     </property>
                    </widget>
                   </item>
@@ -472,27 +478,10 @@
                <string>Color ramp</string>
               </property>
               <layout class="QGridLayout" name="gridLayout_26">
-               <item row="0" column="0">
-                <widget class="QLabel" name="label_8">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string>Color gradient</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="0" column="1">
-                <widget class="QComboBox" name="comboBox_clrgame">
-                 <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Color gradient configurable by adding color gradient in&lt;/p&gt;&lt;p&gt;Settings\Style manager\Color ramp&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="0" colspan="2">
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item row="3" column="0" colspan="3">
                 <widget class="QStackedWidget" name="stackedWidget_colorramp">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -511,8 +500,8 @@
                  </property>
                  <widget class="QWidget" name="page_4">
                   <layout class="QGridLayout" name="gridLayout_8">
-                   <item row="1" column="0">
-                    <widget class="QLabel" name="label_17">
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label_8">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                        <horstretch>0</horstretch>
@@ -520,30 +509,18 @@
                       </sizepolicy>
                      </property>
                      <property name="text">
-                      <string>Offset</string>
+                      <string>Color gradient</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="1" column="1">
-                    <widget class="QDoubleSpinBox" name="doubleSpinBox_levelshift">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="comboBox_clrgame">
                      <property name="toolTip">
-                      <string>Offset the classes (usefull for showing failure wave)</string>
-                     </property>
-                     <property name="minimum">
-                      <double>-999999999.000000000000000</double>
-                     </property>
-                     <property name="maximum">
-                      <double>999999999.000000000000000</double>
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Color gradient configurable by adding color gradient in&lt;/p&gt;&lt;p&gt;Settings\Style manager\Color ramp&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="0" colspan="2">
+                   <item row="1" column="0" colspan="2">
                     <widget class="QComboBox" name="comboBox_genericlevels">
                      <property name="toolTip">
                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Customizables classes by editing the file :&lt;/p&gt;&lt;p&gt;C:\Users\&amp;quot;your name&amp;quot;\.qgis2\python\plugins\PostTelemac\classes.txt&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -554,14 +531,14 @@
                  </widget>
                  <widget class="QWidget" name="page_5">
                   <layout class="QGridLayout" name="gridLayout_3">
-                   <item row="0" column="0">
+                   <item row="1" column="0">
                     <widget class="QLabel" name="label_4">
                      <property name="text">
                       <string>Min</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="1">
+                   <item row="1" column="1">
                     <widget class="QLineEdit" name="lineEdit_levelmin">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -571,14 +548,14 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="2">
+                   <item row="1" column="2">
                     <widget class="QLabel" name="label_9">
                      <property name="text">
                       <string>Max</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="3">
+                   <item row="1" column="3">
                     <widget class="QLineEdit" name="lineEdit_levelmax">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -588,14 +565,14 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="4">
+                   <item row="1" column="4">
                     <widget class="QLabel" name="label_6">
                      <property name="text">
                       <string>Step</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="5">
+                   <item row="1" column="5">
                     <widget class="QLineEdit" name="lineEdit_levelstep">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -608,7 +585,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="1" column="0" colspan="6">
+                   <item row="2" column="0" colspan="6">
                     <widget class="QPushButton" name="pushButton_createsteplevel">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -621,41 +598,61 @@
                      </property>
                     </widget>
                    </item>
+                   <item row="0" column="3" colspan="3">
+                    <widget class="QComboBox" name="comboBox_clrgame2"/>
+                   </item>
+                   <item row="0" column="0" colspan="3">
+                    <widget class="QLabel" name="label_17">
+                     <property name="text">
+                      <string>Color gradient</string>
+                     </property>
+                    </widget>
+                   </item>
                   </layout>
                  </widget>
                  <widget class="QWidget" name="page_9">
-                  <layout class="QHBoxLayout" name="horizontalLayout_5">
+                  <layout class="QVBoxLayout" name="verticalLayout_9">
                    <item>
-                    <widget class="QRadioButton" name="radioButton">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
+                    <widget class="QLabel" name="label_32">
                      <property name="text">
-                      <string>Use advanced</string>
+                      <string>Preset color ramp</string>
                      </property>
                     </widget>
                    </item>
                    <item>
-                    <widget class="QPushButton" name="pushButton_6">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="text">
-                      <string>...</string>
-                     </property>
-                    </widget>
+                    <widget class="QComboBox" name="comboBox_clrramp_preset"/>
                    </item>
                   </layout>
                  </widget>
                 </widget>
                </item>
-               <item row="1" column="1">
+               <item row="4" column="0" colspan="3">
+                <widget class="QLineEdit" name="lineEdit_levelschoosen">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_16">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Classes</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1" colspan="2">
                 <widget class="QComboBox" name="comboBox_levelstype">
                  <item>
                   <property name="text">
@@ -669,34 +666,22 @@
                  </item>
                  <item>
                   <property name="text">
-                   <string>Advanced</string>
+                   <string>User defined</string>
                   </property>
                  </item>
                 </widget>
                </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="label_16">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
+               <item row="5" column="0" colspan="3">
+                <widget class="QPushButton" name="pushButton_editcolorramp">
+                 <property name="toolTip">
+                  <string>Edit color ramp</string>
                  </property>
                  <property name="text">
-                  <string>Classes</string>
+                  <string/>
                  </property>
-                </widget>
-               </item>
-               <item row="3" column="0" colspan="2">
-                <widget class="QLineEdit" name="lineEdit_levelschoosen">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="readOnly">
-                  <bool>true</bool>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/plugins/PostTelemac/icons/Settings_48x48.png</normaloff>:/plugins/PostTelemac/icons/Settings_48x48.png</iconset>
                  </property>
                 </widget>
                </item>
@@ -706,7 +691,7 @@
            </layout>
           </widget>
          </item>
-         <item row="2" column="0" colspan="2">
+         <item row="2" column="0" colspan="3">
           <widget class="QGroupBox" name="groupBox_vel">
            <property name="enabled">
             <bool>false</bool>
@@ -856,7 +841,7 @@
                  </item>
                  <item>
                   <property name="text">
-                   <string>All the points (slow)</string>
+                   <string>All the points</string>
                   </property>
                  </item>
                 </widget>
@@ -938,7 +923,7 @@
          <item row="3" column="0">
           <widget class="QGroupBox" name="groupBox_13">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
@@ -984,7 +969,7 @@
          <item row="3" column="1">
           <widget class="QGroupBox" name="groupBox_5">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
@@ -1051,7 +1036,44 @@
            </layout>
           </widget>
          </item>
-         <item row="0" column="0" colspan="2">
+         <item row="3" column="2">
+          <widget class="QGroupBox" name="groupBox_3">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>100</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="title">
+            <string>Aspect Ratio</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
+            <item>
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_aspectratio">
+              <property name="minimum">
+               <double>1.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>5.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.200000000000000</double>
+              </property>
+              <property name="value">
+               <double>1.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="0" column="0" colspan="3">
           <widget class="QGroupBox" name="groupBox_time">
            <property name="enabled">
             <bool>false</bool>
@@ -1348,15 +1370,111 @@
            </property>
            <widget class="QWidget" name="page_vide"/>
            <widget class="QWidget" name="page_values">
-            <layout class="QVBoxLayout" name="verticalLayout_6">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_6" stretch="1,2,0">
+             <property name="sizeConstraint">
+              <enum>QLayout::SetDefaultConstraint</enum>
+             </property>
              <item>
-              <widget class="QTextBrowser" name="textBrowser_3">
+              <widget class="QTableWidget" name="tableWidget_values">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="verticalScrollBarPolicy">
+                <enum>Qt::ScrollBarAlwaysOff</enum>
+               </property>
+               <property name="editTriggers">
+                <set>QAbstractItemView::DoubleClicked</set>
+               </property>
+               <property name="showDropIndicator" stdset="0">
+                <bool>false</bool>
+               </property>
+               <property name="selectionMode">
+                <enum>QAbstractItemView::SingleSelection</enum>
+               </property>
+               <property name="selectionBehavior">
+                <enum>QAbstractItemView::SelectRows</enum>
+               </property>
+               <property name="rowCount">
+                <number>2</number>
+               </property>
+               <property name="columnCount">
+                <number>2</number>
+               </property>
+               <attribute name="horizontalHeaderStretchLastSection">
+                <bool>true</bool>
+               </attribute>
+               <attribute name="verticalHeaderVisible">
+                <bool>false</bool>
+               </attribute>
+               <attribute name="verticalHeaderCascadingSectionResizes">
+                <bool>true</bool>
+               </attribute>
+               <attribute name="verticalHeaderHighlightSections">
+                <bool>false</bool>
+               </attribute>
+               <attribute name="verticalHeaderStretchLastSection">
+                <bool>false</bool>
+               </attribute>
+               <row/>
+               <row/>
+               <column>
+                <property name="text">
+                 <string>Name</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string>Value</string>
+                </property>
+               </column>
+              </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Minimum</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QGroupBox" name="groupBox_2">
+               <property name="title">
+                <string>Method</string>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_4">
+                <item>
+                 <widget class="QComboBox" name="comboBox_values_method">
+                  <item>
+                   <property name="text">
+                    <string>Nearest point</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Exact point</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+               </layout>
               </widget>
              </item>
             </layout>
@@ -1519,8 +1637,8 @@
                    <string>Calcul</string>
                   </property>
                   <property name="icon">
-                   <iconset resource="../resources.qrc">
-                    <normaloff>:/plugins/PostTelemac/icons/btn_calc.png</normaloff>:/plugins/PostTelemac/icons/btn_calc.png</iconset>
+                   <iconset>
+                    <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -1647,8 +1765,8 @@
                    <string>Flow computation</string>
                   </property>
                   <property name="icon">
-                   <iconset resource="../resources.qrc">
-                    <normaloff>:/plugins/PostTelemac/icons/btn_calc.png</normaloff>:/plugins/PostTelemac/icons/btn_calc.png</iconset>
+                   <iconset>
+                    <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -1880,8 +1998,8 @@
                    <string/>
                   </property>
                   <property name="icon">
-                   <iconset resource="../resources.qrc">
-                    <normaloff>:/plugins/PostTelemac/icons/btn_file.png</normaloff>:/plugins/PostTelemac/icons/btn_file.png</iconset>
+                   <iconset>
+                    <normaloff>:/plugins/PostTelemac/icons/Open_48x48.png</normaloff>:/plugins/PostTelemac/icons/Open_48x48.png</iconset>
                   </property>
                   <property name="iconSize">
                    <size>
@@ -1909,6 +2027,19 @@
                 <string>Compare</string>
                </property>
               </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_2">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
              </item>
             </layout>
            </widget>
@@ -2092,10 +2223,23 @@
                 <string>Do movie (DO NOT MODIFY ANYTHING IN QGIS !)</string>
                </property>
                <property name="icon">
-                <iconset resource="../resources.qrc">
-                 <normaloff>:/plugins/PostTelemac/icons/btn_calc.png</normaloff>:/plugins/PostTelemac/icons/btn_calc.png</iconset>
+                <iconset>
+                 <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                </property>
               </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_3">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
              </item>
             </layout>
            </widget>
@@ -2107,8 +2251,8 @@
                 <string>File _max.res creation</string>
                </property>
                <property name="icon">
-                <iconset resource="../resources.qrc">
-                 <normaloff>:/plugins/PostTelemac/icons/btn_calc.png</normaloff>:/plugins/PostTelemac/icons/btn_calc.png</iconset>
+                <iconset>
+                 <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                </property>
               </widget>
              </item>
@@ -2121,6 +2265,19 @@
                 <string>Load the generated file</string>
                </property>
               </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_4">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
              </item>
             </layout>
            </widget>
@@ -2172,10 +2329,23 @@
                 <string>Generate .shp file</string>
                </property>
                <property name="icon">
-                <iconset resource="../resources.qrc">
-                 <normaloff>:/plugins/PostTelemac/icons/btn_calc.png</normaloff>:/plugins/PostTelemac/icons/btn_calc.png</iconset>
+                <iconset>
+                 <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                </property>
               </widget>
+             </item>
+             <item row="3" column="0">
+              <spacer name="verticalSpacer_5">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
              </item>
             </layout>
            </widget>
@@ -2280,10 +2450,23 @@
                 <string>Generate mesh</string>
                </property>
                <property name="icon">
-                <iconset resource="../resources.qrc">
-                 <normaloff>:/plugins/PostTelemac/icons/btn_calc.png</normaloff>:/plugins/PostTelemac/icons/btn_calc.png</iconset>
+                <iconset>
+                 <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                </property>
               </widget>
+             </item>
+             <item row="6" column="0">
+              <spacer name="verticalSpacer_6">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
              </item>
             </layout>
            </widget>
@@ -2336,10 +2519,23 @@
                 <string>Create points</string>
                </property>
                <property name="icon">
-                <iconset resource="../resources.qrc">
-                 <normaloff>:/plugins/PostTelemac/icons/btn_calc.png</normaloff>:/plugins/PostTelemac/icons/btn_calc.png</iconset>
+                <iconset>
+                 <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                </property>
               </widget>
+             </item>
+             <item row="5" column="0">
+              <spacer name="verticalSpacer_7">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
              </item>
             </layout>
            </widget>
@@ -2362,6 +2558,13 @@
            </property>
            <property name="verticalScrollBarPolicy">
             <enum>Qt::ScrollBarAlwaysOn</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton_clearlog">
+           <property name="text">
+            <string>Clear Log</string>
            </property>
           </widget>
          </item>
@@ -2419,7 +2622,6 @@
  </widget>
  <tabstops>
   <tabstop>doubleSpinBox_2</tabstop>
-  <tabstop>comboBox_genericlevels</tabstop>
   <tabstop>tabWidget</tabstop>
   <tabstop>horizontalSlider_time</tabstop>
   <tabstop>comboBox_time</tabstop>
@@ -2444,12 +2646,10 @@
   <tabstop>pushButton_2</tabstop>
   <tabstop>spinBox</tabstop>
   <tabstop>checkBox_5</tabstop>
-  <tabstop>textBrowser_3</tabstop>
   <tabstop>textBrowser_2</tabstop>
   <tabstop>doubleSpinBox_2</tabstop>
  </tabstops>
- <resources>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>comboBox_time</sender>
@@ -2512,6 +2712,54 @@
     <hint type="destinationlabel">
      <x>128</x>
      <y>503</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>comboBox_clrgame</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>comboBox_clrgame2</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>393</x>
+     <y>297</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>391</x>
+     <y>288</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>comboBox_clrgame2</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>comboBox_clrgame</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>391</x>
+     <y>288</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>393</x>
+     <y>297</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_clearlog</sender>
+   <signal>clicked()</signal>
+   <receiver>textBrowser_2</receiver>
+   <slot>clear()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>240</x>
+     <y>626</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>240</x>
+     <y>367</y>
     </hint>
    </hints>
   </connection>

@@ -17,6 +17,7 @@ from time import ctime
 import math
 import sys
 import os.path
+from scipy.spatial import cKDTree
 
 debug = False
 
@@ -35,6 +36,7 @@ class graphTemp(QtCore.QObject):
         QtCore.QObject.__init__(self)
         self.selafinlayer = selafin
         self.points = qgspoints
+        self.skdtree = None
 
 
     def createGraphTemp(self):
@@ -43,20 +45,28 @@ class graphTemp(QtCore.QObject):
         for i in range(len(self.points)):
             abscisse = []
             ordonnees=[]
-            triangle = self.selafinlayer.trifind.__call__(self.points[i][0],self.points[i][1])
-            if triangle != -1:
-                enumpoint = self.getNearest(self.points[i],triangle)
+            #triangle = self.selafinlayer.trifind.__call__(self.points[i][0],self.points[i][1])
+            #if triangle != -1:
+            enumpoint = self.getNearest(self.points[i])
+            if enumpoint:
+                """
                 x = float(self.selafinlayer.slf.MESHX[enumpoint])
                 y = float(self.selafinlayer.slf.MESHY[enumpoint])
+                """
+                x,y = self.selafinlayer.selafinparser.getXYFromNumPoint([enumpoint])[0]
+                
                 self.emitpoint.emit(x,y)
-                abscisse = self.selafinlayer.slf.tags["times"].tolist()
+                #abscisse = self.selafinlayer.slf.tags["times"].tolist()
+                abscisse = self.selafinlayer.selafinparser.getTimes().tolist()
+                
                 param=self.selafinlayer.propertiesdialog.comboBox_parametreschooser.currentIndex()
                 #param = self.selafinlayer.propertiesdialog.getTreeWidgetSelectedIndex(self.selafinlayer.propertiesdialog.treeWidget_parameters)[1]
                 if self.selafinlayer.parametres[param][2]:
                     dico = self.getDico(self.selafinlayer.parametres[param][2], self.selafinlayer.parametres, self.selafinlayer.values,enumpoint)
                     tempordonees = eval(self.selafinlayer.parametres[param][2],{}, dico)
                 else:
-                    tempordonees = self.selafinlayer.slf.getSERIES([enumpoint + 1],[param],False)   #points in getseries bein with 1
+                    #tempordonees = self.selafinlayer.slf.getSERIES([enumpoint + 1],[param],False)   #points in getseries bein with 1
+                    tempordonees = self.selafinlayer.selafinparser.getTimeSerie([enumpoint + 1],[param])   #points in getseries bein with 1
                 ordonnees = tempordonees[0][0].tolist()
                 list1.append(abscisse)
                 list2.append(ordonnees)
@@ -78,7 +88,7 @@ class graphTemp(QtCore.QObject):
             num_var = 0
             while num_var < nb_var:
                 if not parametres[i][2]:
-                    dico[a.format(i)] = self.selafinlayer.slf.getSERIES([enumpoint + 1],[i],False)
+                    dico[a.format(i)] = self.selafinlayer.selafinparser.getTimeSerie([enumpoint + 1],[i])
                 num_var += 1
                 i += 1
         except Exception, e:
@@ -86,19 +96,16 @@ class graphTemp(QtCore.QObject):
         return dico
         
         
-    def getNearest(self,point,triangle):
-        numfinal=None
-        distfinal = None
-        for num in np.array(self.selafinlayer.slf.IKLE3)[triangle]:
-            dist = math.pow(math.pow(float(self.selafinlayer.slf.MESHX[num])-float(point[0]),2)+math.pow(float(self.selafinlayer.slf.MESHY[num])-float(point[1]),2),0.5)
-            if distfinal:
-                if dist<distfinal:
-                    distfinal = dist
-                    numfinal=num
-            else:
-                distfinal = dist
-                numfinal=num
+    def getNearest(self,point):
+        point1 = [[point[0],point[1]]]
+        if not self.skdtree :
+            meshx, meshy = self.selafinlayer.selafinparser.getMesh()
+            self.arraymesh = np.array([[meshx[i], meshy[i] ] for i in range(self.selafinlayer.selafinparser.pointcount) ])
+            #self.arraymesh = np.array([[self.selafinlayer.slf.MESHX[i],self.selafinlayer.slf.MESHY[i]] for i in range(len(self.selafinlayer.slf.MESHX)) ])
+            self.skdtree = cKDTree(self.arraymesh,leafsize=100)
+        numfinal = self.skdtree.query(point1,k=1)[1][0]
         return numfinal
+
         
      
      

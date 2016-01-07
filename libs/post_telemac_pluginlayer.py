@@ -30,26 +30,22 @@ from qgis.utils import *
 from numpy import *
 import numpy as np
 #import matplotlib
-from matplotlib.path import Path
-import matplotlib.pyplot as plt
 from matplotlib import tri
 from matplotlib import colors
-import matplotlib.tri as tri
-from matplotlib.mlab import griddata
 #import PyQT
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-#import telemac python
-from ..libs_telemac.parsers.parserSELAFIN import SELAFIN
-#imports divers
-#from math import *
-from time import ctime
-import os.path
-from ..Post_Telemac_properties_dialog import PostTelemacPropertiesDialog
-import post_telemac_get_qimage
-# import calculator
+# other import
 from collections import OrderedDict #for identify
 import gc
+import os.path
+import time
+#local import 
+#from ..libs_telemac.parsers.parserSELAFIN import SELAFIN
+from ..dialogs.posttelemacpropertiesdialog import PostTelemacPropertiesDialog
+from post_telemac_pluginlayer_get_qimage import *
+from post_telemac_pluginlayer_colormanager import *
+from posttelemac_selafin_parser import *
 
 """
 Global variable for making new graphs (matplotlib)  with maplotlib 
@@ -61,6 +57,7 @@ selafininstancecount + 1 for graph temp util,
 selafininstancecount = 2
 
 debug = False
+DEBUGTIME = False
 
 class SelafinPluginLayer(QgsPluginLayer):
     """
@@ -82,66 +79,64 @@ class SelafinPluginLayer(QgsPluginLayer):
         #global varaible init
         global selafininstancecount
         self.instancecount = int(selafininstancecount)
-        #Fichier selafin - properties
-        self.fname = None               # selafin file name
-        self.slf = None                 # selafin class
-        self.tempsmax=0                 #Max time of selafin file
-        self.parametres=[]              #Parameters of selafin file [rank,name]
+        #selafin file - properties
+        self.selafinpath = None               # selafin file name
+        self.parametres=[]              #Parameters of selafin file [[rank,name,None or formula for virtual parameter],...]
+        self.parametrevx = None         #specific num for velolity x parameter
+        self.parametrevy = None
+        self.parametreh = None
         self.parametrestoload = []    #virtual parameters to load with projet
         self.dico = {}                  #dico for eval for virtual parametre
-        self.param_gachette=None        #temp parameter of selafin file
-        self.param_memoire=None         #parameter choosen of selafin file
+        self.param_displayed=None        #temp parameter of selafin file
         self.param_identify = None      #temp parameter of selafin file for identify method
-        self.lvl_gachette=[]            #temp level for traitment of selafin file
-        self.lvl_memoire=[]             #level for traitment of selafin file
-        self.lvl_vel = []             #Level for velocity
-        self.temps_gachette=None           #time for traitment of selafin file
-        self.temps_memoire=None            #time  choosen of selafin file
+        self.lvl_contour=[]            #temp level for traitment of selafin file 
+        self.lvl_vel = []             #Level for velocity 
+        self.time_displayed=None           #time for traitment of selafin file
         self.temps_identify = None      #temp time of selafin file for identify method
-        self.alpha = 100                #transparency choosen of the layer
-        self.alpha_gachette = 100       #temp transparency  of the layer
+        self.alpha_displayed = 100       #temp transparency  of the layer
         self.values=None                #Values of params for time t
         self.value=None                 #Values of param_gachette for time t
+        #managers
+        self.colormanager = PostTelemacColorManager(self)
+        self.selafinparser = PostTelemacSelafinParser(self)
         #properties dialog
         self.canvas = iface.mapCanvas()
-        self.loaddirectory = None       #the directory of "load telemac" button
         self.propertiesdialog = PostTelemacPropertiesDialog(self)
-        
         #Connectors
         self.layerCrsChanged.connect(self.changecrs)                             #crs check because reprojection is not effective
         self.canvas.destinationCrsChanged.connect(self.changecrs)
         QgsMapLayerRegistry.instance().layersWillBeRemoved["QStringList"].connect(self.RemoveScenario)  #to close properties dialog when layer deleted
-        #iface.projectRead.connect(self.projectreadfinished)
         #viewer parameters
-        self.renderersizepx=None
-        self.rendererrect=None
-        self.selafinqimage = post_telemac_get_qimage.Selafin2QImage(self.instancecount)
+        self.selafinqimage = Selafin2QImage(self.instancecount)
         self.affichagevitesse = False
-        self.parametrevx = None
-        self.parametrevy = None
-        self.parametreh = None
         self.forcerefresh = False
         self.showmesh = False
-        #matplotlib thongs and others
-        self.triangulation = None
+        self.showvelocityparams =  {'show' : False,
+                                    'type' : None,
+                                    'step' : None,
+                                    'norm' : None}
+        #matplotlib things and others
+        self.triangulation = None       #matplotlib triangulation of the mesh
         self.triinterp = None           #triinterp for plotting tools
-        self.compare = False
-        self.compare_identify = False
+        self.compare = False            #used whrn compare tool is activated
+        self.compare_identify = False   
         self.trifind = None
         #color ramp
-        self.cmap = None
-        self.cmap_vel = None
-        self.propertiesdialog.color_palette_changed(0)
+        #for contour
+        self.cmap_mpl_contour_raw = None    #original cmap, unchanged with levels
+        self.cmap_mpl_contour = None        #cmap modified to correspond levels values
+        self.norm_mpl_contour = None        
+        self.color_mpl_contour = None       
+        self.propertiesdialog.color_palette_changed_contour(0)
+        #for veolocity
+        self.cmap_mpl_vel_raw = None
+        self.cmap_mpl_vel = None
+        self.norm_mpl_vel = None
+        self.color_mpl_vel = None
         self.propertiesdialog.color_palette_changed_vel(0)
-        self.cmap_gachette = None
-        self.cmap3 = None
-        self.norm3 = None
-        self.colors3 = None
-        self.cmap3_vel = None
-        self.norm3_vel = None
-        self.colors3_vel = None
+        #levels
         self.levels=[self.propertiesdialog.predeflevels[i][1] for i in range(len(self.propertiesdialog.predeflevels))]
-        #networkx
+        #networkx - to draw path with the mesh 
         self.networkxgraph =  None
         """
         #Add 3 to global variable : 
@@ -151,39 +146,49 @@ class SelafinPluginLayer(QgsPluginLayer):
         """
         selafininstancecount = selafininstancecount + 3
 
-
-
-
-        
     #****************************************************************************************************
     #************* Typical plugin layer methods***********************************************************
     #****************************************************************************************************
-    
+            
+    def draw(self, rendererContext):
+        """ 
+        implementation of method from QgsPluginLayer to draw on he mapcanvas 
+        return True if successful
+        """
+        if DEBUGTIME : timestart = time.clock()
+        if self.selafinparser.selafin !=None:
+            bool1,image1,image2 = self.selafinqimage.getimage(self,rendererContext)
+        else:
+            image1 = QImage()
+            image2 = None
+            bool1=True
+        painter = rendererContext.painter()
+        painter.save()
+        painter.drawImage(0,0,image1)
+        if image2:
+            painter.drawImage(0,0,image2)
+        painter.restore()
+        if DEBUGTIME : self.propertiesdialog.normalMessage(str(round(time.clock()-timestart,3) ) )
+        return bool1
+
+    def extent(self):
+        """ 
+        implementation of method from QgsMapLayer to compute the extent of the layer 
+        return QgsRectangle()
+        """
+        if self.selafinparser.selafin != None:
+            meshx, meshy = self.selafinparser.getMesh()
+            return QgsRectangle(float(min(meshx)), float(min(meshy)), float(max(meshx)),  float(max(meshy)))
+        else:
+            return QgsRectangle()
+            
     def legendSymbologyItems(self, iconSize):
         """ 
         implementation of method from QgsPluginLayer to show legend entries (in QGIS >= 2.1) 
         return an array with [name of symbology, qpixmap]
         """
-        if self.slf != None :
-            lst = [(  (str(self.parametres[self.param_gachette][1]), QPixmap())  )]
-            for i in range(len(self.lvl_gachette)-1):
-                pix = QPixmap(iconSize)
-                r,g,b,a = self.colors3[i][0]*255,self.colors3[i][1]*255,self.colors3[i][2]*255,self.colors3[i][3]*255
-                pix.fill(QColor(r,g,b))
-                lst.append( (str(self.lvl_gachette[i])+"/"+str(self.lvl_gachette[i+1]), pix))
-            
-            if self.propertiesdialog.groupBox_schowvel.isChecked() :
-                lst.append((self.tr('VELOCITY'),QPixmap()))
-                for i in range(len(self.lvl_vel)-1):
-                    pix = QPixmap(iconSize)
-                    r,g,b,a = self.colors3_vel[i][0]*255,self.colors3_vel[i][1]*255,self.colors3_vel[i][2]*255,self.colors3_vel[i][3]*255
-                    pix.fill(QColor(r,g,b))
-                    lst.append( (str(self.lvl_vel[i])+"/"+str(self.lvl_vel[i+1]), pix))
-                
-            return lst
-        else:
-            return []
-
+        lst = self.colormanager.generateSymbologyItems(iconSize)
+        return lst
             
     #Not used yet
     def readSymbology(self, node, err):
@@ -193,108 +198,55 @@ class SelafinPluginLayer(QgsPluginLayer):
         """ Called when past symbology is activated"""
         return False
             
-        
-    def draw(self, rendererContext):
-        """ 
-        implementation of method from QgsPluginLayer to draw on he mapcanvas 
-        return True if successful
-        """
-        starttime2 = time.clock()
-        if self.slf !=None:
-            bool1,image1 = self.selafinqimage.getimage(self,rendererContext)
-        else:
-            image1 = QImage()
-            bool1=True
-        painter = rendererContext.painter()
-        painter.save()
-        painter.drawImage(0,0,image1)
-        painter.restore()
-        txt=str(round(time.clock()-starttime2,3))
-        return bool1
-
-    def extent(self):
-        """ 
-        implementation of method from QgsMapLayer to compute the extent of the layer 
-        return QgsRectangle()
-        """
-        if self.slf != None:
-            return QgsRectangle(float(min(self.slf.MESHX)), float(min(self.slf.MESHY)), float(max(self.slf.MESHX)),  float(max(self.slf.MESHY)))
-        else:
-            return QgsRectangle()
-            
     #****************************************************************************************************
     #Initialise methods *********************************************************************
     #****************************************************************************************************
 
-    def load_selafin(self,fname=None):
+    def load_selafin(self,selafinpath=None):
         """
         Handler called when 'choose file' is clicked
         Load Selafin file and initialize properties dialog
         """
+        self.selafinpath = selafinpath
+        #Update name in symbology
+        nom = os.path.basename(self.selafinpath).split('.')[0]
+        self.setLayerName(nom)
+        #Set selafin
+        self.selafinparser.loadSelafin(self.selafinpath)
+        #nitialize layer's parameters
+        self.initSelafinParameters()
+        if not self.param_displayed : self.param_displayed = 0
+        if not self.lvl_contour : self.lvl_contour=self.levels[0]
+        if not self.time_displayed : self.time_displayed = 0
+        self.compare = False
+        self.compare_identify = False
+        self.triinterp = None
+        #change levels
+        self.change_lvl_contour(self.lvl_contour)
+        self.change_lvl_vel(self.lvl_vel)
+        #initialise sleafin crs
+        if  self.crs().authid() == u'':
+            self.setCrs(iface.mapCanvas().mapRenderer().destinationCrs())
+        #update selafin values
+        self.updateSelafinValues()
+        #Update propertiesdialog
+        self.propertiesdialog.update()
+        #final update
+        self.triggerRepaint()
+        iface.legendInterface().refreshLayerSymbology(self)
+        iface.mapCanvas().setExtent(self.extent())
 
-        if not fname:
-            str1 = self.tr("Result file chooser")
-            str2 = self.tr("Telemac files")
-            str3 = self.tr("All files")     
-            #tempname = self.propertiesdialog.qfiledlg.getOpenFileName(None,"Choix du fichier res",self.loaddirectory, "Fichiers Telemac (*.res *.geo *.init);;Tous les fichiers (*)")
-            tempname = self.propertiesdialog.qfiledlg.getOpenFileName(None,str1,self.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
-            if tempname:
-                self.fname = tempname
-                self.param_gachette = None
-                self.lvl_gachette = None
-                self.temps_gachette = None
-                self.alpha_gachette = 100.0
-        else:
-            self.fname = fname  #cas du chargement d'un projet qgis 
-
-        if self.fname:
-            #repertoire de recherche
-            self.loaddirectory = os.path.dirname(self.fname)
-            #Update name in symbology
-            nom = os.path.basename(self.fname).split('.')[0]
-            self.setLayerName(nom)
-            #Set selafin
-            self.set_selafin(SELAFIN(self.fname) )
-            #nitialize layer's parameters
-            if not self.param_gachette : self.param_gachette=0
-            if not self.lvl_gachette : self.lvl_gachette=self.levels[0]
-            if not self.temps_gachette : self.temps_gachette=0
-            self.compare = False
-            self.compare_identify = False
-            self.triinterp = None
-            #change levels
-            self.change_lvl(self.lvl_gachette)
-            self.change_lvl_vel(self.lvl_vel)
-            #initialise sleafin crs
-            if  self.crs().authid() == u'':
-                self.setCrs(iface.mapCanvas().mapRenderer().destinationCrs())
-            #update selafin values
-            self.updateSelafinValues()
-            #Update propertiesdialog
-            self.propertiesdialog.update()
-            #final update
-            self.triggerRepaint()
-            iface.legendInterface().refreshLayerSymbology(self)
-            #self.propertiesdialog.textBrowser_main.append(str(ctime())+" - " + self.tr('File ') +  str(nom) +  self.tr(" loaded"))
-            self.propertiesdialog.normalMessage(self.tr('File ') +  str(nom) +  self.tr(" loaded"))
-            iface.mapCanvas().setExtent(self.extent())
-        else:
-            self.propertiesdialog.label_loadslf.setText(self.tr('No file selected'))
-            
-            
-    def set_selafin(self,slf1):
+    def initSelafinParameters(self):
         """
         Called load_selafin by when changing selafin file
         Set selafin variables
         """
-        self.slf = slf1
-        self.set_triangul(self.slf)
-        self.tempsmax=len(self.slf.tags["times"])-1
+        self.initTriangul()
         self.parametres = []
-        #Charge les parametres dans self.parametres
-        for i,name in enumerate(self.slf.VARNAMES):
+        #load  parametres in self.parametres
+        for i,name in enumerate(self.selafinparser.getVarnames()):
             self.parametres.append([i,name.strip(),None])
-        if len(self.parametrestoload)>0:
+        if len(self.parametrestoload)>0:    #case of virtual parameters
             for param in self.parametrestoload:
                 self.parametres.append([len(self.parametres),param[1],param[2]])
         try:
@@ -311,17 +263,23 @@ class SelafinPluginLayer(QgsPluginLayer):
             pass
             #TODO : disable utils dependant on velocity (flow, show velocity)
             
-
+    def clearParameters(self):
+        self.param_displayed = None
+        self.lvl_contour = None
+        self.time_displayed = None
+        self.alpha_displayed = 100.0
                     
-    def set_triangul(self,slf1,ct=None):
+    def initTriangul(self,ct=None):
         """
         Called set_selafin by when changing selafin file
         set matplotlib's triangulation variables
         """
         if ct:
             pass
-        if slf1:
-            self.triangulation = tri.Triangulation(slf1.MESHX,slf1.MESHY,np.array(slf1.IKLE3))
+        if self.selafinparser.selafin:
+            meshx, meshy = self.selafinparser.getMesh()
+            ikle = self.selafinparser.getIkle()
+            self.triangulation = matplotlib.tri.Triangulation(meshx,meshy,np.array(ikle))
             try:
                 self.trifind = self.triangulation.get_trifinder()
             except Exception, e:
@@ -335,23 +293,23 @@ class SelafinPluginLayer(QgsPluginLayer):
     #Update method - selafin value - used with compare util  *********************************
     #****************************************************************************************************
             
-    def updateSelafinValues(self,force = False):
+    def updateSelafinValues(self, onlyparamtimeunchanged = None, force = False):
         """
         Updates the values stored in self.values and self.value
         called when loading selfin file, or when selafin's time is changed
         """
         if not self.compare:
-            if self.param_memoire == self.param_gachette and self.temps_memoire == self.temps_gachette and not force:
-                pass
-            else:
-                values = self.slf.getVALUES(self.temps_gachette)
+            if not onlyparamtimeunchanged :
+                values = self.selafinparser.getValues(self.time_displayed)
                 for param in self.parametres:
-                    if param[2]:
+                    if param[2]:        #for virtual parameter - compute it
                         self.dico = self.getDico(param[2], self.parametres, values)
                         val = eval(param[2],{}, self.dico)
                         values = np.vstack((values,val))
                 self.values = values
-                self.value = self.values[self.param_gachette]
+                self.value = self.values[self.param_displayed]
+            else:
+                self.value = self.values[self.param_displayed]
                     
         else:
             self.updatevalue.emit()
@@ -359,12 +317,14 @@ class SelafinPluginLayer(QgsPluginLayer):
     updatevalue = pyqtSignal()
     
     def getDico(self,expr, parametres, values):
+        """
+        Used for calculation of virtual parameters
+        """
         dico = {}
         dico['sin'] = sin
         dico['cos'] = cos
         dico['abs'] = abs
         dico['int'] = int
-    
         a = 'V{}'
         nb_var = len(values)
         i = 0
@@ -375,26 +335,24 @@ class SelafinPluginLayer(QgsPluginLayer):
             i += 1
         return dico
         
-
     #****************************************************************************************************
-    #Update method - Color map and level update  *********************************
+    #Change variables                                                  *********************************
     #****************************************************************************************************
                     
-    def change_cm(self,cm):
+    def change_cm_contour(self,cm):
         """
         change the color map and layer symbology
         """
-        if len(self.lvl_gachette)>=2:
-            lvls=self.lvl_gachette
+        if len(self.lvl_contour)>=2:
+            lvls=self.lvl_contour
             tab1 = []
             max1=256
-            for i in range(len(lvls)-1):
-                if len(lvls)==2:
-                    tab1.append(1.0)
-                else:
-                    tab1.append(int(max1*i/(len(lvls)-2)))
-            self.colors3 = cm(tab1)
-            self.cmap3,self.norm3 = colors.from_levels_and_colors(lvls,self.colors3)
+            if len(lvls) == 2 :
+                tab1=[1.0]
+            else:
+                tab1 = [int(max1*i/(len(lvls)-2)) for i in range(len(lvls)-1)]
+            self.color_mpl_contour = cm(tab1)
+            self.cmap_mpl_contour,self.norm_mpl_contour = matplotlib.colors.from_levels_and_colors(lvls,self.color_mpl_contour)
         iface.legendInterface().refreshLayerSymbology(self)
         self.triggerRepaint()
         
@@ -411,25 +369,77 @@ class SelafinPluginLayer(QgsPluginLayer):
                     tab1.append(1.0)
                 else:
                     tab1.append(int(max1*i/(len(lvls)-2)))
-            self.colors3_vel = cm(tab1)
-            self.cmap3_vel,self.norm3_vel = colors.from_levels_and_colors(lvls,self.colors3_vel)
+            self.color_mpl_vel = cm(tab1)
+            self.cmap_mpl_vel,self.norm_mpl_vel = matplotlib.colors.from_levels_and_colors(lvls,self.color_mpl_vel)
         iface.legendInterface().refreshLayerSymbology(self)
         self.triggerRepaint()
         
-    def changeAffichageVitesse(self,int1):
+    def change_lvl_contour(self,tab):
+        """
+        change the levels, update color map and layer symbology
+        """
+        self.lvl_contour = tab
+        #self.change_cm( self.cmap)
+        #self.change_cm_contour(self.cmap)
+        self.change_cm_contour(self.cmap_mpl_contour_raw)
+        iface.legendInterface().refreshLayerSymbology(self)
+        self.propertiesdialog.lineEdit_levelschoosen.setText(str(self.lvl_contour))
+        self.triggerRepaint()
+        
+    def change_lvl_vel(self,tab):
+        """
+        change the levels, update color map and layer symbology
+        """
+        self.lvl_vel = tab
+        #self.change_cm_vel( self.cmap_vel)
+        self.change_cm_vel( self.cmap_mpl_vel_raw)
+        iface.legendInterface().refreshLayerSymbology(self)
+        self.propertiesdialog.lineEdit_levelschoosen_2.setText(str(self.lvl_vel))
+        self.triggerRepaint()
+        
+    def changeTime(self,nb):
+        self.time_displayed = nb
+        self.updateSelafinValues()
+        self.triinterp = None
+        if self.draw:
+            self.triggerRepaint()
+            
+    def changeAlpha(self,nb):
+        """When changing alpha value"""
+        self.alpha_displayed = float(nb)
+        if self.draw:
+            self.triggerRepaint()
+            
+    def changeParam(self,int1):
+        """When changing parameter value"""
+        self.param_displayed = int1
+        self.updateSelafinValues(int1)
+        iface.legendInterface().refreshLayerSymbology(self)
+        self.forcerefresh = True
+        self.triggerRepaint()
+            
+    def changecrs(self):
+        """Associated with layercrschaned slot"""
+        try:
+            #self.propertiesdialog.pushButton_crs.setText(self.crs().authid())
+            self.propertiesdialog.label_selafin_crs.setText(self.crs().authid())
+            if iface.mapCanvas().mapSettings().destinationCrs() != self.crs():
+                self.propertiesdialog.errorMessage(self.tr(" - Beware : qgis project's crs is not the same as selafin's crs - reprojection is not implemented")
+                                                  + self.tr(" - Project's CRS : ") +str(iface.mapCanvas().mapSettings().destinationCrs().authid()) + self.tr(" / Selafin's CRS : ")   
+                                                  + str(self.crs().authid()))
+        except Exception, e:
+            pass
+        
+    #****************************************************************************************************
+    #show velocity, mesh  *********************************
+    #****************************************************************************************************
+        
+    def showVelocity(self):
         """
         Called when PostTelemacPropertiesDialog 's "plot velocity" checkbox is checked
-        
         """
-        self.parametrevx = self.propertiesdialog.postutils.getParameterName("VITESSEU")[0]
-        self.parametrevy = self.propertiesdialog.postutils.getParameterName("VITESSEV")[0]
-        #self.propertiesdialog.textBrowser_main.append(str(ctime())+" - paramX : "+str(self.parametrevx)+" paramY : "+str(self.parametrevy))
-        """
-        if int1 == 2:
-            self.affichagevitesse = True
-        elif int1 == 0:
-            self.affichagevitesse = False
-        """
+        #self.parametrevx = self.propertiesdialog.postutils.getParameterName("VITESSEU")[0]
+        #self.parametrevy = self.propertiesdialog.postutils.getParameterName("VITESSEV")[0]
         self.forcerefresh = True
         iface.legendInterface().refreshLayerSymbology(self)
         self.triggerRepaint()
@@ -443,130 +453,16 @@ class SelafinPluginLayer(QgsPluginLayer):
         elif int1 == 0:
             self.showmesh = False
         self.triggerRepaint()
-        
         self.forcerefresh = True
         self.triggerRepaint()
-
-    
-    def change_lvl(self,tab):
-        """
-        change the levels, update color map and layer symbology
-        """
-        self.lvl_gachette = tab
-        self.change_cm( self.cmap)
-        iface.legendInterface().refreshLayerSymbology(self)
-        self.propertiesdialog.lineEdit_levelschoosen.setText(str(self.lvl_gachette))
-        self.triggerRepaint()
-        
-    def change_lvl_vel(self,tab):
-        """
-        change the levels, update color map and layer symbology
-        """
-        self.lvl_vel = tab
-        self.change_cm_vel( self.cmap_vel)
-        iface.legendInterface().refreshLayerSymbology(self)
-        self.propertiesdialog.lineEdit_levelschoosen_2.setText(str(self.lvl_vel))
-        self.triggerRepaint()
-    
-    
-    #****************************************************************************************************
-    #Update method - transaprency, param, time,crs  *********************************
-    #****************************************************************************************************
-            
-    def changeAlpha(self,nb):
-        """When changing alpha value"""
-        self.alpha_gachette = float(nb)
-        if self.draw:
-            self.triggerRepaint()
-            
-            
-    def change_param(self,int1):
-        """When changing parameter value"""
-        self.param_gachette = int1
-        self.value = self.values[self.param_gachette]
-        iface.legendInterface().refreshLayerSymbology(self)
-        self.triggerRepaint()
-        
-    def change_param2(self,int1=None):
-        """When changing parameter value"""
-        getSelected = self.propertiesdialog.treeWidget_parameters.selectedItems()
-        try:
-            baseNode = getSelected[0]
-            position = [self.propertiesdialog.treeWidget_parameters.indexFromItem(baseNode).parent().row(),self.propertiesdialog.treeWidget_parameters.indexFromItem(baseNode).row()]
-            """
-            indextabtemp=[index[0] for index in self.treewidgettoolsindextab ]
-            itemname = self.treewidgettoolsindextab[indextabtemp.index(position)][2]
-            """
-            self.param_gachette = position[1]
-            if self.parametres[position[1]][2]:
-                self.propertiesdialog.pushButton_param_edit.setEnabled(True)
-                self.propertiesdialog.pushButton_param_delete.setEnabled(True)
-            else:
-                self.propertiesdialog.pushButton_param_edit.setEnabled(False)
-                self.propertiesdialog.pushButton_param_delete.setEnabled(False)
-                
-            
-        except Exception, e:
-            itemname = None
-
-        self.updateSelafinValues()
-        #self.value = self.values[self.param_gachette]
-        iface.legendInterface().refreshLayerSymbology(self)
-        self.triggerRepaint()
         
 
-    def change_timetxt(self,nb):
-        """Associated with time modification"""
-        self.temps_gachette=nb
-        self.updateSelafinValues()
-        time2 = time.strftime("%j:%H:%M:%S", time.gmtime(self.slf.tags["times"][self.temps_gachette]))
-        
-        self.propertiesdialog.label_time.setText(self.tr("time (hours)") + " : " + str(time2) +"\n"+ 
-                                              self.tr("time (iteration)") + " : "+ str(self.temps_gachette)+"\n"+
-                                              self.tr("time (seconds)") + " : " + str(self.slf.tags["times"][self.temps_gachette]))
-        if self.draw:
-            self.triggerRepaint()
-            
-
-    def changecrs(self):
-        """Associated with layercrschaned slot"""
-        try:
-            #self.propertiesdialog.pushButton_crs.setText(self.crs().authid())
-            self.propertiesdialog.label_selafin_crs.setText(self.crs().authid())
-            if iface.mapCanvas().mapSettings().destinationCrs() != self.crs():
-                """
-                self.propertiesdialog.textBrowser_main.setTextColor(QColor("red"))
-                self.propertiesdialog.textBrowser_main.setFontWeight(QFont.Bold)
-                self.propertiesdialog.textBrowser_main.append(ctime() + self.tr(" - Beware : qgis project's crs is not the same as selafin's crs - reprojection is not implemented")
-                                                              + self.tr(" - Project's CRS : ") +str(iface.mapCanvas().mapSettings().destinationCrs().authid()) + self.tr(" / Selafin's CRS : ")   
-                                                              + str(self.crs().authid()))
-                self.propertiesdialog.textBrowser_main.setTextColor(QColor("black"))
-                self.propertiesdialog.textBrowser_main.setFontWeight(QFont.Normal)
-                """
-                self.propertiesdialog.errorMessage(self.tr(" - Beware : qgis project's crs is not the same as selafin's crs - reprojection is not implemented")
-                                                  + self.tr(" - Project's CRS : ") +str(iface.mapCanvas().mapSettings().destinationCrs().authid()) + self.tr(" / Selafin's CRS : ")   
-                                                  + str(self.crs().authid()))
-        except Exception, e:
-            pass
-        
-    #****************************************************************************************************
-    #Update method - wait for slider to be released  *********************************
-    #****************************************************************************************************
-    
-    def change2(self):
-        """Associated with slider behaviour"""
-        self.draw=True
-        self.triggerRepaint()
-        
-    def change1(self):
-        """Associated with slider behaviour"""
-        self.draw=False
- 
     #****************************************************************************************************
     #method for profile tool  *********************************
+    #****************************************************************************************************
 
     def name(self):
-        return os.path.basename(self.fname).split('.')[0]
+        return os.path.basename(self.selafinpath).split('.')[0]
         
     def bandCount(self):
         return len(self.parametres)
@@ -588,7 +484,7 @@ class SelafinPluginLayer(QgsPluginLayer):
 
     #****************************************************************************************************
     #method for identifying value  *********************************
-
+    #****************************************************************************************************
 
     
     def identify(self,qgspoint,multiparam = False):
@@ -598,12 +494,12 @@ class SelafinPluginLayer(QgsPluginLayer):
         return tuple with (success,  dictionnary with {parameter : value} )
         """
         #triinterp creation
-        self.updateSelafinValues()
-        if self.temps_identify == self.temps_memoire and self.compare_identify == self.compare and self.triinterp:
+        #self.updateSelafinValues()
+        if self.temps_identify == self.time_displayed and self.compare_identify == self.compare and self.triinterp:
             pass
         else:
-            self.triinterp = [tri.LinearTriInterpolator(self.triangulation, self.values[i]) for i in range(len(self.parametres))]
-            self.temps_identify = self.temps_memoire
+            self.initTriinterpolator()
+            self.temps_identify = self.time_displayed
             self.compare_identify = self.compare
         #getvalues
         try:
@@ -611,29 +507,16 @@ class SelafinPluginLayer(QgsPluginLayer):
         except Exception, e :
             v = None
         #send results
-        if multiparam:
-            strident = ''
+        d = OrderedDict()
+        for param in self.parametres:
             try:
-                for i in range(len(self.parametres)):
-                    strident = strident + str(self.parametres[i][1])+" : "+str(v[i])+"\n"
-            except Exception,e:
-                print str(e)
-            return strident
-        else:
-            d = OrderedDict()
-            #d = dict()
-            for param in self.parametres:
-                try:
-                    d[ QString(param[1]) ] = v[param[0]]
-                except:
-                    d[ param[1] ] = v[param[0]]
-            
-            """
-            d = []
-            for param in self.parametres:
-                d.append([param[1], v[param[0]]])
-            """
-            return (True,d)
+                d[ QString(param[1]) ] = v[param[0]]
+            except:
+                d[ param[1] ] = v[param[0]]
+        return (True,d)
+        
+    def initTriinterpolator(self):
+        self.triinterp = [tri.LinearTriInterpolator(self.triangulation, self.values[i]) for i in range(len(self.parametres))]
         
     #****************************************************************************************************
     #************Method for saving/loading project with selafinlayer file***********************************
@@ -646,10 +529,10 @@ class SelafinPluginLayer(QgsPluginLayer):
         """
         element = node.toElement()
         prj = QgsProject.instance()
-        fname=prj.readPath( element.attribute('meshfile') )
-        self.param_gachette = int(element.attribute('parametre'))
-        self.alpha_gachette = int(element.attribute('alpha'))
-        self.temps_gachette = int(element.attribute('time'))
+        selafinpath=prj.readPath( element.attribute('meshfile') )
+        self.param_displayed = int(element.attribute('parametre'))
+        self.alpha_displayed = int(element.attribute('alpha'))
+        self.time_displayed = int(element.attribute('time'))
         self.showmesh = int(element.attribute('showmesh'))
         self.propertiesdialog.checkBox_showmesh.setChecked(self.showmesh) 
         
@@ -679,7 +562,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         for i in range(count):
             self.parametrestoload.append([i,strtemp[i],strtemp[i+1]])
         
-        self.load_selafin(fname)
+        self.load_selafin(selafinpath)
 
         return True
         
@@ -694,10 +577,10 @@ class SelafinPluginLayer(QgsPluginLayer):
         element = node.toElement()
         element.setAttribute("type", "plugin")
         element.setAttribute("name", SelafinPluginLayer.LAYER_TYPE)
-        element.setAttribute("meshfile", prj.writePath(self.fname))
-        element.setAttribute("parametre", self.param_gachette)
-        element.setAttribute("alpha", self.alpha_gachette)
-        element.setAttribute("time", self.temps_gachette)
+        element.setAttribute("meshfile", prj.writePath(self.selafinpath))
+        element.setAttribute("parametre", self.param_displayed)
+        element.setAttribute("alpha", self.alpha_displayed)
+        element.setAttribute("time", self.time_displayed)
         element.setAttribute("showmesh", int(self.showmesh))
         #levelthings
         element.setAttribute("level_color", self.propertiesdialog.comboBox_clrgame.currentIndex())
@@ -736,7 +619,7 @@ class SelafinPluginLayer(QgsPluginLayer):
                 print 'fig1 ' + str(e)
             try:
                 self.propertiesdialog.figure2.clf()
-                plt.close(self.propertiesdialog.figure2)
+                plt.close(self.propertiesdialog.figure2) 
             except Exception, e :
                 print 'fig2 ' + str(e)
             try:
@@ -748,11 +631,13 @@ class SelafinPluginLayer(QgsPluginLayer):
             #closing properties dialog
             self.propertiesdialog.close()
             del self.propertiesdialog
-            #closing some stuff
+            #closing some stuff - do not succeed in retrieving what does not release memory...
             del self.values
             del self.value
             del self.selafinqimage
             del self.networkxgraph
+            #del self.slf
+            del self.selafinparser
             #end : garbage collector 
             gc.collect()
             #close connecxions
