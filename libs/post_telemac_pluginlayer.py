@@ -29,6 +29,8 @@ from qgis.utils import *
 #import numpy
 from numpy import *
 import numpy as np
+#import scipy
+from scipy.spatial import cKDTree
 #import matplotlib
 from matplotlib import tri
 from matplotlib import colors
@@ -300,19 +302,33 @@ class SelafinPluginLayer(QgsPluginLayer):
         """
         if not self.compare:
             if not onlyparamtimeunchanged :
+                """
                 values = self.selafinparser.getValues(self.time_displayed)
                 for param in self.parametres:
                     if param[2]:        #for virtual parameter - compute it
                         self.dico = self.getDico(param[2], self.parametres, values)
                         val = eval(param[2],{}, self.dico)
                         values = np.vstack((values,val))
-                self.values = values
+                """
+                self.values = self.getValues(self.time_displayed)
                 self.value = self.values[self.param_displayed]
             else:
                 self.value = self.values[self.param_displayed]
                     
         else:
             self.updatevalue.emit()
+            
+    def getValues(self,time):
+        if not self.compare:
+            values = self.selafinparser.getValues(time)
+            for param in self.parametres:
+                if param[2]:        #for virtual parameter - compute it
+                    self.dico = self.getDico(param[2], self.parametres, values)
+                    val = eval(param[2],{}, self.dico)
+                    values = np.vstack((values,val))
+            return values
+        else:
+            pass
             
     updatevalue = pyqtSignal()
     

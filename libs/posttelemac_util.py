@@ -487,7 +487,11 @@ class PostTelemacUtils():
         self.initclass=initRunGetMax()
         self.initclass.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
         self.initclass.finished1.connect(self.chargerSelafin)
-        self.initclass.start(self.selafinlayer.selafinpath,self.selafinlayer.selafinpath.split('.')[0] + '_Max.res',False,False)
+        self.initclass.start(self.selafinlayer,
+                             self.selafinlayer.propertiesdialog.checkBox_11.isChecked(),
+                             self.selafinlayer.propertiesdialog.checkBox_11.isChecked(),
+                             self.selafinlayer.propertiesdialog.doubleSpinBox_4.value() if self.selafinlayer.propertiesdialog.checkBox_9.isChecked() else -1,
+                             self.selafinlayer.propertiesdialog.doubleSpinBox_5.value() if self.selafinlayer.propertiesdialog.checkBox_10.isChecked() else -1)
         
         
         

@@ -9,20 +9,20 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import SIGNAL, Qt
 from PyQt4 import QtCore, QtGui
 
-from Class_Serafin import Serafin
-
+from ..libs_telemac.other.Class_Serafin import Serafin
 
 class runGetMax(QtCore.QObject):
 
-    def __init__(self,name_res, name_res_out, intensite = False, direction = False):
+    def __init__(self,selafinlayer, intensite = False, direction = False, submersion = -1, duree = -1):
         QtCore.QObject.__init__(self)
-        self.name_res = name_res
-        self.name_res_out = name_res_out
+        self.selafinlayer = selafinlayer
+        self.name_res = self.selafinlayer.selafinpath
+        self.name_res_out = self.selafinlayer.selafinpath.split('.')[0] + '_Max.res'
         self.intensite = intensite
         self.direction = direction
-        
-        
-        
+        self.submersion = submersion
+        self.duree = duree
+
 
     def run(self):
         """
@@ -45,6 +45,7 @@ class runGetMax(QtCore.QObject):
             resin = Serafin(name = self.name_res, mode = 'rb')
             resout = Serafin(name = self.name_res_out, mode = 'wb')
 
+
             ## Lecture de l'entete du fichier d'entree
             resin.read_header()
 
@@ -57,45 +58,88 @@ class runGetMax(QtCore.QObject):
 
             ## On ajoute les deux nouvelles variables, pour cela il faut modifier la variable
             ## nbvar et nomvar (le nom de la variable ne doit pas depasser 72 caracteres
+            for param in self.selafinlayer.parametres:
+                if param[2]:        #for virtual parameter
+                    resout.nbvar += 1
+                    resout.nomvar.append(str(param[1]))
             if self.intensite:
                 resout.nbvar += 1
                 resout.nomvar.append('intensite')
             if self.direction:
                 resout.nbvar += 1
                 resout.nomvar.append('direction')
+            if self.submersion > -1 and self.selafinlayer.parametreh != None :
+                resout.nbvar += 1
+                resout.nomvar.append('submersion')
+            if self.duree > -1  and self.selafinlayer.parametreh != None :
+                resout.nbvar += 1
+                resout.nomvar.append('duree')
 
             ## Ecriture de l'entete dans le fichier de sortie
             resout.write_header()
 
             ## Boucle sur tous les temps et récuperation des variables
-            for num_time, time in enumerate(resin.temps):
-                ## Recuperation de toutes les variables du pas de temps
+            for num_time, time in enumerate(self.selafinlayer.selafinparser.getTimes()):
                 if num_time%10 == 0:
                     self.status.emit(ctime() + ' - Maximum creation - time '+ str(time))
-                
                 if num_time != 0:
-                    var = resin.read(time)
+                    #var = resin.read(time)
+                    var = self.selafinlayer.getValues(num_time)
                     for num_var, val_var in enumerate(var):
-                        pos_max = np.where(var[num_var] > var_max[num_var])[0] ## On recherche tous les indicides du tableau ou les nouvelles valeurs sont supérieurs aux anciennes
-                        var_max[num_var][pos_max] = val_var[pos_max]
+                        if self.selafinlayer.parametrevx != None and self.selafinlayer.parametrevy != None and (num_var == self.selafinlayer.parametrevx or num_var == self.selafinlayer.parametrevy):
+                            #if num_var == self.selafinlayer.parametrevx or num_var == self.selafinlayer.parametrevy:
+                            pos_max = np.where(np.abs(var[num_var]) > np.abs(var_max[num_var]))[0] ## On recherche tous les indicides du tableau ou les nouvelles valeurs sont supérieurs aux anciennes
+                            var_max[num_var][pos_max] = val_var[pos_max]
+                        else:
+                            if (self.submersion > -1 or self.duree > -1 ) and self.selafinlayer.parametreh != None and num_var == self.selafinlayer.parametreh:
+                                pos_sub = np.where(var[num_var] >= 0.05)[0]  #la ou h est sup a 0.05 m
+                                if self.duree > -1  :
+                                    var_dur[pos_sub] += time - previoustime
+                                    previoustime = time
+                                if self.submersion > -1 :
+                                    #possubpreced = np.isnan(var_sub[num_var])
+                                    possubpreced = np.where( np.isnan(var_sub) )[0]        #on cherche les valeurs encore a nan
+                                    #self.status.emit('test \n' + str(possubpreced) +'\n' + str(pos_sub))
+                                    goodnum = np.intersect1d(pos_sub,possubpreced)  #on intersecte les deux
+                                    var_sub[goodnum] = time
+                            pos_max = np.where(var[num_var] > var_max[num_var])[0] ## On recherche tous les indicides du tableau ou les nouvelles valeurs sont supérieurs aux anciennes
+                            var_max[num_var][pos_max] = val_var[pos_max]
                     ## Maintenant on s'occuppe du cas particulier des vitesses
-                    if resin.PosU > -1 and resin.PosV > -1:
-                        vit = np.power(np.power(var[resin.PosU],2)+np.power(var[resin.PosV],2),0.5)
-                        vit_max = np.power(np.power(var_max[resin.PosU],2)+np.power(var_max[resin.PosV],2),0.5)
+                    if self.selafinlayer.parametrevx != None and self.selafinlayer.parametrevy != None :
+                        vit = np.power(np.power(var[self.selafinlayer.parametrevx],2)+np.power(var[self.selafinlayer.parametrevy],2),0.5)
+                        vit_max = np.power(np.power(var_max[self.selafinlayer.parametrevx],2)+np.power(var_max[self.selafinlayer.parametrevy],2),0.5)
                         pos_vmax = np.where(vit > vit_max)[0]
-                        var_max[resin.PosU][pos_vmax] = var[resin.PosU][pos_vmax]
-                        var_max[resin.PosV][pos_vmax] = var[resin.PosV][pos_vmax]
+                        var_max[self.selafinlayer.parametrevx][pos_vmax] = var[self.selafinlayer.parametrevx][pos_vmax]
+                        var_max[self.selafinlayer.parametrevy][pos_vmax] = var[self.selafinlayer.parametrevy][pos_vmax]
 
+                    
                 else: ## Ce else permet de d'initialiser notre variable max avec le premier pas de temps
-                    var_max = resin.read(time)
+                    #var_max = resin.read(time)
+                    var_max = self.selafinlayer.getValues(num_time)
+                    if self.submersion > -1 and self.selafinlayer.parametreh != None:
+                        var_sub = np.array([np.nan]*self.selafinlayer.selafinparser.pointcount)
+                        pos_sub = np.where(var_max[self.selafinlayer.parametreh] >= 0.05)[0]  #la ou h est sup a 0.05 m
+                        var_sub[pos_sub] = time
+                    if self.duree > -1 and self.selafinlayer.parametreh != None:
+                        var_dur = np.array([0]*self.selafinlayer.selafinparser.pointcount)
+                        previoustime = time
+                        """
+                        pos_dur = np.where(var_max[self.selafinlayer.parametreh] >= 0.05)[0]  #la ou h est sup a 0.05 m
+                        var_dur[pos_dur] += 1
+                        """
+                        
+            if self.submersion > -1 and self.selafinlayer.parametreh != None:
+                var_sub = np.nan_to_num(var_sub)
+
             ## Une fois sortie de la boucle le max a ete calculer
             ## On recalcule les directions et les intensites sur le dernier pas de temps
-            if self.intensite or self.direction:
-                u = var_max[resin.PosU]
-                v = var_max[resin.PosV]
+
+            if self.selafinlayer.parametrevx != None and self.selafinlayer.parametrevy != None and (self.intensite or self.direction):
+                u = var_max[self.selafinlayer.parametrevx]
+                v = var_max[self.selafinlayer.parametrevy]
                 if self.intensite:
                     val_intensite = np.power(np.power(u,2)+np.power(v,2),0.5)
-                    var_max = np.vstack((var_max, self.intensite))
+                    var_max = np.vstack((var_max, val_intensite))
                 if self.direction:
                     val_direction = np.arctan2(u,v)*360./(2.*pi) +\
                                     np.minimum(np.arctan2(u,v),0.0)/np.arctan2(u,v)*360.
@@ -103,8 +147,13 @@ class runGetMax(QtCore.QObject):
                     ## Dans la creation des directions il peut y avoir des divisions par 0
                     ## Ceci entraine la creation de nan (not a number)
                     ## On va alors remplacer tous ces nan par 0.
-                    np.place(self.direction, np.isnan(self.direction), 0.0)
-                    var_max = np.vstack((var_max, self.direction))
+                    np.place(val_direction, np.isnan(val_direction), 0.0)
+                    var_max = np.vstack((var_max, val_direction))
+            
+            if self.submersion > -1 and self.selafinlayer.parametreh != None:
+                var_max = np.vstack((var_max, var_sub))
+            if self.duree > -1 and self.selafinlayer.parametreh != None:
+                var_max = np.vstack((var_max, var_dur))
 
             ## Ecriture des valeurs max dans le fichier de sortie (on met un temps à 0 dans le fichier)
             time = 0.0
@@ -128,9 +177,9 @@ class initRunGetMax(QtCore.QObject):
         self.thread = QtCore.QThread()
         self.worker = None
 
-    def start(self,name_res, name_res_out, intensite, direction):
+    def start(self,selafinlayer, intensite, direction , submersion, duree):
         #Launch worker
-        self.worker = runGetMax(name_res, name_res_out, intensite, direction)
+        self.worker = runGetMax(selafinlayer, intensite, direction,submersion, duree )
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
         self.worker.status.connect(self.writeOutput)

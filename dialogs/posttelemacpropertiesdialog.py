@@ -450,9 +450,9 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             self.lineEdit_levelmax.setText(str(round(float(zmax),3)))
         else : 
             zmax = float(self.lineEdit_levelmax.text())
-
-        pdn = round(float(self.lineEdit_levelstep.text()),len(self.lineEdit_levelstep.text().split('.')[1]))
-        zmin1=round(zmin,len(self.lineEdit_levelstep.text().split('.')[1]))
+        precision = len(str(float(self.lineEdit_levelstep.text())).split('.')[1])
+        pdn = round(float(self.lineEdit_levelstep.text()) * 10**precision ) / 10**precision
+        zmin1 = round(zmin*10**precision)/10**precision
         while zmin1<=zmin:
             zmin1 = zmin1+  pdn
         zmin1 = zmin1 - pdn
@@ -464,7 +464,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         temp=zmin1
         levels=[temp]
         while temp<=zmax1:
-            temp=round(temp+pdn,3)
+            temp=round(temp+pdn,precision)
             levels.append(temp)
         self.layer.change_lvl_contour(levels)
         

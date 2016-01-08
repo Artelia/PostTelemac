@@ -263,7 +263,6 @@ class PostTelemac:
 
     
     def checkLibrary(self):
-
         try:
             import matplotlib
             self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Matplotlib loaded'))
@@ -273,16 +272,20 @@ class PostTelemac:
             import shapely
             self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Shapely loaded'))
         except Exception, e :
-            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Install shapely (Start menu/All programs/OSGeo4W/setup/advanced install - "python-shapely" library) et restard qgis'))
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Install shapely (Start menu/All programs/OSGeo4W/setup/advanced install - "python-shapely" library) and restard qgis'))
         try:
             import networkx
             self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - networkx loaded'))
         except Exception, e :
-            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Install networkx (Start menu/All programs/OSGeo4W/setup/advanced install - "networkx" library) et restard qgis'))
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Install networkx (Start menu/All programs/OSGeo4W/setup/advanced install - "networkx" library) and restard qgis'))
         try:
             import numpy
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - numpy loaded'))
+        except Exception, e :
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Install numpy (Start menu/All programs/OSGeo4W/setup/advanced install - "python-numpy" library) and restard qgis'))
+        try:
+            import scipy
             self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - scipy loaded'))
         except Exception, e :
-            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Install scipy (Start menu/All programs/OSGeo4W/setup/advanced install - "python-scipy" library) et restard qgis'))
-            
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Install scipy (Start menu/All programs/OSGeo4W/setup/advanced install - "python-scipy" library) and restard qgis'))
             
