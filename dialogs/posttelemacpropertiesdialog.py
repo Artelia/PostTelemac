@@ -32,7 +32,10 @@ from PyQt4.QtGui import *
 import matplotlib
 from matplotlib import *
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+try:
+    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+except :
+    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 #other import
 import os
 from time import ctime
@@ -121,6 +124,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.doubleSpinBox_vel_spatial_step.valueChanged.connect(self.setVelocityRendererParams)
         self.doubleSpinBox_vel_scale.valueChanged.connect(self.setVelocityRendererParams)
         self.spinBox_vel_relative.valueChanged.connect(self.setVelocityRendererParams)
+
+        
         #colorramp
         self.comboBox_genericlevels_2.currentIndexChanged.connect(self.change_cmchoosergenericlvl_vel)
         self.comboBox_clrgame_2.currentIndexChanged.connect(self.color_palette_changed_vel)
@@ -145,9 +150,12 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         rc('font', **font)
         self.canvas1 = FigureCanvas(self.figure1)
         self.ax = self.figure1.add_subplot(111)
-        self.toolbar = NavigationToolbar(self.canvas1, self.frame,True)
         layout = QtGui.QVBoxLayout()
-        layout.addWidget(self.toolbar)
+        try:
+            self.toolbar = NavigationToolbar(self.canvas1, self.frame,True)
+            layout.addWidget(self.toolbar)
+        except Exception, e:
+            pass
         layout.addWidget(self.canvas1)
         self.canvas1.draw()
         self.frame.setLayout(layout)
@@ -159,9 +167,12 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.figure2 = plt.figure(self.layer.instancecount+2)
         self.canvas2 = FigureCanvas(self.figure2)
         self.ax2 = self.figure2.add_subplot(111)
-        self.toolbar2 = NavigationToolbar(self.canvas2, self.frame_2,True)
         layout2 = QtGui.QVBoxLayout()
-        layout2.addWidget(self.toolbar2)
+        try:
+            self.toolbar2 = NavigationToolbar(self.canvas2, self.frame_2,True)
+            layout2.addWidget(self.toolbar2)
+        except Exception, e:
+            pass
         layout2.addWidget(self.canvas2)
         self.canvas2.draw()
         self.frame_2.setLayout(layout2)
@@ -230,7 +241,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
                 self.setTreeWidgetIndex(self.treeWidget_parameters,0,paramtemp)
             else:
                 self.setTreeWidgetIndex(self.treeWidget_parameters,0,0)
-            self.groupBox_contour.setEnabled(True)
+            self.tab_contour.setEnabled(True)
             self.groupBox_param.setEnabled(True)
             self.groupBox_time.setEnabled(True)
             self.treeWidget_parameters.setEnabled(True)

@@ -42,6 +42,7 @@ from collections import OrderedDict #for identify
 import gc
 import os.path
 import time
+import numbers
 #local import 
 #from ..libs_telemac.parsers.parserSELAFIN import SELAFIN
 from ..dialogs.posttelemacpropertiesdialog import PostTelemacPropertiesDialog
@@ -216,10 +217,10 @@ class SelafinPluginLayer(QgsPluginLayer):
         #Set selafin
         self.selafinparser.loadSelafin(self.selafinpath)
         #nitialize layer's parameters
-        self.initSelafinParameters()
         if not self.param_displayed : self.param_displayed = 0
         if not self.lvl_contour : self.lvl_contour=self.levels[0]
         if not self.time_displayed : self.time_displayed = 0
+        self.initSelafinParameters()
         self.compare = False
         self.compare_identify = False
         self.triinterp = None
@@ -254,10 +255,18 @@ class SelafinPluginLayer(QgsPluginLayer):
         try:
             self.parametrevx = self.propertiesdialog.postutils.getParameterName("VITESSEU")[0]
             self.parametrevy = self.propertiesdialog.postutils.getParameterName("VITESSEV")[0]
-            self.propertiesdialog.groupBox_vel.setEnabled(True)
+            self.propertiesdialog.tab_velocity.setEnabled(True)
+            #self.propertiesdialog.groupBox_schowvel.setEnabled(True)
+            for widget in self.propertiesdialog.tab_velocity.children():
+                widget.setEnabled(True)
+            for widget in self.propertiesdialog.groupBox_schowvel.children():
+                widget.setEnabled(True)
+            self.propertiesdialog.groupBox_schowvel.setChecked(True)
+            self.propertiesdialog.groupBox_schowvel.setChecked(False)
         except Exception, e:
             #self.propertiesdialog.groupBox_8.setEnabled(False)
-            self.propertiesdialog.groupBox_schowvel.setEnabled(False)
+            #self.propertiesdialog.groupBox_schowvel.setEnabled(False)
+            self.propertiesdialog.tab_velocity.setEnabled(False)
             #TODO : disable utils dependant on velocity (flow, show velocity)
         try:
             self.parametreh = self.propertiesdialog.postutils.getParameterName("HAUTEUR")[0]
@@ -324,7 +333,7 @@ class SelafinPluginLayer(QgsPluginLayer):
             for param in self.parametres:
                 if param[2]:        #for virtual parameter - compute it
                     self.dico = self.getDico(param[2], self.parametres, values)
-                    val = eval(param[2],{}, self.dico)
+                    val = eval(param[2],{"__builtins__":None}, self.dico)
                     values = np.vstack((values,val))
             return values
         else:
@@ -341,6 +350,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         dico['cos'] = cos
         dico['abs'] = abs
         dico['int'] = int
+        dico['if_then_else'] = self.if_then_else
         a = 'V{}'
         nb_var = len(values)
         i = 0
@@ -350,6 +360,34 @@ class SelafinPluginLayer(QgsPluginLayer):
             num_var += 1
             i += 1
         return dico
+        
+    def if_then_else(self,ifstat,true1,false1):
+        var2 = np.zeros(self.selafinparser.pointcount)
+        
+        if isinstance(ifstat,np.ndarray):
+            temp1 = np.where(ifstat)
+        elif isinstance(ifstat,str):
+            val = eval(ifstat,{"__builtins__":None}, self.dico)
+            temp1 = np.where(val)
+
+        if isinstance(true1,np.ndarray):
+            var2[temp1] = true1[temp1]
+        elif isinstance(true1, numbers.Number):
+            var2[temp1] = float(true1)
+        else:
+            pass
+            
+        mask = np.ones(len(var2), np.bool)
+        mask[temp1] = 0
+
+        if isinstance(false1,np.ndarray):
+            var2[mask] = false1[mask]
+        elif isinstance(false1, numbers.Number):
+            var2[mask] = float(false1)
+        else:
+            pass
+        #print 'ok1 \n' + str(temp1) + '\n'+str(mask)
+        return var2
         
     #****************************************************************************************************
     #Change variables                                                  *********************************
@@ -519,7 +557,7 @@ class SelafinPluginLayer(QgsPluginLayer):
             self.compare_identify = self.compare
         #getvalues
         try:
-            v= [float(self.triinterp[i].__call__(qgspoint.x(),qgspoint.y())) for i in range(len(self.parametres))]
+            v= [float(self.triinterp[i].__call__([qgspoint.x()],[qgspoint.y()])) for i in range(len(self.parametres))]
         except Exception, e :
             v = None
         #send results
@@ -576,7 +614,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         strtemp =  element.attribute('virtual_param').split(';')
         count = int((len(strtemp)-1)/2)
         for i in range(count):
-            self.parametrestoload.append([i,strtemp[i],strtemp[i+1]])
+            self.parametrestoload.append([i,strtemp[2*i],strtemp[2*i+1]])
         
         self.load_selafin(selafinpath)
 

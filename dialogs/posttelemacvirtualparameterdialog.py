@@ -53,7 +53,7 @@ class DefVariablesDialog(QtGui.QDialog, FORM_CLASS):
         #icTool = QIcon(os.path.dirname(os.path.realpath(__file__)) + "\\icones\\btn_tools.png")
         #self.btn_open_classe.setIcon(icTool)
 
-        lst_fn = ["+","-","*","/","**","abs()", "cos()", "int()", "sin()"]
+        lst_fn = ["+","-","*","/","**","abs()", "cos()", "int()", "sin()",'if_then_else("condition",if_true,if_false)']
 
         self.tab_variables.itemDoubleClicked.connect(self.add_variable)
         self.lst_fonctions.doubleClicked.connect(self.add_fonction)
