@@ -234,7 +234,7 @@ class PostTelemac:
     def run(self):
         """Run method that performs all the real work"""
         self.slf.append(SelafinPluginLayer(self.tr('Click properties to load selafin file')))     #add selafin to list otherwise it can not work with multiple selafin files
-        self.slf[len(self.slf)-1].setCrs(self.iface.mapCanvas().mapSettings().destinationCrs())   #to prevent weird bug with weird crs
+        self.slf[len(self.slf)-1].setRealCrs(self.iface.mapCanvas().mapSettings().destinationCrs())   #to prevent weird bug with weird crs
         QgsMapLayerRegistry.instance().addMapLayer(self.slf[len(self.slf)-1])
         self.iface.showLayerProperties(self.slf[len(self.slf)-1])
         #check library things

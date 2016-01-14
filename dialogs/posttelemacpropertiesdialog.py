@@ -43,6 +43,7 @@ from time import ctime
 from ..libs.posttelemac_util import *
 from posttelemacvirtualparameterdialog import *
 from posttelemacusercolorrampdialog import *
+from ..posttelemacparsers.posttelemac_selafin_parser import *
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__),'..', 'ui', 'properties.ui'))
 
@@ -124,8 +125,6 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.doubleSpinBox_vel_spatial_step.valueChanged.connect(self.setVelocityRendererParams)
         self.doubleSpinBox_vel_scale.valueChanged.connect(self.setVelocityRendererParams)
         self.spinBox_vel_relative.valueChanged.connect(self.setVelocityRendererParams)
-
-        
         #colorramp
         self.comboBox_genericlevels_2.currentIndexChanged.connect(self.change_cmchoosergenericlvl_vel)
         self.comboBox_clrgame_2.currentIndexChanged.connect(self.color_palette_changed_vel)
@@ -183,6 +182,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         #Tools tab - compare
         self.pushButton_8.clicked.connect(self.initCompare)
         self.checkBox_6.stateChanged.connect(self.postutils.compare1)
+        self.comboBox_compare_method.currentIndexChanged.connect(self.postutils.compare1)
         
         #Tools tab - movie  
         self.pushButton_film.clicked.connect(self.postutils.makeAnimation)
@@ -229,12 +229,13 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """
         update dialog when selafin layer changed
         """
-        if self.layer.selafinpath is not None:
+        if self.layer.hydraufilepath is not None:
             paramtemp = self.layer.param_displayed   #param_gachete deleted with clear - so save it
             tempstemp = self.layer.time_displayed
             alphatemp = self.layer.alpha_displayed
-            #nom
-            self.label_loadslf.setText(os.path.basename(self.layer.selafinpath).split('.')[0])
+            #name
+            self.label_loadslf.setText(os.path.basename(self.layer.hydraufilepath).split('.')[0])
+            self.loaddirectory = os.path.dirname(self.layer.hydraufilepath)
             #param
             self.populatecombobox_param()
             if paramtemp:
@@ -248,8 +249,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             #time
             self.horizontalSlider_time.setEnabled(True)
             self.comboBox_time.setEnabled(True)
-            self.horizontalSlider_time.setMaximum(self.layer.selafinparser.itertimecount)
-            self.horizontalSlider_time.setPageStep(min(10,int(self.layer.selafinparser.itertimecount/20)))
+            self.horizontalSlider_time.setMaximum(self.layer.hydrauparser.itertimecount)
+            self.horizontalSlider_time.setPageStep(min(10,int(self.layer.hydrauparser.itertimecount/20)))
             self.populatecombobox_time()
             self.change_timetxt(tempstemp)
             self.horizontalSlider_time.setValue(tempstemp)
@@ -264,13 +265,14 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             #utils
             self.textBrowser_2.clear()
             #compare
-            if self.postutils.threadcompare is not None:
-                self.postutils.threadcompare.compare.reset_dialog()
-                self.postutils.threadcompare = None
+            self.writeSelafinCaracteristics(self.textEdit_2,self.layer.hydrauparser)
+            if self.postutils.compareprocess is not None:
+                self.reset_dialog()
+                self.postutils.compareprocess = None
             #movie
             self.reinitcomposeurlist()
             self.reinitcomposeurimages(0)
-            maxiter = self.layer.selafinparser.itertimecount
+            maxiter = self.layer.hydrauparser.itertimecount
             self.spinBox_3.setMaximum(maxiter)
             self.spinBox_2.setMaximum(maxiter)
             self.spinBox_3.setValue(maxiter)
@@ -309,7 +311,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             nom = os.path.basename(tempname).split('.')[0]
             self.normalMessage(self.tr('File ') +  str(nom) +  self.tr(" loaded"))
         else:
-            self.label_loadslf.setText(self.tr('No file selected'))
+            if not self.layer.hydraufilepath:
+                self.label_loadslf.setText(self.tr('No file selected'))
 
     
     def set_layercrs(self):
@@ -320,7 +323,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             self.label_selafin_crs.setText(crs)
         else:
             source.setText(crs)
-        self.layer.setCrs(QgsCoordinateReferenceSystem(crs))
+        self.layer.setRealCrs(QgsCoordinateReferenceSystem(crs))
         
     """
     #*********************************************************************************
@@ -335,11 +338,11 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
     def change_timetxt(self,intitmetireation):
         """Associated with time modification"""
         self.layer.changeTime(intitmetireation)
-        time2 = time.strftime("%j:%H:%M:%S", time.gmtime(self.layer.selafinparser.getTimes()[intitmetireation]))
+        time2 = time.strftime("%j:%H:%M:%S", time.gmtime(self.layer.hydrauparser.getTimes()[intitmetireation]))
         
         self.label_time.setText(self.tr("time (hours)") + " : " + str(time2) +"\n"+ 
                                 self.tr("time (iteration)") + " : "+ str(intitmetireation)+"\n"+
-                                self.tr("time (seconds)") + " : " + str(self.layer.selafinparser.getTimes()[intitmetireation]))
+                                self.tr("time (seconds)") + " : " + str(self.layer.hydrauparser.getTimes()[intitmetireation]))
             
     def sliderReleased(self):
         """Associated with slider behaviour"""
@@ -398,16 +401,12 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             if source == self.pushButton_param_add:
                 self.layer.parametres.append([len(self.layer.parametres),new_var[0],new_var[1]])
                 self.populatecombobox_param()
-                self.layer.param_memoire = None
-                self.layer.temps_identify = None
-                self.layer.updateSelafinValues(True)
+                self.layer.updateSelafinValues()
                 self.setTreeWidgetIndex(self.treeWidget_parameters,0,len(self.layer.parametres)-1)
             elif source == self.pushButton_param_edit:
                 self.layer.parametres[index] = [index,new_var[0],new_var[1]]
                 self.populatecombobox_param()
-                self.layer.param_memoire = None
-                self.layer.temps_identify = None
-                self.layer.updateSelafinValues(True)
+                self.layer.updateSelafinValues()
                 self.setTreeWidgetIndex(self.treeWidget_parameters,0,index)
             
     def delete_def_variables(self):
@@ -420,8 +419,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             self.layer.parametres[index:index+1] = []
             self.populatecombobox_param()
             self.setTreeWidgetIndex(self.treeWidget_parameters,0,index-1)
-            self.layer.updateSelafinValues(True)
-            #self.layer.triggerRepaint()
+            self.layer.updateSelafinValues()
         
     #Display tools - contour - color ramp things ***********************************************
 
@@ -452,18 +450,19 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         create steps classes and change levels of selafin layer when steps classes are changed
         """
         if self.lineEdit_levelmin.text()=="" : 
-            zmin=min(self.layer.selafinparser.getValues(self.layer.time_displayed)[self.layer.param_displayed] )
+            zmin=min(self.layer.hydrauparser.getValues(self.layer.time_displayed)[self.layer.param_displayed] )
             self.lineEdit_levelmin.setText(str(round(float(zmin),3)))
         else : 
             zmin = float(self.lineEdit_levelmin.text())
         if self.lineEdit_levelmax.text()=="" : 
-            zmax=max(self.layer.selafinparser.getValues(self.layer.time_displayed)[self.layer.param_displayed] )
+            zmax=max(self.layer.hydrauparser.getValues(self.layer.time_displayed)[self.layer.param_displayed] )
             self.lineEdit_levelmax.setText(str(round(float(zmax),3)))
         else : 
             zmax = float(self.lineEdit_levelmax.text())
         precision = len(str(float(self.lineEdit_levelstep.text())).split('.')[1])
         pdn = round(float(self.lineEdit_levelstep.text()) * 10**precision ) / 10**precision
-        zmin1 = round(zmin*10**precision)/10**precision
+        zmin1 = zmin
+        
         while zmin1<=zmin:
             zmin1 = zmin1+  pdn
         zmin1 = zmin1 - pdn
@@ -484,10 +483,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         change color map of selafin layer (matplotlib's style) when color palette combobox is changed
         """
         temp1 = QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame.currentText())
-        #print str(self.comboBox_clrgame.currentText())
         self.layer.cmap_mpl_contour_raw = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
-        #cmap = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
-        #print 'cmap1 ' + str(cmap)
         self.layer.change_cm_contour(self.layer.cmap_mpl_contour_raw)
 
 
@@ -504,7 +500,6 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         
         colors,levels = self.dlg_color.dialogIsFinished()
         if colors and levels:
-            #self.layer.cmap = self.layer.colormanager.arrayStepRGBAToCmap(colors)
             self.layer.cmap_mpl_contour_raw = self.layer.colormanager.arrayStepRGBAToCmap(colors)
             self.layer.change_lvl_contour(levels)
 
@@ -657,8 +652,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         Populate time combobox on dialog update
         """
         self.comboBox_time.clear()
-        for i in range(self.layer.selafinparser.itertimecount + 1):
-            self.comboBox_time.addItems([str(self.layer.selafinparser.getTimes()[i])])
+        for i in range(self.layer.hydrauparser.itertimecount + 1):
+            self.comboBox_time.addItems([str(self.layer.hydrauparser.getTimes()[i])])
             
     def populatecombobox_param(self):
         """
@@ -667,13 +662,11 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.comboBox_parametreschooser.clear()
         for i in range(len(self.layer.parametres)):
             temp1 = [str(self.layer.parametres[i][0])+" : "+str(self.layer.parametres[i][1])]
-            #self.comboBox_param.addItems(temp1)
             self.comboBox_parametreschooser.addItems(temp1)
         
         self.treeWidget_parameters.clear()
         itms = []
         for i in range(len(self.layer.parametres)):
-            #self.itmModel = QStandardItemModel()
             itm = QTreeWidgetItem()
             itm.setText(0, str(self.layer.parametres[i][0]))
             itm.setText(1, str(self.layer.parametres[i][1]))
@@ -774,7 +767,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         if (len(self.treeWidget_utils.selectedItems())>0 
             and itemname == 'Values' 
             and self.tabWidget.currentIndex() == 1):
-            #Click on value tool item
+            """Click on value tool item"""
             self.canvas.setMapTool(self.clickTool)
             try:self.clickTool.canvasClicked.disconnect()
             except Exception: pass
@@ -782,10 +775,10 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             self.postutils.valeurs_click(QgsPoint(0.0,0.0))
             
         elif (len(self.treeWidget_utils.selectedItems())>0 
-                  and itemname == 'Temporal graph' 
-                  and self.tabWidget.currentIndex() == 1
-                  and self.comboBox_2.currentIndex() == 0):
-            #Click on temopral graph + temporary point selection method
+              and itemname == 'Temporal graph' 
+              and self.tabWidget.currentIndex() == 1
+              and self.comboBox_2.currentIndex() == 0):
+            """Click on temopral graph + temporary point selection method"""
             if self.postutils.rubberband:
                 self.postutils.rubberband.reset(QGis.Point)
             try : self.clickTool.canvasClicked.disconnect()
@@ -798,7 +791,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
                   and itemname == 'Flow graph' 
                   and self.tabWidget.currentIndex() == 1
                   and (self.comboBox_3.currentIndex() in [0] )):
-            #Click on flow computation - temporary polyline
+            """Click on flow computation - temporary polyline"""
             if self.postutils.rubberband:
                 self.postutils.rubberband.reset(QGis.Point)
             try : self.clickTool.canvasClicked.disconnect()
@@ -806,7 +799,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             self.pushButton_flow.setEnabled(False)
             self.postutils.computeFlow()
         else:
-            #else...
+            """else..."""
             self.pushButton_limni.setEnabled(True)
             self.pushButton_flow.setEnabled(True)
             try: self.canvas.setMapTool(self.maptooloriginal)
@@ -869,22 +862,31 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         str1 = self.tr("Selafin file chooser")
         str2 = self.tr("Telemac files")
         str3 = self.tr("All files")  
+        self.reset_dialog()
         fname = self.qfiledlg.getOpenFileName(None,str1,self.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
-        #fname = self.qfiledlg.getOpenFileName(None,"Choix du fichier res",self.layer.loaddirectory, "Fichier_Telemac (*.res *.geo)")
         #Things
         self.lineEdit_5.setText(fname)
-        self.writeSelafinCaracteristics(self.textEdit_2,self.layer.selafinparser.selafin)
-        self.writeSelafinCaracteristics(self.textEdit_3,SELAFIN(fname))
+        hydrauparser = PostTelemacSelafinParser()
+        hydrauparser.loadHydrauFile(fname)
+        self.writeSelafinCaracteristics(self.textEdit_3,hydrauparser)
         #Launch thread
         self.checkBox_6.setEnabled(False)
         self.postutils.compareselafin()
+        
+    def reset_dialog(self):
+        #self.textEdit_2.clear()
+        self.textEdit_3.clear()
+        self.lineEdit_5.clear()
+        self.lineEdit.clear()
+        self.checkBox_6.setCheckState(0)
+        self.checkBox_6.setEnabled(False)
 
         
-    def writeSelafinCaracteristics(self,textedit,selafin):
+    def writeSelafinCaracteristics(self,textedit,hydrauparser):
         textedit.setText('')
-        for var in selafin.VARNAMES:
+        for var in hydrauparser.getVarnames():
             textedit.append(var)
-        textedit.append("nombre d elements : "+str(len(selafin.getVALUES(0)[0])))
+        textedit.append("nombre d elements : "+str(len(hydrauparser.getValues(0)[0])))
         
         
 

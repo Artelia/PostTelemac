@@ -96,7 +96,7 @@ class PostTelemacColorManager():
     #*********************** layer symbology generator ******************************************************
         
     def generateSymbologyItems(self,iconSize):
-        if self.selafinlayer.selafinparser.selafin != None and self.selafinlayer.color_mpl_contour != None:
+        if self.selafinlayer.hydrauparser != None and self.selafinlayer.hydrauparser.hydraufile != None and self.selafinlayer.color_mpl_contour != None:
             lst = [(  (str(self.selafinlayer.parametres[self.selafinlayer.param_displayed][1]), QPixmap())  )]
             for i in range(len(self.selafinlayer.lvl_contour)-1):
                 pix = QPixmap(iconSize)

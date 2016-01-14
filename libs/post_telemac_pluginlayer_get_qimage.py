@@ -46,14 +46,19 @@ DEBUG = False
 
 class Selafin2QImage():
 
-    def __init__(self,int=1):
+    def __init__(self,selafinlayer,int=1):
         self.fig =  plt.figure(int)
+        self.selafinlayer = selafinlayer
         self.ax = self.fig.add_subplot(111)
+        #Reprojected things
+        self.triangulation = None   #the reprojected triangulation
+        self.meshxreprojected, self.meshyreprojected = None, None
+        #mpl figures
         self.tricontourf1 = None    #the contour plot
         self.meshplot = None    #the meshplot
         self.quiverplot = None  #the quiver plot
         self.tritemp = None #the matplotlib triangulation centred on canvas view
-        #self.mask = None
+        #other
         self.image_mesh = None
         self.goodpointindex  = None
         self.previousdrawrenderersizepx = None
@@ -63,7 +68,30 @@ class Selafin2QImage():
         self.previousdrawalpha = None
         self.previousdrawcmcontour = None
         self.previousdrawcmvelocity = None
-
+        
+    def changeTriangulationCRS(self):
+        try:
+            if self.selafinlayer != None and self.selafinlayer.hydrauparser != None:
+                meshx, meshy = self.selafinlayer.hydrauparser.getMesh()
+                ikle = self.selafinlayer.hydrauparser.getIkle()
+                self.meshxreprojected, self.meshyreprojected = self.getTransformedCoords(meshx, meshy)
+                self.meshxreprojected = np.array(self.meshxreprojected)
+                self.meshyreprojected = np.array(self.meshyreprojected)
+                self.triangulation = matplotlib.tri.Triangulation(self.meshxreprojected,self.meshyreprojected,np.array(ikle))
+        except Exception, e :
+            print str('changecrs : '+str(e))
+        
+    def getTransformedCoords(self,xcoords,ycoords,direction = True):
+        coordinatesAsPoints = [ QgsPoint(xcoords[i], ycoords[i]) for i in range(len(xcoords))]
+        if direction:
+            transformedCoordinatesAsPoints = [self.selafinlayer.xform.transform(point) for point in coordinatesAsPoints]
+        else:
+            transformedCoordinatesAsPoints = [self.selafinlayer.xform.transform(point,QgsCoordinateTransform.ReverseTransform) for point in coordinatesAsPoints]
+        xcoordsfinal = [point.x() for point in transformedCoordinatesAsPoints]
+        ycoordsfinal = [point.y() for point in transformedCoordinatesAsPoints]
+        return xcoordsfinal,ycoordsfinal
+            
+            
         
     def getimage(self,selafinlayer,rendererContext):
         """
@@ -120,15 +148,17 @@ class Selafin2QImage():
                     self.fig.canvas.flush_events()
                     gc.collect()
 
-                    self.tricontourf1= self.ax.tricontourf(selafinlayer.triangulation,
+                    self.tricontourf1= self.ax.tricontourf(self.triangulation,
                                                        selafinlayer.value,
                                                        selafinlayer.lvl_contour, 
                                                        cmap=  selafinlayer.cmap_mpl_contour,
                                                        norm=selafinlayer.norm_mpl_contour ,
                                                        alpha = selafinlayer.alpha_displayed/100.0,
                                                        rasterized=True)
+
                     if selafinlayer.showmesh:
-                        self.meshplot = self.ax.triplot(selafinlayer.triangulation, 'k,-',color = '0.5',linewidth = 0.5, alpha = selafinlayer.alpha_displayed/100.0)
+                        self.meshplot = self.ax.triplot(self.triangulation, 'k,-',color = '0.5',linewidth = 0.5, alpha = selafinlayer.alpha_displayed/100.0)
+
                     #reinit temporary triangulation variables
                     self.tritemp = None
                     self.image_mesh = None
@@ -246,7 +276,7 @@ class Selafin2QImage():
                 if DEBUG : time1.append("value : "+str(round(time.clock()-timestart,3)))
                 
 
-                self.tricontourf1 = self.ax.tricontourf(selafinlayer.triangulation,
+                self.tricontourf1 = self.ax.tricontourf(self.triangulation,
                                                     selafinlayer.value,selafinlayer.lvl_contour, 
                                                     cmap=  selafinlayer.cmap_mpl_contour,
                                                     norm=selafinlayer.norm_mpl_contour ,
@@ -255,9 +285,10 @@ class Selafin2QImage():
                                                     extend = 'neither',
                                                     rasterized=True)
 
+
                                                                          
                 if selafinlayer.showmesh:
-                    self.meshplot = self.ax.triplot(selafinlayer.triangulation, 'k,-',color = '0.5',linewidth = 0.5, alpha = selafinlayer.alpha_displayed/100.0)
+                    self.meshplot = self.ax.triplot(self.triangulation, 'k,-',color = '0.5',linewidth = 0.5, alpha = selafinlayer.alpha_displayed/100.0)
 
                 if selafinlayer.showvelocityparams['show']:
                     tabx,taby,tabvx,tabvy = self.getVelocity(selafinlayer,rendererContext)
@@ -290,7 +321,6 @@ class Selafin2QImage():
         
             
     def getVelocity(self,selafin,rendererContext):
-
         tabx=[]
         taby=[]
         tabvx=[]
@@ -325,12 +355,19 @@ class Selafin2QImage():
             taby = np.ravel(mesh[1].tolist())
             if not selafin.triinterp :
                 selafin.initTriinterpolator()
+            """
             tabvx =  selafin.triinterp[selafin.parametrevx].__call__(tabx,taby)
             tabvy =  selafin.triinterp[selafin.parametrevy].__call__(tabx,taby)
+            """
+            tempx1, tempy1 = self.getTransformedCoords(tabx,taby,False)
+            tabvx =  selafin.triinterp[selafin.parametrevx].__call__(tempx1,tempy1)
+            tabvy =  selafin.triinterp[selafin.parametrevy].__call__(tempx1,tempy1)
 
         elif selafin.showvelocityparams['type'] == 2:
             if not self.goodpointindex == None :
-                tabx, taby = selafin.selafinparser.getMesh()
+                #tabx, taby = selafin.hydrauparser.getMesh()
+                tabx = self.meshxreprojected
+                taby = self.meshyreprojected
                 goodnum = self.goodpointindex
                 tabx = tabx[goodnum]
                 taby = taby[goodnum]
@@ -358,7 +395,13 @@ class Selafin2QImage():
         """
         recttemp = rendererContext.extent()
         rect = [float(recttemp.xMinimum()), float(recttemp.xMaximum()), float(recttemp.yMinimum()), float(recttemp.yMaximum())] 
-        tabx, taby = selafin.selafinparser.getMesh()
+        """
+        tabx, taby = selafin.hydrauparser.getMesh()
+        tabx, taby = self.getTransformedCoords(tabx,taby)
+        """
+        tabx = self.meshxreprojected
+        taby = self.meshyreprojected
+        
         valtabx = np.where(np.logical_and(tabx>rect[0], tabx< rect[1]))
         valtaby = np.where(np.logical_and(taby>rect[2], taby< rect[3]))
         goodnum = np.intersect1d(valtabx[0],valtaby[0])
@@ -372,10 +415,10 @@ class Selafin2QImage():
         """
         Not used - case if we want a mask mesh for tricontour
         """
-        mesh = np.array(selafin.selafinparser.getIkle())
+        mesh = np.array(selafin.hydrauparser.getIkle())
         recttemp = rendererContext.extent()
         rect = [float(recttemp.xMinimum()), float(recttemp.xMaximum()), float(recttemp.yMinimum()), float(recttemp.yMaximum())] 
-        xMesh, yMesh = selafin.selafinparser.getMesh()
+        xMesh, yMesh = selafin.hydrauparser.getMesh()
         maskMesh = np.array([1.0]*len(mesh))
         
         trianx = np.array( [ xMesh[mesh[:,0]], xMesh[mesh[:,1]], xMesh[mesh[:,2]]] )
@@ -397,11 +440,15 @@ class Selafin2QImage():
         return a new triangulation based on triangles visbles in the canvas. 
         return index of selafin points correspondind to the new triangulation
         """
-        mesh = np.array(selafin.selafinparser.getIkle())
+        mesh = np.array(selafin.hydrauparser.getIkle())
         recttemp = rendererContext.extent()
         rect = [float(recttemp.xMinimum()), float(recttemp.xMaximum()), float(recttemp.yMinimum()), float(recttemp.yMaximum())] 
-        xMesh, yMesh = selafin.selafinparser.getMesh()
-
+        """
+        xMesh, yMesh = selafin.hydrauparser.getMesh()
+        xMesh, yMesh = self.getTransformedCoords(xMesh, yMesh)
+        """
+        xMesh = self.meshxreprojected
+        yMesh = self.meshyreprojected
 
         trianx = np.array( [ xMesh[mesh[:,0]], xMesh[mesh[:,1]], xMesh[mesh[:,2]]] )
         trianx = np.transpose(trianx)

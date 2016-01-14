@@ -54,8 +54,6 @@ class PostTelemacUtils():
         self.rubberband = QgsRubberBand(self.selafinlayer.canvas, QGis.Line)
         self.rubberband.setWidth(2)
         self.rubberband.setColor(QColor(Qt.red))
-        
-        
         self.clickTool = QgsMapToolEmitPoint(self.selafinlayer.canvas)
         self.tool = None                        #the activated map tool
         self.layerindex = None                  #for selection mode
@@ -66,8 +64,8 @@ class PostTelemacUtils():
         self.graphtempdatac = []
         self.graphflowdatac = []
         self.skdtree = None                   #Object that enables nearest point query
-        self.threadcompare = None
-        
+        self.compareprocess = None
+        #self.xformutil = None   #for vector crs transformation
 
         
         
@@ -75,26 +73,27 @@ class PostTelemacUtils():
     #************* Values***********************************************************
     #****************************************************************************************************
 
-    def valeurs_click(self,qgspoint):
+    def valeurs_click(self,qgspointfromcanvas):
         """
         Called in PostTelemacPropertiesDialog by value tool
         fill the tablewidget
         """
+        #qgspointtransformed = self.selafinlayer.xform.transform(qgspoint,QgsCoordinateTransform.ReverseTransform)
         if self.selafinlayer.propertiesdialog.comboBox_values_method.currentIndex() == 0 :
-            numnearest = self.getNearest([qgspoint.x(),qgspoint.y()])
-            x,y = self.selafinlayer.selafinparser.getXYFromNumPoint([numnearest])[0]
-            qgspoint = QgsPoint(x,y)
+            numnearest = self.getNearest([qgspointfromcanvas.x(),qgspointfromcanvas.y()])
+            x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([numnearest])[0]
+            qgspointfromcanvas = self.selafinlayer.xform.transform( QgsPoint(x,y) )
 
         if not self.rubberband:
             self.createRubberband()
         self.rubberband.reset(QGis.Point)
-        bool1, values = self.selafinlayer.identify(qgspoint)
+        bool1, values = self.selafinlayer.identify(qgspointfromcanvas)
         strident = ''
         i = 0
         for name, value in values.items():
             self.selafinlayer.propertiesdialog.tableWidget_values.setItem(i, 1, QtGui.QTableWidgetItem(str(round(value,3))))
             i += 1
-        self.rubberband.addPoint(qgspoint)
+        self.rubberband.addPoint(qgspointfromcanvas)
         
         
     #****************************************************************************************************
@@ -103,7 +102,7 @@ class PostTelemacUtils():
     
     #******************* Tools - temporal anf flow graph - clicktool*********************************************
     
-    def computeGraphTemp(self,qgspoint=None):
+    def computeGraphTemp(self,qgspointfromcanvas=None):
         """
         Activated with temporal graph tool - points from layer
         """
@@ -112,15 +111,18 @@ class PostTelemacUtils():
         try:
             self.graphtodo = 0
             self.selectionmethod = self.selafinlayer.propertiesdialog.comboBox_2.currentIndex()
-            if self.selectionmethod == 0:
+            if self.selectionmethod == 0:       #temporary point
                 if not self.graphtempactive:
-                    self.launchThread([[qgspoint.x(),qgspoint.y()]])
+                    xformutil = self.selafinlayer.xform
+                    qgspointtransformed = xformutil.transform(qgspointfromcanvas,QgsCoordinateTransform.ReverseTransform)
+                    self.launchThread([[qgspointtransformed.x(),qgspointtransformed.y()]])
                 
             elif self.selectionmethod == 1 :
                 layer = iface.activeLayer()
                 if not (layer.type() == 0 and layer.geometryType()==0):
                     QMessageBox.warning(iface.mainWindow(), "PostTelemac", self.tr("Select a point vector layer"))
                 else:
+                    xformutil = QgsCoordinateTransform(self.selafinlayer.realCRS, layer.crs() )
                     self.rubberband.reset(QGis.Point)
                     self.selafinlayer.propertiesdialog.ax.cla()
                     self.selafinlayer.propertiesdialog.checkBox.setChecked(True)
@@ -134,7 +136,9 @@ class PostTelemacUtils():
                         except:
                             self.vectorlayerflowids.append(str(feature.id()))
                         geom=feature.geometry().asPoint()
-                        geom=[geom[0],geom[1]]
+                        temp1 = xformutil.transform(QgsPoint(geom[0],geom[1]),QgsCoordinateTransform.ReverseTransform)
+                        geom=[temp1.x(),temp1.y()]
+                        
                         geomfinal.append(geom)
                     if not self.graphtempactive:
                         self.launchThread(geomfinal)    
@@ -147,7 +151,6 @@ class PostTelemacUtils():
         """
         if not self.rubberband:
             self.createRubberband()
-        #source = self.selafinlayer.propertiesdialog.sender()
         self.dblclktemp = None
         self.textquit0 = "Click for polyline and double click to end (right click to cancel then quit)"
         self.textquit1 = "Select the polyline in a vector layer (Right click to quit)"
@@ -159,7 +162,6 @@ class PostTelemacUtils():
             layer = iface.activeLayer()
             if not self.tool:
                 self.tool = FlowMapTool(self.selafinlayer.canvas,self.selafinlayer.propertiesdialog.pushButton_flow)
-                #self.tool = FlowMapTool(self.selafinlayer.canvas,None)
             #Listeners of mouse
             self.connectTool()
             #init the mouse listener comportement and save the classic to restore it on quit
@@ -184,12 +186,12 @@ class PostTelemacUtils():
                 self.selafinlayer.propertiesdialog.canvas2.draw()
                 self.initclass1=[]
                 self.selafinlayer.propertiesdialog.checkBox_7.setChecked(True)
-                #layer = iface.activeLayer()
                 iter = layer.selectedFeatures()
                 if self.selectionmethod == 2 or len(iter)==0:
                     iter = layer.getFeatures()
                 geomfinal=[]
                 self.vectorlayerflowids = []
+                xformutil = QgsCoordinateTransform(self.selafinlayer.realCRS, layer.crs() )
                 for i,feature in enumerate(iter):
                     try:
                         self.vectorlayerflowids.append(str(feature[0]))
@@ -198,7 +200,12 @@ class PostTelemacUtils():
                     geoms=feature.geometry().asPolyline()
                     geoms=[[geom[0],geom[1]] for geom in geoms]
                     geoms = geoms+[geoms[-1]]
-                    geomfinal.append(geoms)
+                    geomstemp=[]
+                    for geom in geoms:
+                        qgspoint = xformutil.transform(QgsPoint(geom[0],geom[1]),QgsCoordinateTransform.ReverseTransform)
+                        geomstemp.append([qgspoint.x(),qgspoint.y()])
+                    geomfinal.append(geomstemp)
+                    
                 self.launchThread(geomfinal)
                 
 
@@ -284,8 +291,14 @@ class PostTelemacUtils():
             mapPos = self.selafinlayer.canvas.getCoordinateTransform().toMapCoordinates(position["x"],position["y"])
             newPoints = [[mapPos.x(), mapPos.y()]]
             self.pointstoDraw += newPoints
+            #convert points to pluginlayer crs
+            xform = self.selafinlayer.xform
+            pointstoDrawfinal=[]
+            for point in self.pointstoDraw:
+                qgspoint = xform.transform(QgsPoint(point[0],point[1]),QgsCoordinateTransform.ReverseTransform)
+                pointstoDrawfinal.append([qgspoint.x(),qgspoint.y()])
             #launch analyses
-            self.launchThread([self.pointstoDraw])
+            self.launchThread([pointstoDrawfinal])
             #Reset
             self.lastFreeHandPoints = self.pointstoDraw
             self.pointstoDraw = []
@@ -310,6 +323,7 @@ class PostTelemacUtils():
         self.initclass.error.connect(self.selafinlayer.propertiesdialog.errorMessage)
         self.initclass.emitpoint.connect(self.addPointRubberband)
         self.initclass.finished1.connect(self.workerFinished)
+        
         if self.graphtodo ==0:
             self.initclass.start(geom,self.selafinlayer)
             self.graphtempactive = True
@@ -378,13 +392,9 @@ class PostTelemacUtils():
             self.selafinlayer.propertiesdialog.label__flow_resultmin.setText('Min : ' + str(mintemp))
             self.selafinlayer.propertiesdialog.canvas2.draw()
             if self.selafinlayer.propertiesdialog.comboBox_3.currentIndex() != 0:
-                #self.selafinlayer.propertiesdialog.pushButton_flow.setCheckable(True)
-                #self.selafinlayer.propertiesdialog.textBrowser_main.append(str(ctime() + ' - Computing flow finished'))
                 self.selafinlayer.propertiesdialog.normalMessage('Computing flow finished')
                 self.selafinlayer.propertiesdialog.pushButton_flow.setEnabled(True)
-
             
-
     
     def copygraphclipboard(self):
         source = self.selafinlayer.propertiesdialog.sender()
@@ -392,7 +402,6 @@ class PostTelemacUtils():
             ax = self.selafinlayer.propertiesdialog.ax
         elif source == self.selafinlayer.propertiesdialog.pushButton_4:
             ax = self.selafinlayer.propertiesdialog.ax2
-        
         
         self.clipboard = QApplication.clipboard()
         strtemp=''
@@ -421,7 +430,8 @@ class PostTelemacUtils():
         iface.mainWindow().statusBar().showMessage( "" )
             
     def addPointRubberband(self,x,y):
-        self.rubberband.addPoint(QgsPoint(x,y))
+        qgspoint = self.selafinlayer.xform.transform(QgsPoint(x,y))
+        self.rubberband.addPoint(qgspoint)
         
         
     #****************************************************************************************************
@@ -429,39 +439,57 @@ class PostTelemacUtils():
     #****************************************************************************************************
     
     def compareselafin(self):
-        self.threadcompare = initgetCompareValue(self.selafinlayer)
-        self.threadcompare.compare.transmitvalues = False
-        self.threadcompare.start()
+        self.compareprocess = getCompareValue(self.selafinlayer)
+        self.getCorrespondingParameters()
+        self.selafinlayer.propertiesdialog.checkBox_6.setEnabled(True)
+        
+        
+    def getCorrespondingParameters(self):
+        for var in self.selafinlayer.parametres:
+            for param in self.compareprocess.hydrauparsercompared.getVarnames() :
+                if var[1] in param.strip()  :
+                    self.selafinlayer.parametres[var[0]][3] = self.compareprocess.hydrauparsercompared.getVarnames().index(param)
+                    break
+                else:
+                    self.selafinlayer.parametres[var[0]][3] = None
+        self.selafinlayer.propertiesdialog.lineEdit.setText(str([[param[0],param[3]] for param in self.selafinlayer.parametres]))
+        
+    def reinitCorrespondingParameters(self):
+        for i, var in enumerate(self.selafinlayer.parametres):
+                self.selafinlayer.parametres[i][3] = i
         
     def compare1(self,int1):
         try:
-            if int1 == 2 :
-                for i in range(len(self.threadcompare.var_corresp)):
-                    if self.threadcompare.var_corresp[i][1] is None:
+            #if int1 == 2 :
+            if self.selafinlayer.propertiesdialog.checkBox_6.checkState() == 2 :
+                self.getCorrespondingParameters()
+                #change signals
+                try:
+                    self.selafinlayer.updatevalue.disconnect(self.selafinlayer.updateSelafinValues1)
+                    self.selafinlayer.updatevalue.connect(self.compareprocess.updateSelafinValue)
+                except Exception, e:
+                    pass
+                self.selafinlayer.triinterp = None
+                #desactive non matching parameters
+                for i in range(len(self.selafinlayer.parametres)):
+                    if self.selafinlayer.parametres[i][3] == None:
                         self.selafinlayer.propertiesdialog.treeWidget_parameters.topLevelItem(i).setFlags(Qt.ItemIsSelectable)
-                #self.selafinlayer.temps_memoire = None
-                #self.selafinlayer.param_memoire = None
-                self.threadcompare.compare.transmitvalues = True
-                self.selafinlayer.compare = True
-                self.threadcompare.run()
+                self.compareprocess.comparetime = None
                 self.selafinlayer.forcerefresh = True
                 self.selafinlayer.updateSelafinValues()
                 self.selafinlayer.triggerRepaint()
-                
-            elif int1 == 0 :
-                #self.compare = None 
-                self.selafinlayer.compare = False
-                #self.selafinlayer.temps_memoire = None
-                #self.selafinlayer.param_memoire = None
+            elif self.selafinlayer.propertiesdialog.checkBox_6.checkState() == 0 :
+                #change signals
+                try:
+                    self.selafinlayer.updatevalue.disconnect(self.compareprocess.updateSelafinValue)
+                    self.selafinlayer.updatevalue.connect(self.selafinlayer.updateSelafinValues1)
+                except Exception, e:
+                    pass
+                self.selafinlayer.triinterp = None
                 self.selafinlayer.forcerefresh = True
+                self.reinitCorrespondingParameters()
                 self.selafinlayer.propertiesdialog.populatecombobox_param()
-                """
-                for i in range(len(self.layer.parametres)):
-                    #self.layer.propertiesdialog.comboBox_param.model().item(i).setEnabled(True)
-                    self.layer.propertiesdialog.treeWidget_parameters.topLevelItem(i).setFlags(Qt.ItemIsSelectable)
-                    self.layer.propertiesdialog.treeWidget_parameters.topLevelItem(i).setFlags(Qt.ItemIsUserCheckable)
-                    self.layer.propertiesdialog.treeWidget_parameters.topLevelItem(i).setFlags(Qt.ItemIsEnabled)
-                """ 
+                self.selafinlayer.propertiesdialog.setTreeWidgetIndex(self.selafinlayer.propertiesdialog.treeWidget_parameters,0,self.selafinlayer.param_displayed)
                 self.selafinlayer.updateSelafinValues()
                 self.selafinlayer.triggerRepaint()
         except Exception, e:
@@ -510,9 +538,9 @@ class PostTelemacUtils():
         
     def create_points(self):
         #Mise en forme des donnees d entree
-        meshx, meshy = self.selafinlayer.selafinparser.getMesh()
+        meshx, meshy = self.selafinlayer.hydrauparser.getMesh()
         donnees_d_entree = {'traitementarriereplan' : 0,
-                                  'pathselafin' : os.path.normpath(self.selafinlayer.selafinpath),
+                                  'pathselafin' : os.path.normpath(self.selafinlayer.hydraufilepath),
                                   'temps' : self.selafinlayer.time_displayed,
                                   'pasdespace' : self.selafinlayer.propertiesdialog.spinBox.value(),
                                   'fichier_point_avec_vecteur_vitesse' : self.selafinlayer.propertiesdialog.checkBox_5.isChecked(),
@@ -521,13 +549,13 @@ class PostTelemacUtils():
                                   'crs' : self.selafinlayer.crs().authid(),
                                   'forcage_attribut_fichier_de_sortie' : "",
                                   'fichierdesortie_point' : "",
-                                  'mesh' : np.array(self.selafinlayer.selafinparser.getIkle()),
+                                  'mesh' : np.array(self.selafinlayer.hydrauparser.getIkle()),
                                   'x' : meshx,
                                   'y' : meshy,
-                                  'ztri' : [self.selafinlayer.selafinparser.getValues(self.selafinlayer.time_displayed)[i] for i in range(len([param for param in self.selafinlayer.parametres if not param[2]]))]}
+                                  'ztri' : [self.selafinlayer.hydrauparser.getValues(self.selafinlayer.time_displayed)[i] for i in range(len([param for param in self.selafinlayer.parametres if not param[2]]))]}
                                   
         donnees_d_entree['champs'] = QgsFields()
-        for i,name in enumerate(self.selafinlayer.selafinparser.getVarnames()):
+        for i,name in enumerate(self.selafinlayer.hydrauparser.getVarnames()):
             donnees_d_entree['champs'].append(QgsField(str(name.strip()).translate(None, "?,!.;"),   QVariant.Double))
                   
                                   
@@ -548,7 +576,6 @@ class PostTelemacUtils():
                                                                                            +str('.shp'))
         #Verifie que le shp n existe pas
         if self.isFileLocked(donnees_d_entree['pathshp'] , True):
-            #self.selafinlayer.propertiesdialog.textBrowser_main.append(str(ctime()) + self.tr(" - initialization - Error : Shapefile already loaded !!"))
             self.selafinlayer.propertiesdialog.errorMessage(self.tr(" - initialization - Error : Shapefile already loaded !!"))
             #pass
         else:
@@ -575,7 +602,7 @@ class PostTelemacUtils():
         self.initclass.finished1.connect(self.workershapeFinished)
         self.selafinlayer.propertiesdialog.normalMessage(self.tr("2Shape - coutour creation launched - watch progress on log tab"))
         self.initclass.start(0,                 #0 : thread inside qgis (plugin) - 1 : thread processing - 2 : modeler (no thread) - 3 : modeler + shpouput - 4: outsideqgis
-                         os.path.normpath(self.selafinlayer.selafinpath),                 #path to selafin file
+                         os.path.normpath(self.selafinlayer.hydraufilepath),                 #path to selafin file
                          int(self.selafinlayer.time_displayed),                            #time to process (selafin time iteration)
                          self.selafinlayer.parametres[self.selafinlayer.param_displayed][1],                     #parameter to process name (string) or id (int)
                          self.selafinlayer.lvl_contour,                       #levels to create
@@ -599,7 +626,7 @@ class PostTelemacUtils():
             self.initclass.finished1.connect(self.workershapeFinished)
         self.selafinlayer.propertiesdialog.normalMessage(self.tr("2Shape - mesh creation launched - watch progress on log tab"))
         self.initclass.start(0,                 #0 : thread inside qgis (plugin) - 1 : thread processing - 2 : modeler (no thread) - 3 : modeler + shpouput - 4: outsideqgis
-                         os.path.normpath(self.selafinlayer.selafinpath),                 #path to selafin file
+                         os.path.normpath(self.selafinlayer.hydraufilepath),                 #path to selafin file
                          int(self.selafinlayer.time_displayed),                            #time to process (selafin time iteration)
                          str(self.getParameterName('BATHYMETRIE')[0]) if self.selafinlayer.propertiesdialog.checkBox_3.isChecked() else None,     #parameter to process name (string) or id (int)
                          self.selafinlayer.propertiesdialog.doubleSpinBox.value(),                 #z amplify
@@ -705,16 +732,17 @@ class PostTelemacUtils():
         """Used for translation"""
         return QCoreApplication.translate('PostTelemacUtils', message, None, QApplication.UnicodeUTF8)
         
-    def getNearest(self,point):
+    def getNearest(self,pointfromcanvas):
         """
         Get the nearest point in selafin mesh
         point is an array [x,y]
         return num of selafin MESH point
         """
-        point1 = [[point[0],point[1]]]
+        qgspoint= self.selafinlayer.xform.transform(QgsPoint(pointfromcanvas[0],pointfromcanvas[1]),QgsCoordinateTransform.ReverseTransform)
+        point1 = [[qgspoint.x(),qgspoint.y()]]
         if not self.skdtree :
-            meshx, meshy = self.selafinlayer.selafinparser.getMesh()
-            self.arraymesh = np.array([[meshx[i], meshy[i] ] for i in range(self.selafinlayer.selafinparser.pointcount) ])
+            meshx, meshy = self.selafinlayer.hydrauparser.getMesh()
+            self.arraymesh = np.array([[meshx[i], meshy[i] ] for i in range(self.selafinlayer.hydrauparser.pointcount) ])
             self.skdtree = cKDTree(self.arraymesh,leafsize=100)
         numfinal = self.skdtree.query(point1,k=1)[1][0]
         return numfinal

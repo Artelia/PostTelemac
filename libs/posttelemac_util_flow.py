@@ -94,35 +94,35 @@ class computeFlow(QtCore.QObject):
                                     try:
                                         if i==0:    #init
                                             try:
-                                                h2 = np.array(self.selafinlayer.selafinparser.getTimeSerie([elem + 1],[parameterh])[0][0])
+                                                h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh])[0][0])
                                             except Exception , e :
                                                 self.status.emit('method 011 : ' + str(e))
-                                            uv2 = np.array(self.selafinlayer.selafinparser.getTimeSerie([elem + 1],[parameteruv])[0][0])
+                                            uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv])[0][0])
                                             uv2 = np.array([[value,0.0] for value in uv2])
-                                            vv2 = np.array(self.selafinlayer.selafinparser.getTimeSerie([elem + 1],[parametervv])[0][0])
+                                            vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv])[0][0])
                                             vv2 = np.array([[0.0,value] for value in vv2])
                                             v2vect = uv2 + vv2
                                             #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
-                                            xy2 = list( self.selafinlayer.selafinparser.getXYFromNumPoint([elem])[0] )
+                                            xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
                                         else:
                                             h1 = h2
                                             v1vect = v2vect
                                             xy1 = xy2
-                                            h2 = np.array(self.selafinlayer.selafinparser.getTimeSerie([elem + 1],[parameterh])[0][0])
-                                            uv2 = np.array(self.selafinlayer.selafinparser.getTimeSerie([elem + 1],[parameteruv])[0][0])
+                                            h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh])[0][0])
+                                            uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv])[0][0])
                                             uv2 = np.array([[value,0.0] for value in uv2])
-                                            vv2 = np.array(self.selafinlayer.selafinparser.getTimeSerie([elem + 1],[parametervv])[0][0])
+                                            vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv])[0][0])
                                             vv2 = np.array([[0.0,value] for value in vv2])
                                             v2vect = uv2 + vv2
                                             #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
-                                            xy2 = list( self.selafinlayer.selafinparser.getXYFromNumPoint([elem])[0] )
+                                            xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
                                             if flow != None:
                                                 flow = flow + self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
                                             else:
                                                 flow = self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
                                     except Exception , e :
                                         self.status.emit('method 01 : ' + str(e))
-                                    x,y = self.selafinlayer.selafinparser.getXYFromNumPoint([elem])[0]
+                                    x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0]
                                     self.emitpoint.emit(x,y)
                             except Exception , e :
                                 self.status.emit('method 0 : ' + str(e))
@@ -148,9 +148,9 @@ class computeFlow(QtCore.QObject):
                                 self.emitpoint.emit(self.selafinlayer.slf.MESHX[temp_edges[i][0]],self.selafinlayer.slf.MESHY[temp_edges[i][0]])
                                 self.emitpoint.emit(self.selafinlayer.slf.MESHX[temp_edges[i][1]],self.selafinlayer.slf.MESHY[temp_edges[i][1]])
                                 """
-                                x,y = self.selafinlayer.selafinparser.getXYFromNumPoint([temp_edges[i][0]])[0] 
+                                x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([temp_edges[i][0]])[0] 
                                 self.emitpoint.emit( x,y )
-                                x,y = self.selafinlayer.selafinparser.getXYFromNumPoint([temp_edges[i][1]])[0]
+                                x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([temp_edges[i][1]])[0]
                                 self.emitpoint.emit( x,y )
                                 
                             else:
@@ -176,9 +176,9 @@ class computeFlow(QtCore.QObject):
                                     self.emitpoint.emit(self.selafinlayer.slf.MESHX[temp_edges[i][0]],self.selafinlayer.slf.MESHY[temp_edges[i][0]])
                                     self.emitpoint.emit(self.selafinlayer.slf.MESHX[temp_edges[i][1]],self.selafinlayer.slf.MESHY[temp_edges[i][1]])
                                     """
-                                    x,y = self.selafinlayer.selafinparser.getXYFromNumPoint([temp_edges[i][0]])[0] 
+                                    x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([temp_edges[i][0]])[0] 
                                     self.emitpoint.emit( x,y )
-                                    x,y = self.selafinlayer.selafinparser.getXYFromNumPoint([temp_edges[i][1]])[0]
+                                    x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([temp_edges[i][1]])[0]
                                     self.emitpoint.emit( x,y )
                                     
                         result.append([line,flow])
@@ -193,7 +193,7 @@ class computeFlow(QtCore.QObject):
                                 flow = flow + result[i][1]
 
                 #list1.append( self.selafinlayer.slf.tags["times"].tolist() )
-                list1.append( self.selafinlayer.selafinparser.getTimes().tolist() )
+                list1.append( self.selafinlayer.hydrauparser.getTimes().tolist() )
                 list2.append( flow.tolist() )
                 list3.append( result )
                 
@@ -221,8 +221,8 @@ class computeFlow(QtCore.QObject):
         templine1 = LineString([(i[0],i[1]) for i in polyline1[:-1]])
         temp2_in = []
         temp2_out = []
-        meshx,meshy = self.selafinlayer.selafinparser.getMesh()
-        ikle = self.selafinlayer.selafinparser.getIkle()
+        meshx,meshy = self.selafinlayer.hydrauparser.getMesh()
+        ikle = self.selafinlayer.hydrauparser.getIkle()
         triplotcontourf = self.fig.gca().tricontourf(meshx,meshy,ikle,self.selafinlayer.value,[-1.0E20,1.0E20])
 
         if METHOD==0 : buffervalue = 0.05
@@ -280,8 +280,8 @@ class computeFlow(QtCore.QObject):
             resulttemp=[]
             lintemp1=np.array([[linetemp[i][0],linetemp[i][1]],[linetemp[i+1][0],linetemp[i+1][1]]])
             lintemp1shapely=LineString([(linetemp[i][0],linetemp[i][1]),(linetemp[i+1][0],linetemp[i+1][1])])
-            meshx,meshy = self.selafinlayer.selafinparser.getMesh()
-            ikle = self.selafinlayer.selafinparser.getIkle()
+            meshx,meshy = self.selafinlayer.hydrauparser.getMesh()
+            ikle = self.selafinlayer.hydrauparser.getIkle()
             
             quoi = sliceMesh(lintemp1,np.asarray(ikle),np.asarray(meshx),np.asarray(meshy))
             """
@@ -298,8 +298,8 @@ class computeFlow(QtCore.QObject):
             
             for i, edgestemp in enumerate(quoi[0][1]):  #slicemesh - quoi[0][1] is list of egdes intersected by line
                 #line4 : line of edge
-                x1,y1 = self.selafinlayer.selafinparser.getXYFromNumPoint([edgestemp[0]])[0]
-                x2,y2 = self.selafinlayer.selafinparser.getXYFromNumPoint([edgestemp[1]])[0]
+                x1,y1 = self.selafinlayer.hydrauparser.getXYFromNumPoint([edgestemp[0]])[0]
+                x2,y2 = self.selafinlayer.hydrauparser.getXYFromNumPoint([edgestemp[1]])[0]
                 #line4 = LineString([(self.selafinlayer.slf.MESHX[edgestemp[0]],self.selafinlayer.slf.MESHY[edgestemp[0]]),(self.selafinlayer.slf.MESHX[edgestemp[1]],self.selafinlayer.slf.MESHY[edgestemp[1]])])
                 line4 = LineString([(x1,y1),(x2,y2)])
                 if line4.crosses(lintemp1shapely):
@@ -384,14 +384,14 @@ class computeFlow(QtCore.QObject):
         
     def valuebetweenEdges(self,xy,edges,param):
         xytemp = np.array(xy)
-        h11 = np.array(self.selafinlayer.selafinparser.getTimeSerie([edges[0] + 1],[param])[0][0])   #getseries begins at  1 
-        h12 = np.array(self.selafinlayer.selafinparser.getTimeSerie([edges[1] + 1 ],[param])[0][0])
+        h11 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([edges[0] + 1],[param])[0][0])   #getseries begins at  1 
+        h12 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([edges[1] + 1 ],[param])[0][0])
         """
         e1 = np.array([self.selafinlayer.slf.MESHX[edges[0]],self.selafinlayer.slf.MESHY[edges[0]]])
         e2 = np.array([self.selafinlayer.slf.MESHX[edges[1]],self.selafinlayer.slf.MESHY[edges[1]]])
         """
-        e1 = np.array(self.selafinlayer.selafinparser.getXYFromNumPoint([edges[0]]))
-        e2 = np.array(self.selafinlayer.selafinparser.getXYFromNumPoint([edges[1]]))
+        e1 = np.array(self.selafinlayer.hydrauparser.getXYFromNumPoint([edges[0]]))
+        e2 = np.array(self.selafinlayer.hydrauparser.getXYFromNumPoint([edges[1]]))
         
         rap=np.linalg.norm(xytemp-e1)/np.linalg.norm(e2-e1)
         return (1.0-rap)*h11 + (rap)*h12
@@ -400,8 +400,8 @@ class computeFlow(QtCore.QObject):
     def getNearest(self,x,y,triangle):
         numfinal=None
         distfinal = None
-        meshx, meshy = self.selafinlayer.selafinparser.getMesh()
-        ikle = self.selafinlayer.selafinparser.getIkle()
+        meshx, meshy = self.selafinlayer.hydrauparser.getMesh()
+        ikle = self.selafinlayer.hydrauparser.getIkle()
         for num in np.array(ikle)[triangle]:
             dist = math.pow(math.pow(float(meshx[num])-float(x),2)+math.pow(float(meshy[num])-float(y),2),0.5)
             if distfinal:
@@ -418,8 +418,8 @@ class computeFlow(QtCore.QObject):
         trianglepoints=[]
         point = np.array([x,y])
         distedge = None
-        meshx, meshy = self.selafinlayer.selafinparser.getMesh()
-        ikle = self.selafinlayer.selafinparser.getIkle()
+        meshx, meshy = self.selafinlayer.hydrauparser.getMesh()
+        ikle = self.selafinlayer.hydrauparser.getIkle()
         for num in np.array(ikle)[triangle]:
             trianglepoints.append(np.array([np.array([meshx[num],meshy[num]]),num]))
         num1 = np.array(ikle)[triangle][0]

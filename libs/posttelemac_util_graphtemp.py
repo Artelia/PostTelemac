@@ -49,15 +49,11 @@ class graphTemp(QtCore.QObject):
             #if triangle != -1:
             enumpoint = self.getNearest(self.points[i])
             if enumpoint:
-                """
-                x = float(self.selafinlayer.slf.MESHX[enumpoint])
-                y = float(self.selafinlayer.slf.MESHY[enumpoint])
-                """
-                x,y = self.selafinlayer.selafinparser.getXYFromNumPoint([enumpoint])[0]
+                x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([enumpoint])[0]
                 
                 self.emitpoint.emit(x,y)
                 #abscisse = self.selafinlayer.slf.tags["times"].tolist()
-                abscisse = self.selafinlayer.selafinparser.getTimes().tolist()
+                abscisse = self.selafinlayer.hydrauparser.getTimes().tolist()
                 
                 param=self.selafinlayer.propertiesdialog.comboBox_parametreschooser.currentIndex()
                 #param = self.selafinlayer.propertiesdialog.getTreeWidgetSelectedIndex(self.selafinlayer.propertiesdialog.treeWidget_parameters)[1]
@@ -66,7 +62,7 @@ class graphTemp(QtCore.QObject):
                     tempordonees = eval(self.selafinlayer.parametres[param][2],{}, dico)
                 else:
                     #tempordonees = self.selafinlayer.slf.getSERIES([enumpoint + 1],[param],False)   #points in getseries bein with 1
-                    tempordonees = self.selafinlayer.selafinparser.getTimeSerie([enumpoint + 1],[param])   #points in getseries bein with 1
+                    tempordonees = self.selafinlayer.hydrauparser.getTimeSerie([enumpoint + 1],[param])   #points in getseries bein with 1
                 ordonnees = tempordonees[0][0].tolist()
                 list1.append(abscisse)
                 list2.append(ordonnees)
@@ -81,14 +77,14 @@ class graphTemp(QtCore.QObject):
             dico['cos'] = cos
             dico['abs'] = abs
             dico['int'] = int
-        
+            dico['if_then_else'] = self.selafinlayer.if_then_else
             a = 'V{}'
             nb_var = len(values)
             i = 0
             num_var = 0
             while num_var < nb_var:
                 if not parametres[i][2]:
-                    dico[a.format(i)] = self.selafinlayer.selafinparser.getTimeSerie([enumpoint + 1],[i])
+                    dico[a.format(i)] = self.selafinlayer.hydrauparser.getTimeSerie([enumpoint + 1],[i])
                 num_var += 1
                 i += 1
         except Exception, e:
@@ -99,8 +95,8 @@ class graphTemp(QtCore.QObject):
     def getNearest(self,point):
         point1 = [[point[0],point[1]]]
         if not self.skdtree :
-            meshx, meshy = self.selafinlayer.selafinparser.getMesh()
-            self.arraymesh = np.array([[meshx[i], meshy[i] ] for i in range(self.selafinlayer.selafinparser.pointcount) ])
+            meshx, meshy = self.selafinlayer.hydrauparser.getMesh()
+            self.arraymesh = np.array([[meshx[i], meshy[i] ] for i in range(self.selafinlayer.hydrauparser.pointcount) ])
             #self.arraymesh = np.array([[self.selafinlayer.slf.MESHX[i],self.selafinlayer.slf.MESHY[i]] for i in range(len(self.selafinlayer.slf.MESHX)) ])
             self.skdtree = cKDTree(self.arraymesh,leafsize=100)
         numfinal = self.skdtree.query(point1,k=1)[1][0]

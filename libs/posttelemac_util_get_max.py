@@ -16,8 +16,8 @@ class runGetMax(QtCore.QObject):
     def __init__(self,selafinlayer, intensite = False, direction = False, submersion = -1, duree = -1):
         QtCore.QObject.__init__(self)
         self.selafinlayer = selafinlayer
-        self.name_res = self.selafinlayer.selafinpath
-        self.name_res_out = self.selafinlayer.selafinpath.split('.')[0] + '_Max.res'
+        self.name_res = self.selafinlayer.hydraufilepath
+        self.name_res_out = self.selafinlayer.hydraufilepath.split('.')[0] + '_Max.res'
         self.intensite = intensite
         self.direction = direction
         self.submersion = submersion
@@ -79,7 +79,7 @@ class runGetMax(QtCore.QObject):
             resout.write_header()
 
             ## Boucle sur tous les temps et récuperation des variables
-            for num_time, time in enumerate(self.selafinlayer.selafinparser.getTimes()):
+            for num_time, time in enumerate(self.selafinlayer.hydrauparser.getTimes()):
                 if num_time%10 == 0:
                     self.status.emit(ctime() + ' - Maximum creation - time '+ str(time))
                 if num_time != 0:
@@ -117,11 +117,11 @@ class runGetMax(QtCore.QObject):
                     #var_max = resin.read(time)
                     var_max = self.selafinlayer.getValues(num_time)
                     if self.submersion > -1 and self.selafinlayer.parametreh != None:
-                        var_sub = np.array([np.nan]*self.selafinlayer.selafinparser.pointcount)
+                        var_sub = np.array([np.nan]*self.selafinlayer.hydrauparser.pointcount)
                         pos_sub = np.where(var_max[self.selafinlayer.parametreh] >= 0.05)[0]  #la ou h est sup a 0.05 m
                         var_sub[pos_sub] = time
                     if self.duree > -1 and self.selafinlayer.parametreh != None:
-                        var_dur = np.array([0]*self.selafinlayer.selafinparser.pointcount)
+                        var_dur = np.array([0]*self.selafinlayer.hydrauparser.pointcount)
                         previoustime = time
                         """
                         pos_dur = np.where(var_max[self.selafinlayer.parametreh] >= 0.05)[0]  #la ou h est sup a 0.05 m

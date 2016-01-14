@@ -51,8 +51,8 @@ class PostTelemacAnimation(QtCore.QObject):
             
             #Cree les paths souhaités
             self.tempdir = tempfile.mkdtemp()   #path to temp dir where png are stored
-            dir = os.path.dirname(self.pluginlayer.selafinpath)  #dir of sl file where movie will be put"
-            nameslf =  os.path.basename(self.pluginlayer.selafinpath).split('.')[0]
+            dir = os.path.dirname(self.pluginlayer.hydraufilepath)  #dir of sl file where movie will be put"
+            nameslf =  os.path.basename(self.pluginlayer.hydraufilepath).split('.')[0]
             nameavi = os.path.join(dir,nameslf+'.avi')
 
             txt = ctime()+ ' - Film - creation du fichier ' + str(nameavi)
@@ -99,7 +99,7 @@ class PostTelemacAnimation(QtCore.QObject):
                 if i%pas==0:
                     if fig:
                         #modifying ax to show the time
-                        self.addtimelineonax(ax,self.pluginlayer.selafinparser.getTimes()[i])
+                        self.addtimelineonax(ax,self.pluginlayer.hydrauparser.getTimes()[i])
                         #saving the figure
                         matplotlibimagepath= os.path.join(self.tempdir,'test'+ "%04d"%compt +'.jpg')
                         fig.savefig(matplotlibimagepath,format='jpg',dpi = 80 )
