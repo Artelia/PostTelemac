@@ -15,5 +15,16 @@
         <file>icons/Stock Index Down_48x48.png</file>
         <file>icons/Stock Index Up_48x48.png</file>
         <file>icons/ARTELIA.jpg</file>
+        <file>icons/tools/Information_48x48.png</file>
+        <file>icons/tools/Line_Graph_48x48.png</file>
+        <file>icons/tools/Line_Graph_48x48_time.png</file>
+        <file>icons/tools/Line_Graph_48x48_spatial.png</file>
+        <file>icons/tools/Line_Graph_48x48_flow.png</file>
+        <file>icons/tools/Video_48x48.png</file>
+        <file>icons/tools/layer_add_mesh.bmp</file>
+        <file>icons/tools/layer_add_points.bmp</file>
+        <file>icons/tools/layer_shaded_relief_add.png</file>
+        <file>icons/tools/Files_Copy.png</file>
+        <file>icons/tools/Wizard_48x48.png</file>
     </qresource>
 </RCC>

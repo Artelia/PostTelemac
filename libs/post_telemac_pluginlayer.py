@@ -30,9 +30,9 @@ from qgis.utils import *
 from numpy import *
 import numpy as np
 #import scipy
-from scipy.spatial import cKDTree
+#from scipy.spatial import cKDTree
 #import matplotlib
-from matplotlib import tri
+#from matplotlib import tri
 from matplotlib import colors
 #import PyQT
 from PyQt4.QtCore import *
@@ -105,9 +105,9 @@ class SelafinPluginLayer(QgsPluginLayer):
         self.canvas = iface.mapCanvas()
         self.propertiesdialog = PostTelemacPropertiesDialog(self)
         #matplotlib things and others
-        self.triangulation = None       #matplotlib triangulation of the mesh
+        #self.triangulation = None       #matplotlib triangulation of the mesh
         self.triinterp = None           #triinterp for plotting tools
-        self.trifind = None
+        #self.trifind = None
         #viewer parameters
         self.selafinqimage = Selafin2QImage(self,self.instancecount)
         self.affichagevitesse = False
@@ -155,7 +155,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         """ 
         implementation of method from QgsPluginLayer to draw on he mapcanvas 
         return True if successful
-        image 2 is used to display mesh (make the render faster)
+        image 2 is used to display only mesh (make the render faster)
         """
         if self.hydrauparser !=None and self.hydrauparser.hydraufile !=None :
             bool1,image1,image2 = self.selafinqimage.getimage(self,rendererContext)
@@ -243,7 +243,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         Called load_selafin by when changing selafin file
         Set selafin variables
         """
-        self.initTriangul()
+        #self.initTriangul()
         self.parametres = []
         #load  parametres in self.parametres
         for i,name in enumerate(self.hydrauparser.getVarnames()):
@@ -275,12 +275,9 @@ class SelafinPluginLayer(QgsPluginLayer):
         self.lvl_contour = None
         self.time_displayed = None
         self.alpha_displayed = 100.0
-                    
+    
+    """
     def initTriangul(self,ct=None):
-        """
-        Called set_selafin by when changing selafin file
-        set matplotlib's triangulation variables
-        """
         if ct:
             pass
         if self.hydrauparser.hydraufile:
@@ -293,7 +290,7 @@ class SelafinPluginLayer(QgsPluginLayer):
                 print 'bug with trifinder ' + str(e)
                 print 'regenerate selafin file please'
                 #TODO : disable utils dependant trifind (valeurs,?)
-
+    """
             
 
     #****************************************************************************************************
@@ -309,7 +306,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         """
         self.updatevalue.emit(onlyparamtimeunchanged)
         
-    updatevalue = pyqtSignal(int,bool)
+    updatevalue = pyqtSignal(int)
             
     def updateSelafinValues1(self, onlyparamtimeunchanged = -1):
         """
@@ -579,7 +576,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         return (True,d)
         
     def initTriinterpolator(self):
-        self.triinterp = [tri.LinearTriInterpolator(self.triangulation, self.values[i]) for i in range(len(self.parametres))]
+        self.triinterp = [tri.LinearTriInterpolator(self.hydrauparser.triangulation, self.values[i]) for i in range(len(self.parametres))]
         
     #****************************************************************************************************
     #************Method for saving/loading project with selafinlayer file***********************************

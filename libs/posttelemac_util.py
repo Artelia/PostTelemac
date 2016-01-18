@@ -65,6 +65,7 @@ class PostTelemacUtils():
         self.graphflowdatac = []
         self.skdtree = None                   #Object that enables nearest point query
         self.compareprocess = None
+        self.initclassgraphtemp = InitGraphTemp()
         #self.xformutil = None   #for vector crs transformation
 
         
@@ -316,7 +317,8 @@ class PostTelemacUtils():
         if self.graphtodo ==0:
             if not self.selafinlayer.propertiesdialog.checkBox.isChecked() and self.rubberband :
                 self.rubberband.reset(QGis.Point)
-            self.initclass=InitGraphTemp()
+            #self.initclass=InitGraphTemp()
+            self.initclass = self.initclassgraphtemp
         elif self.graphtodo ==1:
             self.initclass=InitComputeFlow()
         self.initclass.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
@@ -325,7 +327,7 @@ class PostTelemacUtils():
         self.initclass.finished1.connect(self.workerFinished)
         
         if self.graphtodo ==0:
-            self.initclass.start(geom,self.selafinlayer)
+            self.initclass.start(self.selafinlayer,  geom)
             self.graphtempactive = True
             self.selafinlayer.propertiesdialog.pushButton_limni.setEnabled(False)
         elif self.graphtodo ==1:
@@ -469,6 +471,7 @@ class PostTelemacUtils():
                     self.selafinlayer.updatevalue.connect(self.compareprocess.updateSelafinValue)
                 except Exception, e:
                     pass
+                self.initclassgraphtemp.compare = True
                 self.selafinlayer.triinterp = None
                 #desactive non matching parameters
                 for i in range(len(self.selafinlayer.parametres)):
@@ -485,6 +488,7 @@ class PostTelemacUtils():
                     self.selafinlayer.updatevalue.connect(self.selafinlayer.updateSelafinValues1)
                 except Exception, e:
                     pass
+                self.initclassgraphtemp.compare = False
                 self.selafinlayer.triinterp = None
                 self.selafinlayer.forcerefresh = True
                 self.reinitCorrespondingParameters()
@@ -527,7 +531,8 @@ class PostTelemacUtils():
     def chargerSelafin(self, path):
         if path and self.selafinlayer.propertiesdialog.checkBox_8.isChecked():
             slf = QgsPluginLayerRegistry.instance().pluginLayerType('selafin_viewer').createLayer()
-            slf.setCrs(iface.mapCanvas().mapSettings().destinationCrs()) 
+            #slf.setRealCrs(iface.mapCanvas().mapSettings().destinationCrs()) 
+            slf.setRealCrs(self.selafinlayer.crs())
             slf.load_selafin(path)
             QgsMapLayerRegistry.instance().addMapLayer(slf)
         
@@ -732,6 +737,8 @@ class PostTelemacUtils():
         """Used for translation"""
         return QCoreApplication.translate('PostTelemacUtils', message, None, QApplication.UnicodeUTF8)
         
+    ""
+        
     def getNearest(self,pointfromcanvas):
         """
         Get the nearest point in selafin mesh
@@ -746,3 +753,64 @@ class PostTelemacUtils():
             self.skdtree = cKDTree(self.arraymesh,leafsize=100)
         numfinal = self.skdtree.query(point1,k=1)[1][0]
         return numfinal
+        
+        
+    
+class ThreadLaucnher(QtCore.QObject):
+    
+    def __init__(self):
+        QtCore.QObject.__init__(self)
+        self.thread = None
+        self.worker = None
+        self.processtype = 0
+        #self.selafin = selafin
+        #self.graphtemp = graphTemp(selafin)
+        self.compare = False
+        self.method = None
+
+    def start(self, selafin, method,
+                 qgspoints ):
+                 
+        #Launch worker
+        self.thread = QtCore.QThread()
+        self.worker = graphTemp(selafin, qgspoints,self.compare)
+        #self.graphtemp.points = qgspoints
+        #self.worker = self.graphtemp
+        
+        self.worker.moveToThread(self.thread)
+        self.thread.started.connect(self.worker.createGraphTemp)
+        self.worker.status.connect(self.writeOutput)
+        self.worker.error.connect(self.raiseError)
+        self.worker.emitpoint.connect(self.emitPoint)
+        self.worker.finished.connect(self.workerFinished)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.worker.finished.connect(self.thread.quit)
+        self.thread.start()
+        
+
+    
+    def raiseError(self,str):
+        if self.processtype ==0:
+            self.status.emit(str)
+        elif self.processtype in [1,2,3]:
+            raise GeoAlgorithmExecutionException(str)
+        elif self.processtype == 4:
+            print str
+            sys.exit(0)
+            
+    def writeOutput(self,str1):
+        self.status.emit(str(str1))
+        
+    def workerFinished(self,list1,list2):
+        self.finished1.emit(list1,list2)
+        
+    def emitPoint(self,x,y):
+        self.emitpoint.emit(x,y)
+
+        
+            
+    status = QtCore.pyqtSignal(str)
+    error = QtCore.pyqtSignal(str)
+    finished1 = QtCore.pyqtSignal(list,list)
+    emitpoint = QtCore.pyqtSignal(float,float)

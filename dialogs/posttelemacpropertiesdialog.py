@@ -227,7 +227,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
     #*********************************************************************************
     def update(self):
         """
-        update dialog when selafin layer changed
+        update dialog when selafin layer changes
         """
         if self.layer.hydraufilepath is not None:
             paramtemp = self.layer.param_displayed   #param_gachete deleted with clear - so save it
@@ -282,6 +282,9 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
     #*********************************************************************************
 
     def errorMessage(self,str):
+        """
+        Show message str in main textbrowser
+        """
         self.textBrowser_main.setTextColor(QColor("red"))
         self.textBrowser_main.setFontWeight(QFont.Bold)
         self.textBrowser_main.append(ctime() + ' - '+ str)
@@ -290,6 +293,9 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.textBrowser_main.verticalScrollBar().setValue(self.textBrowser_main.verticalScrollBar().maximum())
         
     def normalMessage(self,str):
+        """
+        Show message error str in main textbrowser
+        """
         self.textBrowser_main.append(ctime() + ' - '+ str)
         self.textBrowser_main.setTextColor(QColor("black"))
         self.textBrowser_main.setFontWeight(QFont.Normal)
@@ -300,6 +306,9 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
     #*********************************************************************************
     
     def loadSelafin(self):
+        """
+        Called when clicking on load selafin button
+        """
         str1 = self.tr("Result file chooser")
         str2 = self.tr("Telemac files")
         str3 = self.tr("All files")     
@@ -316,6 +325,9 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
 
     
     def set_layercrs(self):
+        """
+        Called when clicking on  selafin'crs button
+        """
         source = self.sender()
         self.crsselector.exec_()
         crs = self.crsselector.selectedAuthId()
@@ -336,7 +348,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
     #Display tools - time  ***********************************************
     
     def change_timetxt(self,intitmetireation):
-        """Associated with time modification"""
+        """Associated with time modification buttons"""
         self.layer.changeTime(intitmetireation)
         time2 = time.strftime("%j:%H:%M:%S", time.gmtime(self.layer.hydrauparser.getTimes()[intitmetireation]))
         
@@ -345,12 +357,12 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
                                 self.tr("time (seconds)") + " : " + str(self.layer.hydrauparser.getTimes()[intitmetireation]))
             
     def sliderReleased(self):
-        """Associated with slider behaviour"""
+        """Associated with time slider behaviour"""
         self.layer.draw=True
         self.layer.triggerRepaint()
         
     def sliderPressed(self):
-        """Associated with slider behaviour"""
+        """Associated with time slider behaviour"""
         self.layer.draw=False
         
     #*********************************************************************************
@@ -376,6 +388,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
     def open_def_variables(self, lst_param):
         """
         Create or edit virtual parameter, based on raw parameter of selafin file
+        appears when clicking on new virtual parameter
         """
         source = self.sender()
         if source == self.pushButton_param_add:
@@ -412,6 +425,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
     def delete_def_variables(self):
         """
         Delete virtual parameter
+        When clicking on delete virtual parameter
         """
         index = self.getTreeWidgetSelectedIndex(self.treeWidget_parameters)[1]
         if self.layer.parametres[index][2]:
@@ -604,7 +618,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
 
     def enablecheckbox(self,int1):
         """
-        Enable checkboxes for activating buttons when atoher buttons are activated
+        Enable checkboxes for activating buttons when another buttons are activated
         """
         source = self.sender()
         if source == self.checkBox_contourcrs:
@@ -657,7 +671,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             
     def populatecombobox_param(self):
         """
-        Populate parameters combobox on dialog update
+        Populate parameters comboboxes on dialog update
         """
         self.comboBox_parametreschooser.clear()
         for i in range(len(self.layer.parametres)):
@@ -761,8 +775,6 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             itemname = self.treewidgettoolsindextab[indextabtemp.index(position)][2]
         else:
             itemname = None
-
-        
         
         if (len(self.treeWidget_utils.selectedItems())>0 
             and itemname == 'Values' 
@@ -862,16 +874,17 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         str1 = self.tr("Selafin file chooser")
         str2 = self.tr("Telemac files")
         str3 = self.tr("All files")  
-        self.reset_dialog()
         fname = self.qfiledlg.getOpenFileName(None,str1,self.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
         #Things
-        self.lineEdit_5.setText(fname)
-        hydrauparser = PostTelemacSelafinParser()
-        hydrauparser.loadHydrauFile(fname)
-        self.writeSelafinCaracteristics(self.textEdit_3,hydrauparser)
-        #Launch thread
-        self.checkBox_6.setEnabled(False)
-        self.postutils.compareselafin()
+        if fname:
+            self.reset_dialog()
+            self.lineEdit_5.setText(fname)
+            hydrauparser = PostTelemacSelafinParser()
+            hydrauparser.loadHydrauFile(fname)
+            self.writeSelafinCaracteristics(self.textEdit_3,hydrauparser)
+            #Launch thread
+            self.checkBox_6.setEnabled(False)
+            self.postutils.compareselafin()
         
     def reset_dialog(self):
         #self.textEdit_2.clear()
@@ -955,7 +968,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             
             
     def getTreeWidgetSelectedIndex(self,widget):
-        
+        """
+        """
         getSelected = widget.selectedItems()
         if getSelected:
             baseNode = getSelected[0]

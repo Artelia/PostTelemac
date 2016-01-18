@@ -65,7 +65,7 @@ class computeFlow(QtCore.QObject):
                 if METHOD == 0 :
                     if not self.selafinlayer.networkxgraph:
                         G=nx.Graph()
-                        G.add_edges_from([(edge[0],edge[1]) for edge in self.selafinlayer.triangulation.edges])
+                        G.add_edges_from([(edge[0],edge[1]) for edge in self.selafinlayer.hydrauparser.triangulation.edges])
                         self.selafinlayer.networkxgraph = G
                     else:
                         G = self.selafinlayer.networkxgraph
@@ -81,10 +81,10 @@ class computeFlow(QtCore.QObject):
                         flow = None
                         for points in range(len(linetemp)-1):
                             try:
-                                triangle = self.selafinlayer.trifind.__call__(linetemp[points][0],linetemp[points][1])
+                                triangle = self.selafinlayer.hydrauparser.trifind.__call__(linetemp[points][0],linetemp[points][1])
                                 if triangle != -1:
                                     enumpointdebut = self.getNearestPointEdge(linetemp[points][0],linetemp[points][1],triangle)
-                                triangle = self.selafinlayer.trifind.__call__(linetemp[points + 1][0],linetemp[points + 1][1])
+                                triangle = self.selafinlayer.hydrauparser.trifind.__call__(linetemp[points + 1][0],linetemp[points + 1][1])
                                 if triangle != -1:
                                     enumpointfin = self.getNearestPointEdge(linetemp[points + 1][0],linetemp[points + 1][1],triangle)
 
