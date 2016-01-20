@@ -135,7 +135,7 @@ class PostTelemacAnimation(QtCore.QObject):
                         
                     image.save(filename1,format)
 
-                    if i == 0:
+                    if compt == 0:
                         image.save(os.path.join(dir,nameslf+'_preview.'+format),format)
                         txt =ctime()+ ' - Film - previsulation du film ici : ' + str(os.path.join(dir,nameslf+'_preview.' + format))
                         if self.outputtype:self.pluginlayer.propertiesdialog.textBrowser_2.append(txt)

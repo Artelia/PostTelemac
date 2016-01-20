@@ -118,7 +118,7 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="../resources.qrc">
+           <iconset>
             <normaloff>:/plugins/PostTelemac/icons/Open_48x48.png</normaloff>:/plugins/PostTelemac/icons/Open_48x48.png</iconset>
           </property>
           <property name="iconSize">
@@ -184,7 +184,7 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="../resources.qrc">
+           <iconset>
             <normaloff>:/plugins/PostTelemac/icons/Globe_48x48.png</normaloff>:/plugins/PostTelemac/icons/Globe_48x48.png</iconset>
           </property>
           <property name="iconSize">
@@ -515,7 +515,7 @@
                       <string/>
                      </property>
                      <property name="icon">
-                      <iconset resource="../resources.qrc">
+                      <iconset>
                        <normaloff>:/plugins/PostTelemac/icons/Add_48x48.png</normaloff>:/plugins/PostTelemac/icons/Add_48x48.png</iconset>
                      </property>
                     </widget>
@@ -529,7 +529,7 @@
                       <string/>
                      </property>
                      <property name="icon">
-                      <iconset resource="../resources.qrc">
+                      <iconset>
                        <normaloff>:/plugins/PostTelemac/icons/Settings_48x48.png</normaloff>:/plugins/PostTelemac/icons/Settings_48x48.png</iconset>
                      </property>
                     </widget>
@@ -543,7 +543,7 @@
                       <string/>
                      </property>
                      <property name="icon">
-                      <iconset resource="../resources.qrc">
+                      <iconset>
                        <normaloff>:/plugins/PostTelemac/icons/Delete_48x48.png</normaloff>:/plugins/PostTelemac/icons/Delete_48x48.png</iconset>
                      </property>
                     </widget>
@@ -837,7 +837,7 @@
                    <string/>
                   </property>
                   <property name="icon">
-                   <iconset resource="../resources.qrc">
+                   <iconset>
                     <normaloff>:/plugins/PostTelemac/icons/Settings_48x48.png</normaloff>:/plugins/PostTelemac/icons/Settings_48x48.png</iconset>
                   </property>
                  </widget>
@@ -1335,8 +1335,8 @@
             </property>
             <property name="iconSize">
              <size>
-              <width>25</width>
-              <height>25</height>
+              <width>30</width>
+              <height>30</height>
              </size>
             </property>
             <property name="textElideMode">
@@ -1367,7 +1367,7 @@
               <string>Values</string>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Information_48x48.png</normaloff>:/plugins/PostTelemac/icons/tools/Information_48x48.png</iconset>
              </property>
              <property name="flags">
@@ -1376,10 +1376,11 @@
             </item>
             <item>
              <property name="text">
-              <string>Temporal graph</string>
+              <string>Temporal 
+graph</string>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Line_Graph_48x48_time.png</normaloff>:/plugins/PostTelemac/icons/tools/Line_Graph_48x48_time.png</iconset>
              </property>
              <property name="flags">
@@ -1388,19 +1389,21 @@
             </item>
             <item>
              <property name="text">
-              <string>Spatial graph</string>
+              <string>Spatial 
+graph</string>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Line_Graph_48x48_spatial.png</normaloff>:/plugins/PostTelemac/icons/tools/Line_Graph_48x48_spatial.png</iconset>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Flow computation</string>
+              <string>Flow 
+computation</string>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Line_Graph_48x48_flow.png</normaloff>:/plugins/PostTelemac/icons/tools/Line_Graph_48x48_flow.png</iconset>
              </property>
              <property name="flags">
@@ -1412,7 +1415,7 @@
               <string>Compare</string>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Files_Copy.png</normaloff>:/plugins/PostTelemac/icons/tools/Files_Copy.png</iconset>
              </property>
              <property name="flags">
@@ -1427,7 +1430,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Video_48x48.png</normaloff>:/plugins/PostTelemac/icons/tools/Video_48x48.png</iconset>
              </property>
              <property name="flags">
@@ -1436,10 +1439,11 @@
             </item>
             <item>
              <property name="text">
-              <string>Create max .res</string>
+              <string>Create 
+max .res</string>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Wizard_48x48.png</normaloff>:/plugins/PostTelemac/icons/tools/Wizard_48x48.png</iconset>
              </property>
             </item>
@@ -1455,7 +1459,7 @@
                <string>Contour</string>
               </property>
               <property name="icon">
-               <iconset resource="../resources.qrc">
+               <iconset>
                 <normaloff>:/plugins/PostTelemac/icons/tools/layer_shaded_relief_add.png</normaloff>:/plugins/PostTelemac/icons/tools/layer_shaded_relief_add.png</iconset>
               </property>
               <property name="flags">
@@ -1467,7 +1471,7 @@
                <string>Mesh</string>
               </property>
               <property name="icon">
-               <iconset resource="../resources.qrc">
+               <iconset>
                 <normaloff>:/plugins/PostTelemac/icons/tools/layer_add_mesh.bmp</normaloff>:/plugins/PostTelemac/icons/tools/layer_add_mesh.bmp</iconset>
               </property>
               <property name="flags">
@@ -1479,7 +1483,7 @@
                <string>Points</string>
               </property>
               <property name="icon">
-               <iconset resource="../resources.qrc">
+               <iconset>
                 <normaloff>:/plugins/PostTelemac/icons/tools/layer_add_points.bmp</normaloff>:/plugins/PostTelemac/icons/tools/layer_add_points.bmp</iconset>
               </property>
               <property name="flags">
@@ -1773,7 +1777,7 @@
                     <string>Calcul</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="../resources.qrc">
+                    <iconset>
                      <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                    </property>
                   </widget>
@@ -1901,7 +1905,7 @@
                     <string>Flow computation</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="../resources.qrc">
+                    <iconset>
                      <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                    </property>
                   </widget>
@@ -2079,7 +2083,7 @@
                     <string/>
                    </property>
                    <property name="icon">
-                    <iconset resource="../resources.qrc">
+                    <iconset>
                      <normaloff>:/plugins/PostTelemac/icons/Open_48x48.png</normaloff>:/plugins/PostTelemac/icons/Open_48x48.png</iconset>
                    </property>
                    <property name="iconSize">
@@ -2295,8 +2299,11 @@
                  </item>
                  <item row="2" column="3" colspan="2">
                   <widget class="QSpinBox" name="spinBox_fps">
+                   <property name="minimum">
+                    <number>3</number>
+                   </property>
                    <property name="value">
-                    <number>10</number>
+                    <number>5</number>
                    </property>
                   </widget>
                  </item>
@@ -2352,7 +2359,7 @@
                  <string>Do movie (DO NOT MODIFY ANYTHING IN QGIS !)</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../resources.qrc">
+                 <iconset>
                   <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                 </property>
                </widget>
@@ -2413,7 +2420,7 @@
                  <string>File _max.res creation</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../resources.qrc">
+                 <iconset>
                   <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                 </property>
                </widget>
@@ -2505,7 +2512,7 @@
                  <string>Generate .shp file</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../resources.qrc">
+                 <iconset>
                   <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                 </property>
                </widget>
@@ -2626,7 +2633,7 @@
                  <string>Generate mesh</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../resources.qrc">
+                 <iconset>
                   <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                 </property>
                </widget>
@@ -2695,7 +2702,7 @@
                  <string>Create points</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../resources.qrc">
+                 <iconset>
                   <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                 </property>
                </widget>
@@ -2826,8 +2833,7 @@
   <tabstop>textBrowser_2</tabstop>
   <tabstop>doubleSpinBox_2</tabstop>
  </tabstops>
- <resources>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>comboBox_time</sender>
