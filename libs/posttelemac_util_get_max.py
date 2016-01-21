@@ -79,10 +79,14 @@ class runGetMax(QtCore.QObject):
             resout.write_header()
 
             ## Boucle sur tous les temps et récuperation des variables
-            for num_time, time in enumerate(self.selafinlayer.hydrauparser.getTimes()):
-                if num_time%10 == 0:
+            itermin = self.selafinlayer.propertiesdialog.spinBox_max_start.value()
+            iterfin = self.selafinlayer.propertiesdialog.spinBox_max_end.value()
+            #for num_time, time in enumerate(self.selafinlayer.hydrauparser.getTimes()[itermin:iterfin]):
+            for  time in self.selafinlayer.hydrauparser.getTimes()[itermin:iterfin]:
+                num_time = np.where(self.selafinlayer.hydrauparser.getTimes() == time)[0][0]
+                if (num_time - itermin)%10 == 0:
                     self.status.emit(ctime() + ' - Maximum creation - time '+ str(time))
-                if num_time != 0:
+                if num_time != itermin:
                     #var = resin.read(time)
                     var = self.selafinlayer.getValues(num_time)
                     for num_var, val_var in enumerate(var):

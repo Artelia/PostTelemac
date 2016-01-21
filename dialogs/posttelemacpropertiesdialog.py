@@ -272,10 +272,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             #movie
             self.reinitcomposeurlist()
             self.reinitcomposeurimages(0)
-            maxiter = self.layer.hydrauparser.itertimecount
-            self.spinBox_3.setMaximum(maxiter)
-            self.spinBox_2.setMaximum(maxiter)
-            self.spinBox_3.setValue(maxiter)
+            self.populateMinMaxSpinBox()
 
     #*********************************************************************************
     #Standart output ****************************************************************
@@ -645,6 +642,21 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
                 self.pushButton_9.setEnabled(True)
             elif int1 == 0:
                 self.pushButton_9.setEnabled(False)
+                
+    def populateMinMaxSpinBox(self):
+        """
+        Populate time  min/max spin box on dialog creation
+        """
+        maxiter = self.layer.hydrauparser.itertimecount
+        #movie
+        self.spinBox_3.setMaximum(maxiter)
+        self.spinBox_2.setMaximum(maxiter)
+        self.spinBox_3.setValue(maxiter)
+        #max
+        self.spinBox_max_start.setMaximum(maxiter)
+        self.spinBox_max_end.setMaximum(maxiter)
+        self.spinBox_max_end.setValue(maxiter)
+        
                 
 
     def populatecombobox_lvl(self):
