@@ -52,7 +52,6 @@ from os import path
 from utils.files import getFileContent,putFileContent
 from utils.progressbar import ProgressBar
 from utils.geometry import isClose
-from samplers.polygons import isClockwise
 
 # _____                   __________________________________________
 # ____/ Global Variables /_________________________________________/
@@ -62,10 +61,11 @@ ken_header = re.compile(r'[#:]')
 asc_FileType = re.compile(r':FileType\s(?P<type>\b\w\w\w\b)') #\s(?P<after>.*?)\Z')
 asc_AttributeName = re.compile(r':AttributeName\s(?P<number>\b(|[^a-zA-Z(,])(?:(\d+)(\b|[^a-zA-Z,)])))(?P<after>.*?)\Z')
 
-var_1int = re.compile(r'(?P<before>[^+-]*?)(?P<number>\b(|[^a-zA-Z(,])(?:(\d+)(\b|[^a-zA-Z,)])))(?P<after>.*?)\Z')
+var_1int = re.compile(r'(?P<before>[^\'"]*?)\b(?P<number>[+-]?(|[^a-zA-Z(,])(?:(\d+)(\b|[^a-zA-Z,)])))(?P<after>[^.].*?)\Z')
 var_1dbl = re.compile(r'(?P<number>[+-]?(|[^a-zA-Z(,])(?:(\d+(|\.)\d*[dDeE](\+|\-)?\d+|\d+\.\d+)(\b|[^a-zA-Z,)])))[\s,;]*(?P<after>.*?)\Z')
 var_2dbl = re.compile(r'(?P<number1>[+-]?(|[^a-zA-Z(,])(?:(\d+(|\.)\d*[dDeE](\+|\-)?\d+|\d+\.\d+)(\b|[^a-zA-Z,)])))[\s,;]*(?P<number2>[+-]?(|[^a-zA-Z(,])(?:(\d+(|\.)\d*[dDeE](\+|\-)?\d+|\d+\.\d+)(\b|[^a-zA-Z,)])))(?P<after>.*?)\Z')
 var_3dbl = re.compile(r'(?P<number1>[+-]?(|[^a-zA-Z(,])(?:(\d+(|\.)\d*[dDeE](\+|\-)?\d+|\d+\.\d+)(\b|[^a-zA-Z,)])))[\s,;]*(?P<number2>[+-]?(|[^a-zA-Z(,])(?:(\d+(|\.)\d*[dDeE](\+|\-)?\d+|\d+\.\d+)(\b|[^a-zA-Z,)])))[\s,;]*(?P<number3>[+-]?(|[^a-zA-Z(,])(?:(\d+(|\.)\d*[dDeE](\+|\-)?\d+|\d+\.\d+)(\b|[^a-zA-Z,)])))(?P<after>.*?)\Z')
+var_1str = re.compile(r'(?P<string>)(".*?")[\s,;]*(?P<after>.*?)\Z')
 
 # _____                  ___________________________________________
 # ____/ General Toolbox /__________________________________________/
@@ -74,325 +74,180 @@ var_3dbl = re.compile(r'(?P<number1>[+-]?(|[^a-zA-Z(,])(?:(\d+(|\.)\d*[dDeE](\+|
 def cleanSpaces(istr): # same as in parserFortran
    return istr.strip().replace('  ',' ').replace('  ',' ')
 
-# _____                      _______________________________________
-# ____/ Toolbox for I2S/I3S /______________________________________/
+# _____                              _______________________________
+# ____/ Principal Class for I2S/I3S /______________________________/
 #
-
-def getInS(file):
-   # TODO: Read the whole header, for the time being head is copied
-   #       over
-   # TODO: Read variables depending on type and on a list
-
-   # ~~ Get all ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   core = getFileContent(file)
-
-   # ~~ Parse head ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   icore = 0; atrbut = {}; natrbut = 0
-   while re.match(ken_header,core[icore]):
-      # ~~> instruction FileType
-      proc = re.match(asc_FileType,core[icore])
-      if proc: fileType = proc.group('type').lower()
-      # ~~> instruction AttributeName
-      proc = re.match(asc_AttributeName,core[icore])
-      if proc:
-         natrbut += 1
-         if natrbut == int(proc.group('number')):
-            atrbut.update({natrbut:[proc.group('after').strip()]})
-         else:
-            print '... Could not read the order of your Attributes:',core[icore]
-            sys.exit()
-      # ... more instruction coming ...
-      icore += 1
-   head = core[0:icore]
-   # /!\ icore starts the body
-
-   # ~~ Parse body ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   # This is also fairly fast, so you might not need a progress bar
-   poly = []; type = []; npoin = 0
-   while icore < len(core):
-      if core[icore].strip() == '':
-         icore += 1
-         continue
-      # ~~> polygon head
-      proc = re.match(var_1int,core[icore])
-      if not proc:
-         print '\nCould not parse the following polyline header: '+core[icore]
-         sys.exit()
-      nrec = int(proc.group('number'))
-      a = proc.group('after').strip().split()
-      if len(a) != natrbut:
-         print '... Could not find the correct number of attribute:',core[icore],', ',natrbut,' expected'
-         sys.exit()
-      for i in atrbut.keys(): atrbut[i].append(a[i-1])
-      xyi = []; icore += 1
-      for irec in range(nrec):
-         nbres = core[icore+irec].split()
-         proc = re.match(var_1dbl,nbres[0])
-         if not proc:
-            proc = re.match(var_1int,nbres[0])
-            if not proc:
-               print '\nCould not parse the following polyline record: '+core[icore+irec]
-               sys.exit()
-         nbres[0] = float(proc.group('number'))
-         proc = re.match(var_1dbl,nbres[1])
-         if not proc:
-            proc = re.match(var_1int,nbres[1])
-            if not proc:
-               print '\nCould not parse the following polyline record: '+core[icore+irec]
-               sys.exit()
-         nbres[1] = float(proc.group('number'))
-         xyi.append(nbres)
-      if xyi != []:
-         cls = 0
-         if isClose(xyi[0],xyi[len(xyi)-1],size=10) :
-            xyi.pop(len(xyi)-1)
-            cls = 1
-         poly.append(np.asarray(xyi))
-         type.append(cls)
-      npoin += len(xyi)
-      icore += nrec
-
-   return head,fileType,npoin,poly,type,atrbut
-
-def putInS(file,head,fileType,poly,type=None,atrbut=None):
-
-   # ~~ Write head ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   if head != []: core = head
-   else: core = [':FileType '+fileType+' ASCII EnSim 1.0',
-      ':Application BlueKenue', ':Version 3.2.24',
-      ':WrittenBy sebourban', ':CreationDate Thu, Dec 08, 2011 02:47 PM',
-      ':Name ' + path.basename(file),
-      ':AttributeUnits 1 m',
-      ':EndHeader' ]
-
-   # ~~ Look for closed lines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   if type == None:
-      type = []
-      for ip in poly:
-         if isClose(ip[0],ip[len(ip)-1]): type.append(True)
-         else: type.append(False)
-
-   # ~~ Look for closed lines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   if atrbut == None:
-      atrbut = {1:['name']}
-      for p in poly: atrbut[1].append('0')
-
-   # ~~ Write body ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   for i,ip,it in zip(range(len(poly)),poly,type):
-      il = len(ip)
-      if il != 0 and not isClose(ip[0],ip[len(ip)-1]): il += it
-      line = str(il)
-      for a in range(len(atrbut.keys())): line  = line + ' ' + atrbut[a+1][i+1]
-      core.append(line)
-      if fileType == 'i2s':
-         for xyi in ip: core.append(str(xyi[0])+' '+str(xyi[1]))
-         if il != len(ip): core.append(str(ip[0][0])+' '+str(ip[0][1]))
-      elif fileType == 'i3s':
-         for xyi in ip: core.append(str(xyi[0])+' '+str(xyi[1])+' '+str(xyi[2]))
-         if il != len(ip): core.append(str(ip[0][0])+' '+str(ip[0][1])+' '+str(ip[0][2]))
-
-   # ~~ Put all ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   putFileContent(file,core)
-
-   return
-
 """
    self.poly is a numpy object, while self.type is not.
 """
 class InS:
 
    def __init__(self,fileName):
-      self.fileName = fileName
-      if fileName != '':
-         self.head,self.fileType,self.npoin,self.poly,self.type,self.atrbut = getInS(self.fileName)
+      # file parsing is based on the name of the extension
+      _,tail = path.splitext(fileName)
+      # ~~> Case of a Kenue type i2s/i3s file
+      if tail in ['.i2s','.i3s']: self.parseContent(fileName)
+      else:
+         print '\nThe polygon file extension is required to be either i2s or i3s'
+         sys.exit(1)
 
-   def putContent(self,fileName):
-      putInS(fileName,self.head,self.fileType,self.poly,self.type,self.atrbut)
 
-   def sph2ll(self,(long0,lat0)):
-      radius  = 6371000.
-      long0 = np.deg2rad(float(long0)); lat0 = np.deg2rad(float(lat0))
-      const = np.tan( lat0/2. + np.pi/4. )
-      for poly in self.poly:
-         for ip in range(len(poly)):
-            poly[ip] = [np.rad2deg( poly[ip][0]/radius + long0 ),np.rad2deg( 2.*np.arctan( const*np.exp(poly[ip][1]/radius) ) - np.pi/2. )]
+   # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+   # ~~~~ Parse Content ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   #
 
-   def ll2sph(self,(long0,lat0)):
-      radius  = 6371000.
-      long0 = np.deg2rad(float(long0)); lat0 = np.deg2rad(float(lat0))
-      const = np.tan( lat0/2. + np.pi/4. )
-      for poly in self.poly:
-         for ip in range(len(poly)):
-            poly[ip] = [radius * ( np.deg2rad(poly[ip][0]) - long0 ),radius * ( np.log( np.tan( np.deg2rad(poly[ip][1])/2. + np.pi/4. ) ) - np.log( const ) )]
+   def parseContent(self,fileName):
+      # TODO: Read the whole header
 
-   def removeDuplicates(self):
-      ibar = 0; pbar = ProgressBar(maxval=self.npoin).start()
-      ip = 0
-      while ip < len(self.poly):
-         ibar += len(self.poly[ip])
-         lb = len(self.poly[ip])
-         self.poly[ip],self.type[ip] = removeDuplicates(self.poly[ip],self.type[ip])
-         la = len(self.poly[ip])
-         if la < lb: pbar.write('    +> removed '+str(lb-la)+' points of '+str(lb)+' from polygon '+str(ip+1),ibar)
-         if self.poly[ip] == []:
-            pbar.write('    +> removed entire polygon '+str(ip+1),ibar)
-            self.poly.pop(ip)
-            self.type.pop(ip)
-         else: ip += 1
-         pbar.update(ibar)
-      pbar.finish()
-      return self.poly,self.type
+      # ~~ Get all ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      core = getFileContent(fileName)
 
-   def removeDuplilines(self):
-      ibar = 0; pbar = ProgressBar(maxval=self.npoin).start()
-      ip = 0
-      while ip < len(self.poly):
-         ibar += len(self.poly[ip])
-         p,t = removeDuplilines(self.poly[ip],self.type[ip])
-         pbar.trace() # /!\ the call requires sub-progress bar
-         if len(p) > 1:
-            pbar.maxval -= len(self.poly[ip])
-            ibar -= len(self.poly[ip])
-            self.poly.pop(ip)
-            self.type.pop(ip)
-            for po,to in zip(p,t):
-               pbar.maxval += len(po)
-               self.poly.append(po)
-               self.type.append(to)
+      # ~~ Parse head ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      icore = 0; self.atrbut = {}; self.natrbut = 0; self.oatrbut = []
+      while re.match(ken_header,core[icore].strip()):
+         # ~~> instruction FileType
+         proc = re.match(asc_FileType,core[icore].strip())
+         if proc: self.fileType = proc.group('type').lower()
+         # ~~> instruction AttributeName
+         proc = re.match(asc_AttributeName,core[icore].strip())
+         if proc:
+            self.natrbut += 1
+            if self.natrbut == int(proc.group('number')):
+               self.oatrbut.append(proc.group('after').strip())
+               self.atrbut.update({self.oatrbut[-1]:[]})
+            else:
+               print '... Could not read the order of your Attributes:',core[icore]
+               sys.exit(1)
+         # ... more instruction coming ...
+         icore += 1
+      self.head = core[0:icore]
+      # /!\ icore starts the body
+
+      # ~~ Parse body ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      # This is also fairly fast, so you might not need a progress bar
+      self.poly = []; self.vals = []; self.type = []; self.npoin = 0
+      while icore < len(core):
+         if core[icore].strip() == '':
+            icore += 1
+            continue
+         # ~~> polygon head
+         proc = re.match(var_1int,core[icore].strip())
+         if not proc:
+            print '\nCould not parse the following polyline header: '+core[icore].strip()
+            sys.exit(1)
+         nrec = int(proc.group('number'))
+         a = proc.group('after').strip().split()
+         if len(a) != self.natrbut:
+            if self.natrbut != 0:
+               print '... Could not find the correct number of attribute:',core[icore].strip(),', ',self.natrbut,' expected'
+               sys.exit(1)
+            else:
+               self.natrbut = len(a)
+               self.oatrbut = range(1,len(a)+1)
+               self.atrbut = dict([ (i+1,[a[i]]) for i in range(len(a)) ])
          else:
-            ip += 1
-         pbar.update(ibar)
-      pbar.finish()
-      return self.poly,self.type
+            for i in range(len(self.oatrbut)): self.atrbut[self.oatrbut[i]].append(a[i])
+         xyi = []; val = []; icore += 1
+         for irec in range(nrec):
+            nbres = core[icore+irec].strip().split()
+            proc = re.match(var_1dbl,nbres[0])
+            if not proc:
+               proc = re.match(var_1int,nbres[0])
+               if not proc:
+                  print '\nCould not parse the following polyline record: '+core[icore+irec].strip()
+                  sys.exit(1)
+            nbres[0] = float(proc.group('number'))
+            procd = re.match(var_1dbl,nbres[1])
+            proci = re.match(var_1int,nbres[1])
+            if procd: nbres[1] = float(procd.group('number'))
+            elif proci: nbres[1] = float(procd.group('number'))
+            xyi.append(nbres[:2])
+            val.append(nbres[2:])
+         if xyi != []:
+            cls = 0
+            if isClose(xyi[0],xyi[len(xyi)-1],size=10) :
+               xyi.pop(len(xyi)-1)
+               val.pop(len(val)-1)
+               cls = 1
+            self.poly.append(np.asarray(xyi,dtype=np.float))
+            self.vals.append(np.asarray(val,dtype=np.float))
+            self.type.append(cls)
+         self.npoin += len(xyi)
+         icore += nrec
 
-   def removeDuplangles(self):
-      ibar = 0; pbar = ProgressBar(maxval=self.npoin).start()
-      ip = 0
-      while ip < len(self.poly):
-         ibar += len(self.poly[ip])
-         lb = len(self.poly[ip])
-         self.poly[ip],self.type[ip] = removeDuplangles(self.poly[ip],self.type[ip])
-         la = len(self.poly[ip])
-         if la < lb: pbar.write('    +> removed '+str(lb-la)+' points of '+str(lb)+' from polygon '+str(ip+1),ibar)
-         if self.poly[ip] == []:
-            pbar.write('    +> removed entire polygon '+str(ip+1),ibar)
-            self.poly.pop(ip)
-            self.type.pop(ip)
-         else: ip += 1
-         pbar.update(ibar)
+      self.npoly = len(self.poly)
 
-      pbar.finish()
-      return self.poly,self.type
+      # ~~ Parse attributes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      #for o in self.oatrbut:
+      #   proc = re.match(var_1int,self.atrbut[o][0])
+      #   if not proc:
+      #      proc = re.match(var_1dbl,self.atrbut[o][0])
+      #      if proc: self.atrbut[o] = np.array( self.atrbut[o], dtype=np.float )
+      #   else: self.atrbut[o] = np.array( self.atrbut[o], dtype=np.int )
 
-   def makeClockwise(self):
-      ibar = 0; pbar = ProgressBar(maxval=self.npoin).start()
-      for ip in range(len(self.poly)):
-         ibar += len(self.poly[ip])
-         if self.type[ip] != 0:
-            if not isClockwise(self.poly[ip]):
-               pbar.write('    +> turned clockwise polygon '+str(ip+1),ibar)
-               self.poly[ip] = np.flipud(self.poly[ip])
-         pbar.update(ibar)
-      pbar.finish()
-      return self.poly
 
-   def makeAntiClockwise(self):
-      ibar = 0; pbar = ProgressBar(maxval=self.npoin).start()
-      for ip in range(len(self.poly)):
-         ibar += len(self.poly[ip])
-         if self.type[ip] != 0:
-            if isClockwise(self.poly[ip]):
-               pbar.write('    +> turned anti-clockwise polygon '+str(ip+1),ibar)
-               self.poly[ip] = np.flipud(self.poly[ip])
-         pbar.update(ibar)
-      pbar.finish()
-      return
+   # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+   # ~~~~ Write-up Content ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   #
+   # Note:
+   #    + file parsing is based on the name of the extension
+   #
+   def putContent(self,fileName,head=[]):
 
-   def smoothSubdivise(self,weight=0.5):
-      ibar = 0; pbar = ProgressBar(maxval=self.npoin).start()
-      for ip in range(len(self.poly)):
-         ibar += len(self.poly[ip])
-         lb = len(self.poly[ip])
-         self.poly[ip],self.type[ip] = smoothSubdivise(self.poly[ip],self.type[ip],weight)
-         la = len(self.poly[ip])
-         if la > lb: pbar.write('    +> added '+str(la-lb)+' points to polygon '+str(ip+1),ibar)
-         pbar.update(ibar)
-      pbar.finish()
-      return self.poly,self.type
+      # ~~> file extension processing
+      _,tail = path.splitext(fileName)
+      if tail[1:] != self.fileType:
+         if head != []:
+            head = ['\n'.join(head).replace(':FileType '+self.fileType,':FileType '+tail[1:])]
+         self.fileType = tail[1:]
 
-   def smoothSubsampleDistance(self,distance):
-      ibar = 0; pbar = ProgressBar(maxval=self.npoin).start()
-      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/^\~~~~~~~~
-      #                          subsampling by distance \_/
-      ip = 0
-      while ip < len(self.poly):
-         ibar += len(self.poly[ip])
-         lb = len(self.poly[ip])
-         self.poly[ip],self.type[ip] = subsampleDistance(self.poly[ip],self.type[ip],distance)
-         la = len(self.poly[ip])
-         if la < lb: pbar.write('    +> removed '+str(lb-la)+' points of '+str(lb)+' from polygon '+str(ip+1),ibar)
-         if self.poly[ip] == []:
-            pbar.write('    +> removed entire polygon '+str(ip+1),ibar)
-            self.poly.pop(ip)
-            self.type.pop(ip)
-         else: ip += 1
-         #pbar.update(ibar)
+      # ~~> write head
+      if head != []: core = head
+      else: core = [':FileType '+self.fileType+' ASCII EnSim 1.0',
+         ':Application BlueKenue', ':Version 3.2.24',
+         ':WrittenBy sebourban', ':CreationDate Thu, Dec 08, 2011 02:47 PM',
+         ':Name ' + path.basename(fileName),
+         #':AttributeName 1 level',
+         #':AttributeType 1 float',
+         #':AttributeUnits 1 m',
+         ':EndHeader' ]
 
-      pbar.finish()
-      return self.poly,self.type
+      # ~~> look for closed lines
+      if self.type == []:
+         for ip in self.poly:
+            if isClose(ip[0][:2],ip[len(ip)-1][:2]): self.type.append(1)
+            else: self.type.append(0)
 
-   def smoothSubsampleAngle(self,angle):
-      ibar = 0; pbar = ProgressBar(maxval=self.npoin).start()
-      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/^\~~~~~~~~
-      #                            subsampling by anlgle \_/
-      ip = 0
-      while ip < len(self.poly):
-         ibar += len(self.poly[ip])
-         lb = len(self.poly[ip])
-         self.poly[ip],self.type[ip] = subsampleAngle(self.poly[ip],self.type[ip],angle)
-         la = len(self.poly[ip])
-         if la < lb: pbar.write('    +> removed '+str(lb-la)+' points of '+str(lb)+' from polygon '+str(ip+1),ibar)
-         if self.poly[ip] == []:
-            pbar.write('    +> removed entire polygon '+str(ip+1),ibar)
-            self.poly.pop(ip)
-            self.type.pop(ip)
-         else: ip += 1
-         #pbar.update(ibar)
+      # ~~> fill-up empty attributes
+      if self.atrbut == {}:
+         self.atrbut = {1:['ArbitraryName1']}
+         for _ in self.poly: self.atrbut[1].append(0)
+         self.oatrbut = [1]
 
-      pbar.finish()
-      return self.poly,self.type
+      # ~~> fill-up attribute names
+      if head == []:
+         for i,o in zip(range(len(self.oatrbut)),self.oatrbut): core.insert(-1,':AttributeName '+repr(i+1)+' '+repr(o))
 
-   """
-   Early work by S.E.Bourban ... will be replaced by more recent work from M.S.Turnbull
+      # ~~ Write body ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      for i,ip,iv,it in zip(range(len(self.poly)),self.poly,self.vals,self.type):
+         il = len(ip)
+         if il != 0 and not isClose(ip[0],ip[len(ip)-1]): il += it
+         line = repr(il)
+         for o in self.oatrbut: line  = line + ' ' + str(self.atrbut[o][i])
+         core.append(line)
+         if self.fileType == 'i2s':
+            for xyi in ip: core.append(repr(xyi[0])+' '+repr(xyi[1]))
+            if il != len(ip): core.append(repr(ip[0][0])+' '+repr(ip[0][1]))
+         elif self.fileType == 'i3s':
+            if np.shape(iv)[1] == 0:
+               for xyi in ip: core.append(repr(xyi[0])+' '+repr(xyi[1])+' 0.0')
+               if il != len(ip): core.append(repr(ip[0][0])+' '+repr(ip[0][1])+' 0.0')
+            else:
+               for xyi,val in zip(ip,iv): core.append(repr(xyi[0])+' '+repr(xyi[1])+' '+' '.join([ repr(v) for v in val ]))
+               if il != len(ip): core.append(repr(ip[0][0])+' '+repr(ip[0][1])+' '+' '.join([ repr(v) for v in iv[0] ]))
 
-   def cutAngleJoinSplit(self,angle,distance,stencil):
-      ibar = 0; pbar = ProgressBar(maxval=self.npoin).start()
-      ip = 0
-      while ip < len(self.poly):
-         ibar += len(self.poly[ip])
-         if self.type[ip] == 0:
-            ip += 1; pbar.update(ibar)
-            continue # \!/ Only do the rest for closed polygons
-         lb = len(self.poly[ip])
-         if isClockwise(self.poly[ip]):
-            self.poly[ip],loops = cutAngleJoinSplit(
-               np.flipud(self.poly[ip]),angle,distance,stencil )
-         else:
-            self.poly[ip],loops = cutAngleJoinSplit(
-               self.poly[ip],angle,distance,stencil )
-         sys.exit()
-         la = len(self.poly[ip])
-         if la < lb: pbar.write('    +> removed '+str(lb-la)+' points of '+str(lb)+' from polygon '+str(ip+1),ibar)
-         if len(loops) > 0: pbar.write('    +> separate loops created from polygon '+str(ip+1),ibar)
-         if self.poly[ip] == []:
-            pbar.write('    +> removed entire polygon '+str(ip+1),ibar)
-            self.poly.pop(ip)
-            self.type.pop(ip)
-         else: ip += 1
-         pbar.update(ibar)
-
-      return self.poly,self.type
-   """
+      # ~~ Put all ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      putFileContent(fileName,core)
 
 # _____                  ___________________________________________
 # ____/ Toolbox for XYZ /__________________________________________/
@@ -421,7 +276,7 @@ def getXYn(file):
          proc = re.match(var_2dbl,core[icore]+' ')
          if not proc:
             print '\nCould not parse the first record: '+core[icore]
-            sys.exit()
+            sys.exit(1)
          else: fileType = 'xy'
       else: fileType = 'xyz'
 
@@ -435,13 +290,13 @@ def getXYn(file):
          proc = re.match(var_2dbl,core[icore]+' ')
          if not proc:
             print '\nCould not parse the following xyz record: '+core[icore]
-            sys.exit()
+            sys.exit(1)
          xyz.append([float(proc.group('number1')),float(proc.group('number2'))])
       elif fileType == 'xyz':
          proc = re.match(var_3dbl,core[icore]+' ')
          if not proc:
             print '\nCould not parse the following xyz record: '+core[icore]
-            sys.exit()
+            sys.exit(1)
          xyz.append([float(proc.group('number1')),float(proc.group('number2')),float(proc.group('number3'))])
       icore += 1
    #pbar.finish()
@@ -462,9 +317,9 @@ def putXYn(file,head,fileType,xyz):
 
    # ~~ Write body ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    if fileType == 'xy':
-      for i in xyz: core.append(str(xyz[0])+' '+str(xyz[1]))
+      for _ in xyz: core.append(str(xyz[0])+' '+str(xyz[1]))
    elif fileType == 'xyz':
-      for i in xyz: core.append(str(xyz[0])+' '+str(xyz[1])+' '+str(xyz[2]))
+      for _ in xyz: core.append(str(xyz[0])+' '+str(xyz[1])+' '+str(xyz[2]))
 
    # ~~ Put all ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    putFileContent(file,core)

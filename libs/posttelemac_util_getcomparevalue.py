@@ -49,12 +49,12 @@ from PyQt4.QtCore import SIGNAL, Qt
 from PyQt4 import QtCore, QtGui
 #import telemac python
 
-from ..libs_telemac.utils.files import getFileContent
-from ..libs_telemac.parsers.parserSortie import getValueHistorySortie
-from ..libs_telemac.parsers.parserSELAFIN import getValueHistorySLF,   getValuePolylineSLF,subsetVariablesSLF
+#from ..libs_telemac.utils.files import getFileContent
+#from ..libs_telemac.parsers.parserSortie import getValueHistorySortie
+#from ..libs_telemac.parsers.parserSELAFIN import getValueHistorySLF,   getValuePolylineSLF,subsetVariablesSLF
 #from ..libs_telemac.parsers.parserSELAFIN import SELAFIN
 
-from ..libs_telemac.parsers.parserStrings import parseArrayPaires
+#from ..libs_telemac.parsers.parserStrings import parseArrayPaires
 #imports divers
 import threading
 from time import ctime

@@ -43,6 +43,10 @@
 """@history 13/07/2013 -- Sebastien E. Bourban
    Now deals with DECLARATIONS first before identifying unkonwn externals
 """
+"""@history 23/09/2014 -- Sebastien E. Bourban and Yoann Audoin
+   The content of the log files from GRETEL and PARTEL are now reported
+   in the error report.
+"""
 """@brief
 """
 
@@ -485,11 +489,11 @@ def parsePrincipalWrap(lines):
       name = proc.group('after')
       resu = proc.group('result')
       objt = proc.group('object')
-      type = proc.group('type').strip()
-      if ( type != '' ):
-         if not re.match(typ_name,type):
-            print 'Invalid header type ' + type + ' ' + objt + ' ' + name
-            sys.exit() #return [],[],[],lines
+      typ = proc.group('type').strip()
+      if ( typ != '' ):
+         if not re.match(typ_name,typ):
+            print 'Invalid header type ' + typ + ' ' + objt + ' ' + name
+            sys.exit(1) #return [],[],[],lines
       proc = re.match(argnames,name)
       if proc :
          name = proc.group('name')
@@ -546,10 +550,10 @@ def parsePrincipalWrap(lines):
             return core[1:count+ctain],[ objt[0:1], name, args, resu ],face,core[count+ctain+1:count],core[count+2:]
       else:
          print 'Invalid header type for first line' + lines[0]
-         sys.exit()
+         sys.exit(1)
 
    print 'Invalid header type for first line' + lines[0]
-   sys.exit()
+   sys.exit(1)
    return # /!\ this return is just for python parsing
 
 def parsePrincipalMain(lines,who,type,name,args,resu):
@@ -562,7 +566,7 @@ def parsePrincipalMain(lines,who,type,name,args,resu):
 
    # ~~ Lists uses in File ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    core,uses = parseUses(core)
-   for k in uses.keys():
+   for k in uses:
       whi['uses'].update({k:[]})
       for v in uses[k]: addToList(whi['uses'],k,v)
 
@@ -580,17 +584,17 @@ def parsePrincipalMain(lines,who,type,name,args,resu):
          if k in decs['dec']: decs['dec'].remove(k)
    for dec in args:
       if dec in decs['dec']: decs['dec'].remove(dec)
-   #for k in uses.keys():
+   #for k in uses:
    #   for v in decs['dec']:
    #      if v in uses[k][0]: decs['dec'].remove(dec)
-   for k in decs.keys():
+   for k in decs:
       whi['vars'][k] = []
       for v in decs[k]: addToList(whi['vars'],k,v)
    whi['vars']['als'] = alias
 
    # ~~ Lists calls in File ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    core,calls = parseCalls(core)
-   for k in calls.keys():
+   for k in calls:
       whi['calls'][k] = []
       for v in calls[k]: addToList(whi['calls'],k,v) # still includes xtn calls
 
@@ -603,7 +607,7 @@ def parsePrincipalMain(lines,who,type,name,args,resu):
                found = False
                for cmn in whi['vars']['cmn']:
                   if fct in cmn[1]: found = True
-               #for cmn in uses.keys():
+               #for cmn in uses:
                #   if fct in uses[cmn][0]: found = True
                if not found and fct != name: fcts.append(fct)
    whi['functions'] = fcts # still includes xtn
@@ -629,7 +633,7 @@ def delContinuedsF77(lines):
          #?cmd = cmd.rstrip() + proc1.group('line')
          cmd = ( cmd.rstrip() + proc1.group('line') ).strip().replace('  ',' ').replace('  ',' ') # /!\ Looking to save on upper space
       else:
-         if cmd is not '' : cmds.append(cmd)
+         if cmd != '' : cmds.append(cmd)
          #?cmd = line
          cmd = line.strip().replace('  ',' ').replace('  ',' ') # /!\ Looking to save on upper space
    cmds.append(cmd)
@@ -650,7 +654,7 @@ def delContinuedsF90(lines):
          cnt = True
       elif proc2 :
          if not cnt:
-            if cmd is not '' : cmds.append(cmd)
+            if cmd != '' : cmds.append(cmd)
             cmd = ''
          #?cmd = cmd.rstrip() + proc2.group('line')
          cmd = cleanSpaces( cmd + proc2.group('line') ) # /!\ Looking to save on upper space
@@ -664,11 +668,11 @@ def delContinuedsF90(lines):
             #?cmd = cmd.rstrip() + line
             cmd = cleanSpaces( cmd + line ) # /!\ Looking to save on upper space
          else:
-            if cmd is not '' : cmds.append(cmd)
+            if cmd != '' : cmds.append(cmd)
             #?cmd = line
             cmd = cleanSpaces(line) # /!\ Looking to save on upper space
          cnt = False
-   if cmd is not '' : cmds.append(cmd)
+   if cmd != '' : cmds.append(cmd)
    return cmds
 
 """
@@ -701,7 +705,7 @@ def scanSources(cfgdir,cfg,BYPASS):
    fic = {}; mdl = {}; sbt = {}; fct = {}; prg = {}; dep = {}; wcw = {}
 
    # ~~ Looking at each file individually ~~~~~~~~~~~~~~~~~~~~~~~~~~
-   for mod in cfg['MODULES'].keys() :
+   for mod in cfg['MODULES']:
 
       wcw.update({mod:{'path':cfg['MODULES'][mod]['path']}})
       fic.update({mod:{}})
@@ -713,7 +717,7 @@ def scanSources(cfgdir,cfg,BYPASS):
       FileList = cfg['MODULES'][mod]['files']
       if len(FileList) == 0:
          print '... found an empty module: ' + mod
-         sys.exit()
+         sys.exit(1)
       ODir = path.join(cfg['MODULES'][mod]['path'],cfgdir)
 
       print '... now scanning ', path.basename(cfg['MODULES'][mod]['path'])
@@ -724,7 +728,7 @@ def scanSources(cfgdir,cfg,BYPASS):
       for File in FileList :
          ibar = ibar + 1; pbar.update(ibar)
 
-         if not fic.has_key(mod): fic.update({mod:{}})
+         if not mod in fic: fic.update({mod:{}})
          fic[mod].update({File:[]})
          #pbar.write(File,ibar)
          who = { 'path':SrcDir, \
@@ -772,7 +776,7 @@ def scanSources(cfgdir,cfg,BYPASS):
                fcode,fw,ff,ft,face = parsePrincipalWrap(face)
                if fcode != []:
                   fname,whof,rest = parsePrincipalMain(fcode,who,fw[0],fw[1],fw[2],fw[3])
-                  for k in whof['uses'].keys():
+                  for k in whof['uses']:
                      for v in whof['uses'][k]: addToList(whoi['uses'],k,v)
             while ctns != []:                                      # contains fcts & subs
                ccode,cw,cf,ct,ctns = parsePrincipalWrap(ctns)
@@ -781,11 +785,11 @@ def scanSources(cfgdir,cfg,BYPASS):
                   whoi['contains'].append(cname)
                   if cw[0] == 'S': sbt = addToList(sbt,cname,whoi['libname'])# subroutine
                   if cw[0] == 'F': fct = addToList(fct,cname,whoi['libname'])# function
-                  for k in whoc['uses'].keys():
+                  for k in whoc['uses']:
                      for v in whoc['uses'][k]: addToList(whoi['uses'],k,v)
-                  for k in whoc['vars'].keys():
+                  for k in whoc['vars']:
                      for v in whoc['vars'][k]: addToList(whoi['vars'],k,v)
-                  for k in whoc['calls'].keys():
+                  for k in whoc['calls']:
                      for v in whoc['calls'][k]: addToList(whoi['calls'],k,v)
                   for k in whoc['functions']:
                      if k not in whoi['functions']: whoi['functions'].append(k)
@@ -798,24 +802,24 @@ def scanSources(cfgdir,cfg,BYPASS):
    # ~~ Cross-referencing CALLS together ~~~~~~~~~~~~~~~~~~~~~~~~~~~
    # For those CALLs stored in 'calls' but not part of the system:
    #   move them from 'calls' to 'function' (outsiders remain)
-   for mod in wcw.keys() :
-      for name in wcw[mod]:
+   for mod in wcw.keys():
+      for name in wcw[mod].keys():
          if name != 'path':
             who = wcw[mod][name]
             for s in who['calls'].keys():
-               if s not in sbt.keys():
+               if s not in sbt:
                   del wcw[mod][name]['calls'][s]
                   wcw[mod][name]['functions'].append(s)
 
    # ~~ Cross-referencing FUNCTIONS together ~~~~~~~~~~~~~~~~~~~~~~~
-   for mod in wcw.keys() :
-      for name in wcw[mod]:
+   for mod in wcw.keys():
+      for name in wcw[mod].keys():
          if name != 'path':
             who = wcw[mod][name]
             f,u = sortFunctions(who['functions'],who['vars']['use'],wcw,mdl,who['uses'])
             who['functions'] = f
             who['vars']['use'].update(u) # because this is a dico-list, updating who updates wcw
-   for mod in wcw.keys() :
+   for mod in wcw:
       for name in wcw[mod]:
          if name != 'path':
             who = wcw[mod][name]
@@ -823,24 +827,24 @@ def scanSources(cfgdir,cfg,BYPASS):
                if f not in who['functions']:
                   if debug: print f,' declared but not used in ',who['name']
                   who['functions'].append(f)
-            for f in fct.keys():
+            for f in fct:
                while f in who['functions']:
                   who['functions'].remove(f)
                   who['calls'].update({f:[['']]})
 
    # ~~ Sort out referencing ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    # Fill-in the 'called' category
-   for mod in wcw.keys() :
-      for name in wcw[mod]:
+   for mod in wcw.keys():
+      for name in wcw[mod].keys():
          if name != 'path':
-            for call in wcw[mod][name]['calls'].keys():
-               if sbt.has_key(call):
+            for call in wcw[mod][name]['calls']:
+               if call in sbt:
                   for u in sbt[call]:
-                     if wcw[u].has_key(call):
+                     if call in wcw[u]:
                         wcw[u][call]['called'].append(name)
-               if fct.has_key(call):
+               if call in fct:
                   for u in fct[call]:
-                     if wcw[u].has_key(call):
+                     if call in wcw[u]:
                         wcw[u][call]['called'].append(name)
 
    return fic,mdl,sbt,fct,prg,dep,wcw
@@ -850,7 +854,7 @@ def sortFunctions(ifcts,iuses,list,mods,xuses):
    ofcts = []; ofcts.extend(ifcts)
    for d in ifcts:
       for u in xuses:
-         if u not in mods.keys():
+         if u not in mods:
             continue
          if d in list[mods[u][0]][u]['vars']['dec']:
             ofcts.remove(d)
@@ -862,7 +866,7 @@ def sortFunctions(ifcts,iuses,list,mods,xuses):
             break
    ifcts = ofcts
    for u in xuses:
-      if u in mods.keys() and ifcts != []:
+      if u in mods and ifcts != []:
          ifcts,iuses = sortFunctions(ifcts,iuses,list,mods,list[mods[u][0]][u]['uses'])
 
    return ifcts,iuses
@@ -918,7 +922,7 @@ def parseDoxyTags(core):
 varcomment = re.compile(r'[C!#*]\s*?[|!]\s*?(?P<vars>[\s\w,()]*)(?P<inout>(|[|!->=<\s]*[|!]))(?P<after>(|[^|!]*))\s*[|!]?\s*\Z') #,re.I)
 
 def parseFortHeader(core):
-   docs = []; title = []; vars = {}
+   docs = []; vrs = {}
    while 1:
       line = delComments([core[0]])
       if line == []:
@@ -931,20 +935,20 @@ def parseFortHeader(core):
                ino = proc.group('inout').strip()
                if ino == '!!' or ino == '||': ino = '<>'
                #print val
-               vars.update({var:[ino,[val]]})
+               vrs.update({var:[ino,[val]]})
             elif proc.group('after').strip() != '':
-               #print vars
-               vars[var][1].append(proc.group('after').strip())
+               #print vrs
+               vrs[var][1].append(proc.group('after').strip())
             #print '##'+proc.group('vars')+'##','@@'+proc.group('inout')+'@@','>>'+proc.group('after')+'<<'
-            #print var,vars[var]
+            #print var,vrs[var]
          core.pop(0)
          continue
       line = line[0].rstrip()
       proc = re.match(pcl_title,line)
       if proc:
-         type = proc.group('type').strip()
-         if ( type != '' ):
-            if not re.match(typ_name,type): break
+         typ = proc.group('type').strip()
+         if ( typ != '' ):
+            if not re.match(typ_name,typ): break
          docs.append(core[0].rstrip())
          core.pop(0)
          continue
@@ -964,7 +968,7 @@ def parseFortHeader(core):
       docs.append(core[0].rstrip())
       core.pop(0)
 
-   return docs,vars,core
+   return docs,vrs,core
 
 def getPrincipalWrapNames(difFile):
    # Filter most unuseful
@@ -978,7 +982,7 @@ def getPrincipalWrapNames(difFile):
    pFiles = []
    while flines != []:
       code,w,face,ctns,flines = parsePrincipalWrap(flines)
-      pFiles.append(w[1])
+      pFiles.append([w[0],w[1]])
    return pFiles
 
 def filterPrincipalWrapNames(uNames,sFiles):
@@ -1099,12 +1103,12 @@ if __name__ == "__main__":
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # ~~~~ Reads config file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   print '\n\nLoading Options and Configurations\n\
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'
+   print '\n\nLoading Options and Configurations\n'+'~'*72+'\n'
    USETELCFG = ''
-   if environ.has_key('USETELCFG'): USETELCFG = environ['USETELCFG']
+   PWD = path.dirname(path.dirname(path.dirname(path.dirname(sys.argv[0]))))
+   if 'USETELCFG' in environ: USETELCFG = environ['USETELCFG']
    SYSTELCFG = 'systel.cfg'
-   if environ.has_key('SYSTELCFG'): SYSTELCFG = environ['SYSTELCFG']
+   if 'SYSTELCFG' in environ: SYSTELCFG = environ['SYSTELCFG']
    if path.isdir(SYSTELCFG): SYSTELCFG = path.join(SYSTELCFG,'systel.cfg')
    parser = OptionParser("usage: %prog [options] \nuse -h for more help.")
    parser.add_option("-c", "--configname",
@@ -1122,11 +1126,6 @@ if __name__ == "__main__":
                       dest="rootDir",
                       default='',
                       help="specify the root, default is taken from config file" )
-   parser.add_option("-v", "--version",
-                      type="string",
-                      dest="version",
-                      default='',
-                      help="specify the version number, default is taken from config file" )
    parser.add_option("-m", "--modules",
                       type="string",
                       dest="modules",
@@ -1168,18 +1167,18 @@ if __name__ == "__main__":
       dircfg = path.abspath(path.dirname(options.configFile))
       if path.isdir(dircfg) :
          print ' ... in directory: ' + dircfg + '\n ... use instead: '
-         for dirpath,dirnames,filenames in walk(dircfg) : break
-         for file in filenames :
-            head,tail = path.splitext(file)
-            if tail == '.cfg' : print '    +> ',file
-      sys.exit()
+         _, _, filenames = walk(dircfg).next()
+         for fle in filenames :
+            head,tail = path.splitext(fle)
+            if tail == '.cfg' : print '    +> ',fle
+      sys.exit(1)
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # ~~~~ Works for only one configuration ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    cfgs = parseConfigFile(options.configFile,options.configName)
-   cfgname = cfgs.keys()[0]
+   cfgname = cfgs.iterkeys().next()
+   if not cfgs[cfgname].has_key('root'): cfgs[cfgname]['root'] = PWD
    if options.rootDir != '': cfgs[cfgname]['root'] = options.rootDir
-   if options.version != '': cfgs[cfgname]['version'] = options.version
    if options.modules != '': cfgs[cfgname]['modules'] = options.modules
    cfg = parseConfig_CompileTELEMAC(cfgs[cfgname])
 
@@ -1188,14 +1187,13 @@ if __name__ == "__main__":
    if len(args) < 2:
       print '\nAn action name and at least one file are required\n'
       parser.print_help()
-      sys.exit()
+      sys.exit(1)
    codeName = args[0]
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # ~~~~ Comparison with standard PRINCI ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    if codeName == 'princi':
-      print '\n\nScanning Fortran\n\
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'
+      print '\n\nScanning Fortran\n'+'~'*72+'\n'
 
       if len(args[1:]) >= 1:
          difFile = args[1]
@@ -1205,10 +1203,10 @@ if __name__ == "__main__":
          if pFiles == []:
             print '         ... nothing !'
             print '\n... This does not seem a Fortran file I can read.\n'
-            sys.exit()
+            sys.exit(1)
          else:
             print '        +> found:'
-            for oFile in pFiles: print '           - ',oFile
+            for oType,oFile in pFiles: print '           - ',oFile
 
       if len(args[1:]) == 1: # if only one PRINCI ...
          # ~~> Get and store original version of files
@@ -1219,22 +1217,21 @@ if __name__ == "__main__":
          if oFiles == {}:
             print '         ... nothing !'
             print '\n... Your program does not seem to be related to the system in this configuration.\n'
-            sys.exit()
+            sys.exit(1)
          else:
             print '        +> found:'
             for oFile in oFiles: print '           - ',path.basename(oFile)
          oriFile = path.splitext(difFile)[0]+'.original'+path.splitext(difFile)[1]
          putFileContent(oriFile,[])
          for p in pFiles:
-            if p in oFiles.keys():
+            if p in oFiles:
                addFileContent(oriFile,getFileContent(oFiles[p]))
 
       elif len(args[1:]) == 2: # case of two PRINCI files ...
          oriFile = args[2]
 
       # ~~> Execute diff 
-      print '\n\nDifferenciating:\n    +> ' + oriFile + '\nand +> ' + difFile + '\n\
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'
+      print '\n\nDifferenciating:\n    +> ' + oriFile + '\nand +> ' + difFile + '\n'+'~'*72+'\n'
       # ~~> use of writelines because diff is a generator
       diff = diffTextFiles(oriFile,difFile,options)
       remove(oriFile)
@@ -1258,10 +1255,10 @@ if __name__ == "__main__":
 # ~~~~ Case of UNKNOWN ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    else:
       print '\nDo not know what to do with this code name: ',codeName
-      sys.exit()
+      sys.exit(1)
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # ~~~~ Jenkins' success message ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    print '\n\nMy work is done\n\n'
 
-   sys.exit()
+   sys.exit(0)

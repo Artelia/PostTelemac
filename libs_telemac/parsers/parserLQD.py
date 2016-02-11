@@ -27,6 +27,7 @@
 # ~~> dependencies towards standard python
 import sys
 import re
+import numpy as np
 # ~~> dependencies towards other pytel/modules
 from utils.files import getFileContent,putFileContent
 
@@ -70,11 +71,11 @@ def getLQD(file):
       # ~~> Variable header
       if core[icore].split()[0].upper() != 'T':
          print '\nThought I would find T for this LQD file on this line: '+core[icore]
-         sys.exit()
+         sys.exit(1)
       if len(core[icore].split()) != len(core[jcore].split()):
          print '\nThought I to corresponding units for this LQD file on this line: '+core[jcore]
-         sys.exit()
-      vars = zip( core[icore].upper().split(),core[jcore].upper().split() )
+         sys.exit(1)
+      vrs = zip( core[icore].upper().split(),core[jcore].upper().split() )
 
    # ~~ Size valid values ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    icore = jcore+1
@@ -84,17 +85,17 @@ def getLQD(file):
    # ~~ Parse body ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    # This is also fairly fast, so you might not need a progress bar
    t = np.zeros( jcore-icore )
-   z = np.zeros( len(vars)-1,jcore-icore )
+   z = np.zeros( len(vrs)-1,jcore-icore )
    itime = 0
    for icore in core[jcore+1:]:
       if re.match(lqd_header,icore): continue
       values = icore.replace(',',' ').split()
-      t[itime] = float(value[0])
-      for ivar in range(len(values[1:])): z[itime][ivar] = float(value[ivar])
+      t[itime] = float(values[0])
+      for ivar in range(len(values[1:])): z[itime][ivar] = float(values[ivar])
 
-   return head,vars[1:],t,z
+   return head,vrs[1:],t,z
 
-def putLQD(file,head,vars,date0,time,xyz):
+def putLQD(fle,head,vrs,date0,time,xyz):
 
    # ~~ Write head ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    core = head
@@ -103,15 +104,15 @@ def putLQD(file,head,vars,date0,time,xyz):
    
    names = 'T'; units = 's'
    if xyz.ndim == 2:
-      for name,unit in vars:
+      for name,unit in vrs:
          names += ' ' + name.strip().replace(' ','_')
          units += ' ' + unit.strip().replace(' ','_')
       core.append(names+'\n'+units)
    elif xyz.ndim == 3:
-      for ivar in range(len(vars[0])):
-         for inod in vars[1]:
-            names += ' ' + vars[0][ivar][0].strip().replace(' ','_') + '(' + str(inod) + ')'
-            units += ' ' + vars[0][ivar][1].strip().replace(' ','_')
+      for ivar in range(len(vrs[0])):
+         for inod in vrs[1]:
+            names += ' ' + vrs[0][ivar][0].strip().replace(' ','_') + '(' + str(inod) + ')'
+            units += ' ' + vrs[0][ivar][1].strip().replace(' ','_')
       core.append(names+'\n'+units)
    if xyz.ndim == 2:
       for itim in range(xyz.shape[1]):
@@ -126,7 +127,7 @@ def putLQD(file,head,vars,date0,time,xyz):
          core.append(line)
 
    # ~~ Put all ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   putFileContent(file,core)
+   putFileContent(fle,core)
 
    return
 
@@ -138,11 +139,11 @@ class LQD:
 
    def __init__(self,fileName='', vars=[],date=[1972,07,13,17,24,27],times=[],series=[]):
       if fileName != '': # read from file
-         self.head,self.vars,self.times,self.series = getLDQ(self.fileName)
+         self.head,self.vrs,self.times,self.series = getLQD(self.fileName)
       else:              # set content values
-         self.vars = vars; self.times = times; self.series = series
+         self.vrs = vars; self.times = times; self.series = series
       self.date=date
 
    def putContent(self,fileName):
-      putLQD(fileName,self.head,self.vars,self.date,self.times,self.series)
+      putLQD(fileName,self.head,self.vrs,self.date,self.times,self.series)
 

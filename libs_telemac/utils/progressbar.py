@@ -395,6 +395,7 @@ class ProgressBar(object):
       self.widgets = widgets
       self.fd = fd
       self.signal_set = False
+      self.term_width = 79
       if term_width is None:
             try:
                 self.handle_resize(None,None)
@@ -412,8 +413,9 @@ class ProgressBar(object):
       self.seconds_elapsed = 0
 
    def handle_resize(self, signum, frame):
-      h,w=array('h', ioctl(self.fd,termios.TIOCGWINSZ,'\0'*8))[:2]
-      self.term_width = w
+      #h,w=array('h', ioctl(self.fd,termios.TIOCGWINSZ,'\0'*8))[:2]
+      #self.term_width = w
+      pass
 
    def percentage(self):
       "Returns the percentage of the progress."
@@ -528,4 +530,4 @@ if __name__ == "__main__":
          # do something
          pbar.update(10*i+1)
       pbar.finish()
-   sys.exit()
+   sys.exit(0)

@@ -36,9 +36,9 @@ from ..mpldatacursor import datacursor
 from selectlinetool import SelectLineTool
 #import local libs
 from posttelemac_util_animation import *
-from posttelemac_util_extractshp import *
-from posttelemac_util_extractmesh import *
-from posttelemac_util_extractpts import *
+from ..toshape.posttelemac_util_extractshp import *
+from ..toshape.posttelemac_util_extractmesh import *
+from ..toshape.posttelemac_util_extractpts import *
 from posttelemac_util_graphtemp import *
 from posttelemac_util_flow import *
 from posttelemac_util_get_max import *
@@ -542,70 +542,37 @@ class PostTelemacUtils():
     #****************************************************************************************************
         
     def create_points(self):
-        #Mise en forme des donnees d entree
-        meshx, meshy = self.selafinlayer.hydrauparser.getMesh()
-        donnees_d_entree = {'traitementarriereplan' : 0,
-                                  'pathselafin' : os.path.normpath(self.selafinlayer.hydraufilepath),
-                                  'temps' : self.selafinlayer.time_displayed,
-                                  'pasdespace' : self.selafinlayer.propertiesdialog.spinBox.value(),
-                                  'fichier_point_avec_vecteur_vitesse' : self.selafinlayer.propertiesdialog.checkBox_5.isChecked(),
-                                  'paramvalueX' : self.selafinlayer.parametrevx if self.selafinlayer.propertiesdialog.checkBox_5.isChecked() else None,
-                                  'paramvalueY' : self.selafinlayer.parametrevy if self.selafinlayer.propertiesdialog.checkBox_5.isChecked() else None,
-                                  'crs' : self.selafinlayer.crs().authid(),
-                                  'forcage_attribut_fichier_de_sortie' : "",
-                                  'fichierdesortie_point' : "",
-                                  'mesh' : np.array(self.selafinlayer.hydrauparser.getIkle()),
-                                  'x' : meshx,
-                                  'y' : meshy,
-                                  'ztri' : [self.selafinlayer.hydrauparser.getValues(self.selafinlayer.time_displayed)[i] for i in range(len([param for param in self.selafinlayer.parametres if not param[2]]))]}
-                                  
-        donnees_d_entree['champs'] = QgsFields()
-        for i,name in enumerate(self.selafinlayer.hydrauparser.getVarnames()):
-            donnees_d_entree['champs'].append(QgsField(str(name.strip()).translate(None, "?,!.;"),   QVariant.Double))
-                  
-                                  
-        if donnees_d_entree['forcage_attribut_fichier_de_sortie']=="":
-            if donnees_d_entree['pasdespace']==0:
-                donnees_d_entree['pathshp'] =os.path.join(os.path.dirname(donnees_d_entree['pathselafin']),
-                                                                                           os.path.basename(donnees_d_entree['pathselafin']).split('.')[0]
-                                                                                           +"_points_t_"+str(int(donnees_d_entree['temps']))+str('.shp'))  
-            else:
-                donnees_d_entree['pathshp']=os.path.join(os.path.dirname(donnees_d_entree['pathselafin']),
-                                                                                           os.path.basename(donnees_d_entree['pathselafin']).split('.')[0]
-                                                                                           +"_points_"+str(int(donnees_d_entree['pasdespace']))
-                                                                                           +"m_t_"+str(int(donnees_d_entree['temps']))+str('.shp'))  
-        else:
-                donnees_d_entree['pathshp']=os.path.join(os.path.dirname(donnees_d_entree['pathselafin']),
-                                                                                           os.path.basename(donnees_d_entree['pathselafin']).split('.')[0]
-                                                                                           +"_"+str(donnees_d_entree['forcage_attribut_fichier_de_sortie'])
-                                                                                           +str('.shp'))
-        #Verifie que le shp n existe pas
-        if self.isFileLocked(donnees_d_entree['pathshp'] , True):
-            self.selafinlayer.propertiesdialog.errorMessage(self.tr(" - initialization - Error : Shapefile already loaded !!"))
-            #pass
-        else:
-            #Lancement du thread *************************************************************************
-            self.selafinlayer.propertiesdialog.normalMessage(self.tr("2Shape - point creation launched - watch progress on log tab"))
-            worker = Worker_pts(donnees_d_entree)
-            thread = QtCore.QThread()
-            worker.moveToThread(thread)
-            thread.started.connect(worker.run)
-            worker.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
-            worker.error.connect(self.selafinlayer.propertiesdialog.errorMessage)
-            worker.finished.connect(self.workershapePointFinished)
-            worker.finished.connect(worker.deleteLater)
-            thread.finished.connect(thread.deleteLater)
-            worker.finished.connect(thread.quit)
-            thread.start()
-            self.thread = thread
-            self.worker = worker
-        
+        self.initclass=InitSelafinMesh2Pts()
+        self.initclass.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
+        self.initclass.finished1.connect(self.workershapePointFinished)
+        self.initclass.start(                 
+                             0,                 #0 : thread inside qgis (plugin) - 1 : thread processing - 2 : modeler (no thread) - 3 : modeler + shpouput - 4: outsideqgis
+                             os.path.normpath(self.selafinlayer.hydraufilepath),                 #path to selafin file
+                             self.selafinlayer.time_displayed,                            #time to process (selafin time in interation if int, or second if str)
+                             self.selafinlayer.propertiesdialog.spinBox.value(),                     #space step
+                             self.selafinlayer.propertiesdialog.checkBox_5.isChecked(),               #bool for comuting velocity
+                             self.selafinlayer.parametrevx if self.selafinlayer.propertiesdialog.checkBox_5.isChecked() else None,
+                             self.selafinlayer.parametrevy if self.selafinlayer.propertiesdialog.checkBox_5.isChecked() else None,
+                             [self.selafinlayer.hydrauparser.getValues(self.selafinlayer.time_displayed)[i] for i in range(len([param for param in self.selafinlayer.parametres if not param[2]]))],                          #tab of values
+                             self.selafinlayer.crs().authid(),      #selafin crs
+                              None,   #if no none, specify crs of output file
+                              None,           #change generic outputname to specific one
+                             None,         #if not none, create shp in this directory
+                             None)    #needed for toolbox processing
 
     def create_shp(self):
         self.initclass=InitSelafinContour2Shp()
         self.initclass.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
         self.initclass.finished1.connect(self.workershapeFinished)
         self.selafinlayer.propertiesdialog.normalMessage(self.tr("2Shape - coutour creation launched - watch progress on log tab"))
+        
+        if  self.selafinlayer.propertiesdialog.lineEdit_contourname.text() == "":
+            name = (os.path.basename(os.path.normpath(self.selafinlayer.hydraufilepath)).split('.')[0]
+                             +"_"+str(self.selafinlayer.parametres[self.selafinlayer.param_displayed][1]).translate(None, "?,!.;")
+                             +"_t_"+str(int(self.selafinlayer.time_displayed)) )
+        else:
+            name = self.selafinlayer.propertiesdialog.lineEdit_contourname.text()
+        
         self.initclass.start(0,                 #0 : thread inside qgis (plugin) - 1 : thread processing - 2 : modeler (no thread) - 3 : modeler + shpouput - 4: outsideqgis
                          os.path.normpath(self.selafinlayer.hydraufilepath),                 #path to selafin file
                          int(self.selafinlayer.time_displayed),                            #time to process (selafin time iteration)
@@ -614,7 +581,7 @@ class PostTelemacUtils():
                          self.selafinlayer.crs().authid(),      #selafin crs
                          self.selafinlayer.propertiesdialog.pushButton_contourcrs.text() if self.selafinlayer.propertiesdialog.checkBox_contourcrs.isChecked() else None,   #if no none, specify crs of output file
                          False,                #quickprocess option - don't make ring
-                          str(self.selafinlayer.propertiesdialog.lineEdit_contourname.text()),           #change generic outputname to specific one
+                          name,           #change generic outputname to specific one
                           None,         #if not none, create shp in this directory
                          self.selafinlayer.value,          #force value for plugin
                           None)
@@ -652,8 +619,9 @@ class PostTelemacUtils():
         
     def workershapePointFinished(self,strpath):
         vlayer = QgsVectorLayer( strpath, os.path.basename(strpath).split('.')[0],"ogr")
-        pathpointvelocityqml = os.path.join(os.path.dirname(__file__), '..','styles', '00_Points_Vmax_vecteur_champ_vectoriel.qml')
-        vlayer.loadNamedStyle(pathpointvelocityqml)
+        if self.selafinlayer.propertiesdialog.checkBox_5.isChecked():
+            pathpointvelocityqml = os.path.join(os.path.dirname(__file__), '..','styles', '00_Points_Vmax_vecteur_champ_vectoriel.qml')
+            vlayer.loadNamedStyle(pathpointvelocityqml)
         QgsMapLayerRegistry.instance().addMapLayer(vlayer)
         #self.selafinlayer.propertiesdialog.textBrowser_main.append(ctime() + " - "+ str(os.path.basename(strpath).split('.')[0]) + self.tr(" created"))
         self.selafinlayer.propertiesdialog.normalMessage(str(os.path.basename(strpath).split('.')[0]) + self.tr(" created"))

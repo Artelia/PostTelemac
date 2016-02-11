@@ -34,14 +34,23 @@ import sys
 from os import path
 import numpy as np
 import math
-# ~~> dependencies towards other pytel/modules
+from scipy.spatial import cKDTree
+import matplotlib.path as mplPath
+from scipy.spatial import Delaunay
+from matplotlib.tri import Triangulation
 sys.path.append( path.join( path.dirname(sys.argv[0]), '..' ) )
-from utils.geometry import getSegmentIntersection,getBarycentricWeights,isInsideTriangle,getDistancePointToLine
+# ~~> dependencies towards other modules
+from config import OptionParser
+# ~~> dependencies towards other pytel/modules
+from parsers.parserSELAFIN import SELAFIN
+from utils.progressbar import ProgressBar
+from utils.geometry import isCCW,getSegmentIntersection,getBarycentricWeights,isInsideTriangle,getDistancePointToLine
+from samplers.polygons import isClockwise,joinSegments
 
 # _____                  ___________________________________________
 # ____/ General Toolbox /__________________________________________/
 #
-   
+
 def nearLocateMesh(xyo,IKLE,MESHX,MESHY,tree=None):
    """
    Requires the scipy.spatial and the matplotlib.tri packages to be loaded.
@@ -53,7 +62,6 @@ def nearLocateMesh(xyo,IKLE,MESHX,MESHY,tree=None):
    """
    # ~~> Create the KDTree of the iso-barycentres
    if tree == None:
-      from scipy.spatial import cKDTree
       isoxy = np.column_stack((np.sum(MESHX[IKLE],axis=1)/3.0,np.sum(MESHY[IKLE],axis=1)/3.0))
       tree = cKDTree(isoxy)
    # ~~> Find the indices corresponding to the nearest elements to the points
@@ -106,9 +114,8 @@ def xyTraceMesh(inear,xyi,xyo,IKLE,MESHX,MESHY,neighbours=None):
       map and ray-traces from xyi to xyo
    Return: whether xyo was found within the mesh, the (nearest) element, the
       associated barycentric weights, and the neighbourhood if computed
-   """   
+   """
    if neighbours == None:
-      from matplotlib.tri import Triangulation
       neighbours = Triangulation(MESHX,MESHY,IKLE).get_cpp_triangulation().get_neighbors()
    found,ray = traceRay2XY(IKLE,MESHX,MESHY,neighbours,inear,xyi,inear,xyo)
 
@@ -120,16 +127,16 @@ def subdivideMesh(IKLE,MESHX,MESHY):
     - Will use already computed edges or re-create it if necessary.
    This function return a new tuple IKLE,MESHX,MESHY where each triangle has been
       subdivided in 4.
-   """   
+   """
    # ~~> Singling out edges
    from matplotlib.tri import Triangulation
    edges = Triangulation(MESHX,MESHY,IKLE).get_cpp_triangulation().get_edges()
-   
+
    # ~~> Memory allocation for new MESH
    IELEM = len(IKLE); IPOIN = len(MESHX); IEDGE = len(edges)
    JKLE = np.zeros((IELEM*4,3),dtype=np.int)       # you subdivide every elements by 4
    MESHJ = np.zeros((IEDGE,2),dtype=np.int)        # you add one point on every edges
-   
+
    # ~~> Lookup tables for node numbering on common edges
    pa,pb = edges.T
    k1b,k1a = np.sort(np.take(IKLE,[0,1],axis=1)).T
@@ -141,7 +148,7 @@ def subdivideMesh(IKLE,MESHX,MESHY):
    k3b,k3a = np.sort(np.take(IKLE,[2,0],axis=1)).T
    indx3 = np.searchsorted(pa,k3a)
    jndx3 = np.searchsorted(pa,k3a,side='right')
-   
+
    # ~~> Building one triangle at a time /!\ Please get this loop parallelised
    j = 0
    for i in range(IELEM):
@@ -234,36 +241,33 @@ def traceRay2XY(IKLE,MESHX,MESHY,neighbours,ei,xyi,en,xyn):
    # ~~> you should not be here !
    return False,pnt
 
-def xysLocateMesh(xys,IKLE,MESHX,MESHY,tree=None,neighbours=None):
-   # ~~ Re-sampling nodes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   ipt = []; iet = []; ibr = []
-   
-   for xyo in xys:
-      # ~~> get to the nearest element
-      oet = -1; obr = [0.0,0.0,0.0]
-      eo,bo,tree = nearLocateMesh(xyo,IKLE,MESHX,MESHY,tree)
-      if bo == []:
-         found,ray,neighbours = xyTraceMesh(eo,[np.sum(MESHX[IKLE[eo]])/3.0,np.sum(MESHY[IKLE[eo]])/3.0],xyo,IKLE,MESHX,MESHY,neighbours)
-         if found:
-            obr = ray['b'][ray['n']]
-            oet = ray['e'][ray['n']]
-      else:
-         obr = bo
-         oet = eo
-      ipt.append(xyo); iet.append(oet); ibr.append(obr)
+def xysLocateMesh(xyo,IKLE,MESHX,MESHY,tree=None,neighbours=None):
 
-   return (ipt,iet,ibr),tree,neighbours
+   # ~~> get to the nearest element
+   oet = -1; obr = [0.0,0.0,0.0]
+   eo,bo,tree = nearLocateMesh(np.array(xyo),IKLE,MESHX,MESHY,tree)
+   if bo == []:
+      found,ray,neighbours = xyTraceMesh(eo,[np.sum(MESHX[IKLE[eo]])/3.0,np.sum(MESHY[IKLE[eo]])/3.0],xyo,IKLE,MESHX,MESHY,neighbours)
+      if found:
+         obr = ray['b'][ray['n']]
+         oet = ray['e'][ray['n']]
+   else:
+      obr = bo
+      oet = eo
+
+   if oet == -1: return [-1,-1,-1],obr
+   return IKLE[oet],obr
 
 def crossMesh(polyline,IKLE,MESHX,MESHY,tree=None,neighbours=None):
    """
    """
    # ~~ Intersection nodes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    ipt = []; iet = []; ibr = []
-   
+
    # ~~ Locate nodes of the polyline ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    xyo = polyline[0]
    eo,bo,tree = nearLocateMesh(xyo,IKLE,MESHX,MESHY,tree)
-   
+
    for i in range(len(polyline)-1):
       xyi = polyline[i+1]
       ei,bi,tree = nearLocateMesh(xyi,IKLE,MESHX,MESHY,tree)
@@ -272,7 +276,7 @@ def crossMesh(polyline,IKLE,MESHX,MESHY,tree=None,neighbours=None):
          found,ej,xyj,bj = dichoLocateMesh(rank,eo,xyo,ei,xyi,IKLE,MESHX,MESHY,tree)
          if not found:
             print '... Could not find easily an intersection with the mesh'
-            sys.exit()
+            sys.exit(1)
          found,rayo,neighbours = xyTraceMesh(ej,xyj,xyo,IKLE,MESHX,MESHY,neighbours)
          #print 'raya'
          for j in range(rayo['n'])[:-1]:
@@ -282,7 +286,7 @@ def crossMesh(polyline,IKLE,MESHX,MESHY,tree=None,neighbours=None):
          #print 'rayb'
          for j in range(rayi['n'])[(rayi['n']-1)::-1]:
             #print rayi['e'][j],rayi['xy'][j]
-            ipt.append(rayi['xy'][j]); iet.append(rayi['e'][j]); ibr.append(rayi['b'][j])         
+            ipt.append(rayi['xy'][j]); iet.append(rayi['e'][j]); ibr.append(rayi['b'][j])
       elif bi == [] and bo != []:
          found,rayi,neighbours = xyTraceMesh(eo,xyo,xyi,IKLE,MESHX,MESHY,neighbours)
          #print 'rayc'
@@ -313,35 +317,28 @@ def sliceMesh(polyline,IKLE,MESHX,MESHY,tree=None):
    A new method to slice through a triangular mesh (replaces crossMesh)
    """
    from matplotlib.tri import Triangulation
-   ipt = []; iet = []; ibr = []
+   xys = []
+   douplets = []
    # ~~> Calculate the minimum mesh resolution
    dxy = math.sqrt(min(np.square(np.sum(np.fabs(MESHX[IKLE]-MESHX[np.roll(IKLE,1)]),axis=1)/3.0) + \
             np.square(np.sum(np.fabs(MESHY[IKLE]-MESHY[np.roll(IKLE,1)]),axis=1)/3.0)))
    accuracy = np.power(10.0, -8+np.floor(np.log10(dxy)))
 
-   xyo = polyline[0]
+   xyo = np.array(polyline[0])
    for i in range(len(polyline)-1):
-      xyi = polyline[i+1]
+      xyi = np.array(polyline[i+1])
       dio = math.sqrt(sum(np.square(xyo-xyi)))
 
       # ~~> Resample the line to that minimum mesh resolution
       rsmpline = np.dstack((np.linspace(xyo[0],xyi[0],num=int(dio/dxy)),np.linspace(xyo[1],xyi[1],num=int(dio/dxy))))[0]
       nbpoints = len(rsmpline)
-
-      # ~~> Create the KDTree of the iso-barycentres
-      if tree == None:
-         from scipy.spatial import cKDTree
-         isoxy = np.column_stack((np.sum(MESHX[IKLE],axis=1)/3.0,np.sum(MESHY[IKLE],axis=1)/3.0))
-         tree = cKDTree(isoxy)
+      nbneighs = min( 8,len(IKLE) )
       # ~~> Filter closest 8 elements (please create a good mesh) as a halo around the polyline
-      #halo = np.zeros((nbpoints,8),dtype=np.int)
-      halo = np.zeros((nbpoints,8),dtype=np.int)
+      halo = np.zeros((nbpoints,nbneighs),dtype=np.int)
       for i in range(nbpoints):
-         #d,e = tree.query(rsmpline[i],8)
-         d,e = tree.query(rsmpline[i],8)
+         d,e = tree.query(rsmpline[i],nbneighs)
          halo[i] = e
       halo = np.unique(halo)
-
 
       # ~~> Get the intersecting halo (on a smaller mesh connectivity)
       edges = Triangulation(MESHX,MESHY,IKLE[halo]).get_cpp_triangulation().get_edges()
@@ -353,7 +350,7 @@ def sliceMesh(polyline,IKLE,MESHX,MESHY,tree=None):
          if getDistancePointToLine((MESHX[node],MESHY[node]),xyo,xyi) < accuracy: olah.append(node)
       ijsect = zip(olah,olah)
       xysect = [(MESHX[i],MESHY[i]) for i in olah]
-      lmsect = [ 1.0 for i in range(len(ijsect)) ]
+      lmsect = [ (1.0,0.0) for i in range(len(ijsect)) ]
       mask = np.zeros((len(edges),2),dtype=bool)
       for i in olah:
          mask = np.logical_or( edges == i  , mask )
@@ -365,19 +362,19 @@ def sliceMesh(polyline,IKLE,MESHX,MESHY,tree=None):
          if xyj != []:
             ijsect.append(edge)     # nodes from the mesh
             xysect.append(tuple(xyj[0]))   # intersection (xo,yo)
-            lmsect.append(xyj[1])   # weight along each each
+            lmsect.append((xyj[1],1.0-xyj[1]))   # weight along each each
 
       # ~~> Final sorting along keys x and y
       xysect = np.array(xysect, dtype=[('x', '<f4'), ('y', '<f4')])
       xysort = np.argsort(xysect, order=('x','y'))
 
       # ~~> Move on to next point
-      ipt.extend([ xysect[i] for i in xysort ])
-      iet.extend([ ijsect[i] for i in xysort ])
-      ibr.extend([ lmsect[i] for i in xysort ])
+      for i in xysort:
+         xys.append( xysect[i] )
+         douplets.append( (ijsect[i],lmsect[i]) )
       xyo = xyi
 
-   return (ipt,iet,ibr),tree
+   return xys,douplets
 
 # _____             ________________________________________________
 # ____/ MAIN CALL  /_______________________________________________/
@@ -387,10 +384,9 @@ __author__="Sebastien E. Bourban"
 __date__ ="$12-Dec-2012 08:51:29$"
 
 if __name__ == "__main__":
-   debug = False
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # ~~~~ Jenkins' success message ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    print '\n\nMy work is done\n\n'
 
-   sys.exit()
+   sys.exit(0)

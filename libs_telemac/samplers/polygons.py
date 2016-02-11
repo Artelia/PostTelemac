@@ -21,10 +21,15 @@
 #
 # ~~> dependencies towards standard python
 import sys
+from os import path
 import numpy as np
+sys.path.append( path.join( path.dirname(sys.argv[0]), '..' ) )
+# ~~> dependencies towards other modules
+from config import OptionParser
 # ~~> dependencies towards other pytel/modules
 from utils.geometry import getConeAngle,isClose,getNorm2
 from utils.progressbar import SubProgressBar
+from parsers.parserKenue import InS
 
 # _____                   __________________________________________
 # ____/ Global Variables /_________________________________________/
@@ -58,9 +63,10 @@ def joinSegments(polyLines):
 
    return polyGones
 
-def smoothSubdivise(poly,type,weight):
+def smoothSubdivise(poly,vals,type,weight):
 
-   ptwice = np.zeros([2*len(poly)-1+type,2])
+   ptwice = np.zeros((2*len(poly)-1+type,2))
+   #vtwice = np.zeros((2*len(poly)-1+type,2,len(lavs)))
    # ~~> save original set
    for i in range(len(poly)): ptwice[2*i] = poly[i]
    # ~~> include intermediates
@@ -72,9 +78,9 @@ def smoothSubdivise(poly,type,weight):
       ptwice[0] = weight*ptwice[0] + (1-weight)*( ptwice[len(ptwice)-1]+ptwice[1] )/2.
       ptwice[len(ptwice)-2] = weight*ptwice[len(ptwice)-2] + (1-weight)*( ptwice[len(ptwice)-1]+ptwice[len(ptwice)-3] )/2.
 
-   return ptwice,type
+   return ptwice,vals,type
 
-def removeDuplicates(poly,type):
+def removeDuplicates(poly,type): # /!\ does not work anymore
    found = True
    while found:
       i = 0; found = False
@@ -113,9 +119,9 @@ def removeDuplilines(poly,type):
    sbar.finish()
    if p == []:
       p.append(poly); t.append(type)
-   return p,t
+   return p,v,t
 
-def removeDuplangles(poly,type):
+def removeDuplangles(poly,vals,type): # /!\ does not work anymore
 
    found = True
    while found:
@@ -140,19 +146,23 @@ def subsampleDistance(poly,type,dist):
          if dist > getNorm2( poly[i],poly[i+1] ):
             poly[i] = ( poly[i]+poly[i+1] )/2.
             poly = np.delete(poly,i+1,0)
+            vals[i] = ( vals[i]+vals[i+1] )/2.
+            vals = np.delete(vals,i+1,0)
             found = True
          i += 1
-   if len(poly) == 1: return [],0
-   elif len(poly) == 2: return [],0 #poly,0
+   if len(poly) == 1: return [],[],0
+   elif len(poly) == 2: return [],[],0 #poly,0
    else:
       if type!=0:
          if dist > getNorm2( poly[len(poly)-1],poly[0] ):
             poly[len(poly)-1] = ( poly[len(poly)-1]+poly[0] )/2.
             poly = np.delete(poly,0,0)
-      if len(poly) < 3: return [],0 #poly,0
-      return poly,type
+            vals[len(vals)-1] = ( vals[len(vals)-1]+vals[0] )/2.
+            vals = np.delete(vals,0,0)
+      if len(poly) < 3: return [],[],0 #poly,0
+      return poly,vals,type
 
-def subsampleAngle(poly,type,angle):
+def subsampleAngle(poly,vals,type,angle):
 
    found = True
    while found:
@@ -160,21 +170,26 @@ def subsampleAngle(poly,type,angle):
       while i < len(poly)-4:
          if angle > 180*abs( abs(getConeAngle( poly[i],poly[i+1],poly[i+2] )) - np.pi )/np.pi:
             poly = np.delete(poly,i+1,0)
+            vals = vals.pop(i+1)
             found = True
          if angle > 180*abs( abs(getConeAngle( poly[i+1],poly[i+2],poly[i+3] )) - np.pi )/np.pi:
             poly = np.delete(poly,i+2,0)
+            vals = vals.pop(i+2)
             found = True
          i += 2
-   if len(poly) < 3: return [],0 #poly,0
-   return poly,type
+   if len(poly) < 3: return [],[],0 #poly,vals,0
+   return poly,vals,type
 
 def isClockwise(poly):
+   # assumes that poly does not duplicate points
    wise = 0
    for i in range(len(poly)):
-      wise += ( poly[(i+1)%len(poly)][0]-poly[i][0] ) \
+      z = ( poly[(i+1)%len(poly)][0]-poly[i][0] ) \
          *( poly[(i+2)%len(poly)][1]-poly[(i+1)%len(poly)][1] ) \
          - ( poly[(i+1)%len(poly)][1]-poly[i][1] ) \
          * ( poly[(i+2)%len(poly)][0]-poly[(i+1)%len(poly)][0] )
+      if z > 0: wise += 1
+      elif z < 0: wise -= 1
    return wise < 0
 
 # _____             ________________________________________________
@@ -190,7 +205,7 @@ if __name__ == "__main__":
 # ~~~~ Jenkins' success message ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    print '\n\nMy work is done\n\n'
 
-   sys.exit()
+   sys.exit(0)
 
 """
 Early work by S.E.Bourban ... will be replaced by more recent work from M.S.Turnbull
@@ -219,7 +234,7 @@ def cutAngleJoinSplit(poly,angle,dist,stencil):
                #   should use split / join
                #   poly = np.delete(poly,iline%len(line))
                #   print 'I can delete the following',a,b,c
-               #   sys.exit()
+               #   sys.exit(1)
                #   found += 1
                #   continue
             iline += 1

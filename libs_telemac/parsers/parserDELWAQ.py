@@ -73,27 +73,27 @@ class DELWAQ:
       # ~~> Read the steering file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       if not path.exists(fileName):
          print '... Could not file your DELWAQ file: ',fileName
-         sys.exit()
+         sys.exit(1)
       self.dwqList = self.parseDWQ(getFileContent(fileName))
 
       # ~~> Read the geometry file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      file = self.dwqList['grid-indices-file']
-      if not path.exists(file):
-         print '...Could not find the GEO file: ',file
-         sys.exit()
-      self.geo = SELAFIN(file)
+      fle = self.dwqList['grid-indices-file']
+      if not path.exists(fle):
+         print '...Could not find the GEO file: ',fle
+         sys.exit(1)
+      self.geo = SELAFIN(fle)
       self.NPOIN3 = int(self.dwqList['grid-cells-first-direction'])
       if self.NPOIN3 != self.geo.NPOIN3:
          print '...In consistency in numbers with GEO file: ',self.NPOIN3,self.geo.NPOIN3
-         sys.exit()
+         sys.exit(1)
       self.NSEG3 = int(self.dwqList['grid-cells-second-direction'])
 
       # ~~> Read the CONLIM file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      file = self.dwqList['grid-coordinates-file']
-      if not path.exists(file):
-         print '...Could not find the CONLIM file: ',file
-         sys.exit()
-      self.conlim = CONLIM(file)
+      fle = self.dwqList['grid-coordinates-file']
+      if not path.exists(fle):
+         print '...Could not find the CONLIM file: ',fle
+         sys.exit(1)
+      self.conlim = CONLIM(fle)
 
       # ~~> Time records ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       self.HYDRO0T = int(self.dwqList['hydrodynamic-start-time'])
@@ -129,7 +129,7 @@ class DELWAQ:
          proc = re.match(self.grp_word,line)
          if proc:
             i += 1
-            if proc.group('key').lower() in self.complxkeys.keys():
+            if proc.group('key').lower() in self.complxkeys:
                end = 'end-' + proc.group('key')
                sroc = re.match(self.key_word,lines[i].strip())
                word = []
@@ -150,7 +150,7 @@ class DELWAQ:
          proc = re.match(self.key_word,line)
          if proc:
             i += 1
-            if proc.group('key').lower() in self.simplekeys.keys():
+            if proc.group('key').lower() in self.simplekeys:
                dval = re.match(self.var_dquot,proc.group('after').strip())
                sval = re.match(self.var_squot,proc.group('after').strip())
                if dval: dwqList.update({proc.group('key').lower():dval.group('dquot').strip('"')})
@@ -163,59 +163,59 @@ class DELWAQ:
 
    def big2little(self):
 
-      file = self.dwqList["surfaces-file"]
-      fole = path.splitext(path.basename(file))[0] + '.qwd'
-      self.big2littleBOT(file,fole)
+      fle = self.dwqList["surfaces-file"]
+      fole = path.splitext(path.basename(fle))[0] + '.qwd'
+      self.big2littleBOT(fle,fole)
 
-      file = self.dwqList["lengths-file"]
-      fole = path.splitext(path.basename(file))[0] + '.qwd'
-      self.big2littleNDS(file,fole)
+      fle = self.dwqList["lengths-file"]
+      fole = path.splitext(path.basename(fle))[0] + '.qwd'
+      self.big2littleNDS(fle,fole)
 
-      file = self.dwqList["pointers-file"]
-      fole = path.splitext(path.basename(file))[0] + '.qwd'
-      self.big2littleNFX(file,fole)
+      fle = self.dwqList["pointers-file"]
+      fole = path.splitext(path.basename(fle))[0] + '.qwd'
+      self.big2littleNFX(fle,fole)
 
-      file = self.dwqList["volumes-file"]
-      fole = path.splitext(path.basename(file))[0] + '.qwd'
-      self.big2littlePTS(file,fole)
+      fle = self.dwqList["volumes-file"]
+      fole = path.splitext(path.basename(fle))[0] + '.qwd'
+      self.big2littlePTS(fle,fole)
 
-      file = self.dwqList["flows-file"]
-      fole = path.splitext(path.basename(file))[0] + '.qwd'
-      self.big2littleVFX(file,fole)
+      fle = self.dwqList["flows-file"]
+      fole = path.splitext(path.basename(fle))[0] + '.qwd'
+      self.big2littleVFX(fle,fole)
 
-      file = self.dwqList["areas-file"]
-      fole = path.splitext(path.basename(file))[0] + '.qwd'
-      self.big2littleARE(file,fole)
+      fle = self.dwqList["areas-file"]
+      fole = path.splitext(path.basename(fle))[0] + '.qwd'
+      self.big2littleARE(fle,fole)
 
    def big2littleBOT(self,fileName,foleName):
 
       # ~~ Openning files ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      file = open(fileName,'rb')
+      fle = open(fileName,'rb')
       fole = open(foleName,'wb')
       print '           +> writing the surfaces-file: ',foleName
 
       # ~~ Read/Write dimensions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      l,n1,n2,n3,n4,n5,n6,chk = unpack('>i6ii',file.read(4+24+4))
+      l,n1,n2,n3,n4,n5,n6,chk = unpack('>i6ii',fle.read(4+24+4))
       if l != chk:
          print '... Cannot read the first 6 INTEGER from your DELWAQ file'
-         sys.exit()
+         sys.exit(1)
       fole.write(pack('<i6ii',4*6,n1,n2,n3,n4,n5,n6,4*6))
 
       # ~~ Read areas ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      file.seek(4,1)
-      AREA = np.asarray( unpack('>'+str(n1)+'f',file.read(4*n1)) )
-      file.seek(4,1)
+      fle.seek(4,1)
+      AREA = np.asarray( unpack('>'+str(n1)+'f',fle.read(4*n1)) )
+      fle.seek(4,1)
       fole.write(pack('<i',4*n1))
       fole.write(pack('<'+str(n1)+'f',*(AREA)))
       fole.write(pack('<i',4*n1))
 
-      file.close()
+      fle.close()
       fole.close()
 
    def big2littleNDS(self,fileName,foleName):
 
       # ~~ Openning files ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      file = open(fileName,'rb')
+      fle = open(fileName,'rb')
       fole = open(foleName,'wb')
       print '           +> writing the lengths-file: ',foleName
 
@@ -223,12 +223,12 @@ class DELWAQ:
       NSEG2 = ( 3*self.geo.NELEM3 + self.conlim.NPTFR )/2
       MBND2 = np.count_nonzero(self.conlim.BOR['lih'] != 2)
       n3 = 2*self.geo.NPLAN*( NSEG2 + MBND2 )
-      n4 = 2*( self.geo.NPLAN-1 )*self.geo.NPOIN3
+      #n4 = 2*( self.geo.NPLAN-1 )*self.geo.NPOIN3
 
       # ~~ Read lengths ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      file.seek(4*4,1)
-      LENGTH = np.asarray( unpack('>'+str(n3)+'f',file.read(4*n3)) )
-      file.seek(4,1)
+      fle.seek(4*4,1)
+      LENGTH = np.asarray( unpack('>'+str(n3)+'f',fle.read(4*n3)) )
+      fle.seek(4,1)
       fole.write(pack('<iii',4,0,4))
       fole.write(pack('<i',4*n3))
       fole.write(pack('<'+str(n3)+'f',*(LENGTH)))
@@ -236,35 +236,35 @@ class DELWAQ:
 
       # ~~ 3D lengths ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       #if n4 != 0:
-      #   file.seek(4*n4+8,1)
+      #   fle.seek(4*n4+8,1)
 
-      file.close()
+      fle.close()
       fole.close()
 
    def big2littleNFX(self,fileName,foleName):
 
       # ~~ Openning files ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      file = open(fileName,'rb')
+      fle = open(fileName,'rb')
       fole = open(foleName,'wb')
       print '           +> writing the pointers-file: ',foleName
 
       # ~~ Read lengths ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      for iplan in range(self.geo.NPLAN):
-         for i in range(self.NSEG3):
-            l,n1,n2,n3,n4,chk = unpack('>i4ii',file.read(4+16+4))
+      for _ in range(self.geo.NPLAN):
+         for _ in range(self.NSEG3):
+            l,n1,n2,n3,n4,chk = unpack('>i4ii',fle.read(4+16+4))
             fole.write(pack('<i4ii',4*4,n1,n2,n3,n4,4*4))
          #for i in range(self.conlim.NPTFR):
          #   if self.conlim.BOR['lih'][i] != 2:
          #      l,n1,n2,n3,n4,chk = unpack('>i4ii',file.read(4+16+4))
          #      fole.write(pack('<i4ii',4*4,n1,n2,n3,n4,4*4))
 
-      file.close()
+      fle.close()
       fole.close()
 
    def big2littlePTS(self,fileName,foleName):
 
       # ~~ Openning files ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      file = open(fileName,'rb')
+      fle = open(fileName,'rb')
       fole = open(foleName,'wb')
       print '           +> writing the volumes-file: ',foleName
 
@@ -275,10 +275,10 @@ class DELWAQ:
       # ~~ Read volumes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       pbar = ProgressBar(maxval=self.HYDROIT).start()
       for i in range(self.HYDROIT):
-         l,it = unpack('>ii',file.read(4+4))
-         VOLUME = np.asarray( unpack('>'+str(self.NPOIN3)+'f',file.read(4*self.NPOIN3)) )
+         l,it = unpack('>ii',fle.read(4+4))
+         VOLUME = np.asarray( unpack('>'+str(self.NPOIN3)+'f',fle.read(4*self.NPOIN3)) )
          VOLUME = np.maximum(VOLUME,minvol)
-         file.seek(4,1)
+         fle.seek(4,1)
          if it >= self.tfrom and it <= self.tstop:
             pbar.write('            ~> read iteration: '+str(it),i)
             fole.write(pack('<ii',4*n1,it-self.HYDRO00))
@@ -289,13 +289,13 @@ class DELWAQ:
          pbar.update(i)
       pbar.finish()
 
-      file.close()
+      fle.close()
       fole.close()
 
    def big2littleVFX(self,fileName,foleName):
 
       # ~~ Openning files ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      file = open(fileName,'rb')
+      fle = open(fileName,'rb')
       fole = open(foleName,'wb')
       print '           +> writing the flows-file: ',foleName
 
@@ -303,14 +303,14 @@ class DELWAQ:
       NSEG2 = ( 3*self.geo.NELEM3 + self.conlim.NPTFR )/2
       MBND2 = np.count_nonzero(self.conlim.BOR['lih'] != 2)
       n3 = ( NSEG2 + MBND2 )
-      n4 = 2*( self.geo.NPLAN-1 )*self.geo.NPOIN3
+      #n4 = 2*( self.geo.NPLAN-1 )*self.geo.NPOIN3
 
       # ~~ Read volumes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       pbar = ProgressBar(maxval=self.HYDROIT).start()
       for i in range(self.HYDROIT):
-         l,it = unpack('>ii',file.read(4+4))
-         VFLUXES = np.asarray( unpack('>'+str(n3)+'f',file.read(4*n3)) )
-         file.seek(4,1)
+         l,it = unpack('>ii',fle.read(4+4))
+         VFLUXES = np.asarray( unpack('>'+str(n3)+'f',fle.read(4*n3)) )
+         fle.seek(4,1)
          if it >= self.tfrom and it <= self.tstop:
             pbar.write('            ~> read iteration: '+str(it),i)
             fole.write(pack('<ii',4*n3,it-self.HYDRO00))
@@ -321,13 +321,13 @@ class DELWAQ:
          pbar.update(i)
       pbar.finish()
 
-      file.close()
+      fle.close()
       fole.close()
 
    def big2littleARE(self,fileName,foleName):
 
       # ~~ Openning files ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      file = open(fileName,'rb')
+      fle = open(fileName,'rb')
       fole = open(foleName,'wb')
       print '           +> writing the areas-file: ',foleName
 
@@ -335,14 +335,14 @@ class DELWAQ:
       NSEG2 = ( 3*self.geo.NELEM3 + self.conlim.NPTFR )/2
       MBND2 = np.count_nonzero(self.conlim.BOR['lih'] != 2)
       n3 = ( NSEG2 + MBND2 )
-      n4 = 2*( self.geo.NPLAN-1 )*self.geo.NPOIN3
+      #n4 = 2*( self.geo.NPLAN-1 )*self.geo.NPOIN3
 
       # ~~ Read volumes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       pbar = ProgressBar(maxval=self.HYDROIT).start()
       for i in range(self.HYDROIT):
-         l,it = unpack('>ii',file.read(4+4))
-         AREAS = np.asarray( unpack('>'+str(n3)+'f',file.read(4*n3)) )
-         file.seek(4,1)
+         l,it = unpack('>ii',fle.read(4+4))
+         AREAS = np.asarray( unpack('>'+str(n3)+'f',fle.read(4*n3)) )
+         fle.seek(4,1)
          if it >= self.tfrom and it <= self.tstop:
             pbar.write('            ~> read iteration: '+str(it),i)
             fole.write(pack('<ii',4*n3,it-self.HYDRO00))
@@ -353,7 +353,7 @@ class DELWAQ:
          pbar.update(i)
       pbar.finish()
 
-      file.close()
+      fle.close()
       fole.close()
 
 
@@ -369,18 +369,17 @@ if __name__ == "__main__":
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # ~~~~ Reads config file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   print '\n\nLoading Options and Configurations\n\
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'
+   print '\n\nLoading Options and Configurations\n'+'~'*72+'\n'
    USETELCFG = ''
-   if environ.has_key('USETELCFG'): USETELCFG = environ['USETELCFG']
+   PWD = path.dirname(path.dirname(path.dirname(path.dirname(sys.argv[0]))))
+   if 'USETELCFG' in environ: USETELCFG = environ['USETELCFG']
    SYSTELCFG = 'systel.cfg'
-   if environ.has_key('SYSTELCFG'): SYSTELCFG = environ['SYSTELCFG']
+   if 'SYSTELCFG' in environ: SYSTELCFG = environ['SYSTELCFG']
    if path.isdir(SYSTELCFG): SYSTELCFG = path.join(SYSTELCFG,'systel.cfg')
    parser = OptionParser("usage: %prog [options] \nuse -h for more help.")
    parser.add_option("-c", "--configname",type="string",dest="configName",default=USETELCFG,help="specify configuration name, default is randomly found in the configuration file" )
    parser.add_option("-f", "--configfile",type="string",dest="configFile",default=SYSTELCFG,help="specify configuration file, default is systel.cfg" )
    parser.add_option("-r", "--rootdir",type="string",dest="rootDir",default='',help="specify the root, default is taken from config file" )
-   parser.add_option("-v", "--version",type="string",dest="version",default='',help="specify the version number, default is taken from config file" )
    parser.add_option("--reset",action="store_true",dest="areset",default=False,help="reset the start time to zero" )
    parser.add_option("--minvol",type="string",dest="minvol",default='0.001',help="make sure there is a minimum volume" )
    parser.add_option("--from",type="string",dest="tfrom",default="1",help="specify the first frame included" )
@@ -391,18 +390,18 @@ if __name__ == "__main__":
       dircfg = path.abspath(path.dirname(options.configFile))
       if path.isdir(dircfg) :
          print ' ... in directory: ' + dircfg + '\n ... use instead: '
-         for dirpath,dirnames,filenames in walk(dircfg) : break
-         for file in filenames :
-            head,tail = path.splitext(file)
-            if tail == '.cfg' : print '    +> ',file
-      sys.exit()
+         _, _, filenames = walk(dircfg).next()
+         for fle in filenames :
+            head,tail = path.splitext(fle)
+            if tail == '.cfg' : print '    +> ',fle
+      sys.exit(1)
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # ~~~~ Works for only one configuration ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    cfgs = parseConfigFile(options.configFile,options.configName)
-   cfgname = cfgs.keys()[0]
+   cfgname = cfgs.iterkeys().next()
+   if not cfgs[cfgname].has_key('root'): cfgs[cfgname]['root'] = PWD
    if options.rootDir != '': cfgs[cfgname]['root'] = options.rootDir
-   if options.version != '': cfgs[cfgname]['version'] = options.version
    cfg = parseConfig_CompileTELEMAC(cfgs[cfgname])
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -410,16 +409,16 @@ if __name__ == "__main__":
    if len(args) < 1:
       print '\nAt least one DELWAQ steering file name is required\n'
       parser.print_help()
-      sys.exit()
+      sys.exit(1)
    fileNames = args
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # ~~~~ Loop over the DELWAQ files ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   for file in fileNames:
+   for fle in fileNames:
 
       # ~~> Parse DELWAQ steering file
-      print '      ~> scanning your DELWAQ file: ',path.basename(file)
-      dwq = DELWAQ(file)
+      print '      ~> scanning your DELWAQ file: ',path.basename(fle)
+      dwq = DELWAQ(fle)
       
       # ~~> Possible options so far
       if options.areset: dwq.resetDWQ()
@@ -434,4 +433,4 @@ if __name__ == "__main__":
 # ~~~~ Jenkins' success message ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    print '\n\nMy work is done\n\n'
 
-   sys.exit()
+   sys.exit(0)

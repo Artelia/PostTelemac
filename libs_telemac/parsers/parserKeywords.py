@@ -44,6 +44,10 @@
    values of keywords are now checked for their type against the declared type
       in the DICO.
 """
+"""@history 23/09/2014 -- Sebastien E. Bourban and Yoann Audoin
+   The content of the log files from GRETEL and PARTEL are now reported
+   in the error report.
+"""
 """@brief
 """
 
@@ -90,18 +94,28 @@ dicokeys = ['AIDE','AIDE1','APPARENCE','CHOIX','CHOIX1','COMPORT','COMPOSE',
 # _____             ________________________________________________
 # ____/ CAS FILES  /_______________________________________________/
 #
-def scanCAS(cas):
+def scanCAS(lines):
    keylist = []; vallist = []
-   casLines = getFileContent(cas)
+   # ~~ clean ending empty lines
+   lines = (''.join(lines).rstrip('\n ')).split('\n')
+   # ~~ clean lines' endings
+   core = []
+   for line in lines:
+      proc = re.match(key_none,line)
+      if proc: line = line.lstrip()
+      core.append(line.rstrip(' '))
+   lines = core
+ 
    # ~~ clean comments
    core = []
-   for i in range(len(casLines)):
-      line = casLines[i].replace('"""',"'''").replace('"',"'").replace("''",'"')
+   for i in range(len(lines)):
+      line = lines[i].replace('"""',"'''").replace('"',"'").replace("''",'"')
       proc = re.match(key_comment,line+'/')
       line = proc.group('before').strip() + ' '
       proc = re.match(emptyline,line)
       if not proc: core.append(line)
-   casStream = (' '.join(core)).replace('  ',' ')
+   # TODO: See what thar replace was for
+   casStream = (' '.join(core))#.replace('  ',' ')
    # ~~ clean values to keep only the keys
    while casStream != '':
       # ~~ non-key
@@ -122,7 +136,8 @@ def scanCAS(cas):
       if not proc: raise Exception([{'name':'scanCAS','msg':'no value to keyword '+kw}])
       val = []
       while proc:
-         val.append(proc.group('val').replace("'",''))
+         if proc.group('val') == '"': val.append('')
+         else: val.append(proc.group('val').replace("'",''))
          casStream = proc.group('after')   # still hold the separator
          proc = re.match(val_equals,casStream)
       if kw in keylist:
@@ -130,18 +145,22 @@ def scanCAS(cas):
       else:
          keylist.append(kw)
          vallist.append(val)
-   
-   return (keylist,vallist)
 
-def readCAS(keywords,dico,frgb):
+   return lines,(keylist,vallist)
+
+def readCAS(cas,dico,frgb):
 
    vint = re.compile(r'\d+\Z')
    vflt = re.compile(r'(-)?\d*(|\.)\d*([dDeE](\+|\-)?\d+|)\Z')
+   lines,keywords = cas
    keylist,vallist = keywords
    for key,value in zip(*keywords):
       kw = key
       if kw[0] == '&': continue
-      if kw not in dico.keys(): kw = frgb['GB'][kw]
+      if kw not in dico:
+         if kw not in frgb['GB']:
+            raise Exception([{'name':'readCAS','msg':'... could not find the following keyword in the selected dictionary file: '+key+'\n     ~> you may not be running the code associated to your CAS file.'}])
+         kw = frgb['GB'][kw]
       if dico[kw]['TYPE'][0] == 'LOGIQUE':
          vals = []
          for val in value:
@@ -158,20 +177,20 @@ def readCAS(keywords,dico,frgb):
       elif dico[kw]['TYPE'][0] in ['REEL','REAL']:
          vals = []
          for val in value:
-            if re.match(vflt,val.lower().replace('d','e')): vals.append(float(val.lower().replace('d','e')))
+            if re.match(vflt,val.lower().replace('d','e')): vals.append(val)
             else: raise Exception([{'name':'readCAS','msg':'... I am looking for an FLOAT but found an inapropriate value set for keyword: '+key}])
          vallist[keylist.index(key)] = vals
       else:
          vals = []
-         for val in value: vals.append(repr(val))
+         for val in value: vals.append(repr(val.replace('"',"''")).replace('"',"'"))
          vallist[keylist.index(key)] = vals
 
-   return (keylist,vallist)
+   return lines,(keylist,vallist)
 
 def rewriteCAS(cas):
 
    lines = []
-   for key,val in zip(*cas):
+   for key,val in zip(*cas[1]):
       if val == []: raise Exception([{'name':'rewriteCAS','msg':'... inapropriate value set for keyword: '+key}])
 
       # ~~~> Special keys starting with '&'
@@ -182,19 +201,16 @@ def rewriteCAS(cas):
          line = ''; lcur = ' ' + key + ' : ' + str(val[0])
       else:
          line = ' ' + key + ' :\n'
-         if len('    ' + str(val[0])) < 73: lcur = '    ' + str(val[0])
-         else:
-            lcur = ''
-            for i in range(len(str(val[0]))/72+1):
-               lcur = lcur + ( str(val[0])+72*' ' )[72*i:72*i+72] + '\n'
+         if len('   ' + str(val[0])) < 73: lcur = '   ' + str(val[0])
+         else: lcur = '\n' + format72(str(val[0]))
       for v in val[1:]:
          if len(lcur + ';'+str(v)) < 72:
             lcur = lcur + ';'+str(v)
          else:
             if len(lcur) < 72:
                line = line + lcur + ';\n'
-               lcur = '    '+str(v)
-            else:  '... warning: CAS file cannot read this value: ',lcur
+               lcur = '   '+str(v)
+            else:  print '... warning: CAS file cannot read this value: ',lcur
       lines.append(line+lcur)
 
    lines.append('')
@@ -240,8 +256,8 @@ def translateCAS(cas,frgb):
 
          # ~~> translate the keyword
          head = head.replace(kw,'',1)
-         if kw.upper() in frgb['GB'].keys(): frline = frline.replace(kw,frgb['GB'][kw],1)
-         if kw.upper() in frgb['FR'].keys(): gbline = gbline.replace(kw,frgb['FR'][kw],1)
+         if kw.upper() in frgb['GB']: frline = frline.replace(kw,frgb['GB'][kw],1)
+         if kw.upper() in frgb['FR']: gbline = gbline.replace(kw,frgb['FR'][kw],1)
 
          # ~~> look for less obvious keywords
          casStream = proc.group('after')   # still hold the separator
@@ -325,13 +341,13 @@ def scanDICO(dicoFile):
       kw = proc.group('key').strip()
       if kw not in dicokeys:
          print 'unknown key ',kw,proc.group('after'),dicoStream
-         sys.exit()
+         sys.exit(1)
       dicoStream = proc.group('after')   # still hold the separator
       # ~~ val
       proc = re.match(val_equals,dicoStream)
       if not proc:
          print 'no value to keyword ',kw
-         sys.exit()
+         sys.exit(1)
       val = []
       while proc:
          if proc.group('val')[0] == "'":
@@ -346,11 +362,13 @@ def scanDICO(dicoFile):
    while keylist != []:
       if keylist[0][0] != 'NOM' and keylist[1][0] != 'NOM1':
          print 'could not read NOM or NOM1 from ',keylist[0][1]
-         sys.exit()
+         sys.exit(1)
       dico['FR'].update({keylist[0][1][0].replace('"',"'"):keylist[1][1][0].replace('"',"'")})
       dico['GB'].update({keylist[1][1][0].replace('"',"'"):keylist[0][1][0].replace('"',"'")})
       key = keylist[0][1][0].replace('"',"'")
-      words = {'NOM':keylist[0][1]}; keylist.pop(0)
+      words = {}
+      words = {'NOM':keylist[0][1]}
+      keylist.pop(0)
       while keylist != []:
          if keylist[0][0] == 'NOM': break
          words.update({keylist[0][0]:keylist[0][1]})
@@ -365,30 +383,34 @@ def scanDICO(dicoFile):
 """
 def getIOFilesSubmit(frgb,dico):
    iFiles = {}; oFiles = {}
-   for key in dico.keys():
-      if dico[key].has_key('SUBMIT'):
+   for key in dico:
+      if 'SUBMIT' in dico[key]:
          if 'LIT' in dico[key]['SUBMIT'][0]:
             iFiles.update({key:dico[key]['SUBMIT'][0]})
             iFiles.update({frgb['FR'][key]:dico[key]['SUBMIT'][0]})
+            # File can be both read and write
+            if 'ECR' in dico[key]['SUBMIT'][0]:
+               oFiles.update({key:dico[key]['SUBMIT'][0]})
+               oFiles.update({frgb['FR'][key]:dico[key]['SUBMIT'][0]})
          elif 'ECR' in dico[key]['SUBMIT'][0]:
             oFiles.update({key:dico[key]['SUBMIT'][0]})
             oFiles.update({frgb['FR'][key]:dico[key]['SUBMIT'][0]})
          else:
             if 'void' not in dico[key]['SUBMIT'][0]:
                print '... hmm, this is embarrassing. I do not know what to do with ', key
-               sys.exit()
+               sys.exit(1)
 
    return iFiles,oFiles
 
 def getKeyWord(key,cas,dico,frgb):
 
    value = []; defaut = []
-   kl,vl = cas
-   if key in frgb['GB'].keys():
+   kl,vl = cas[1]
+   if key in frgb['GB']:
       defaut = dico[frgb['GB'][key]]['DEFAUT1']
       if key in kl: value = vl[kl.index(key)]
       elif frgb['GB'][key] in kl: value = vl[kl.index(frgb['GB'][key])]
-   if key in frgb['FR'].keys():
+   if key in frgb['FR']:
       defaut = dico[key]['DEFAUT']
       if key in kl: value = vl[kl.index(key)]
       elif frgb['FR'][key] in kl: value = vl[kl.index(frgb['FR'][key])]
@@ -397,33 +419,87 @@ def getKeyWord(key,cas,dico,frgb):
 
 def getSubmitWord(key,cas,iFS,oFS):
 
-   value = []; kl,vl = cas
-   for i in iFS.keys():
+   value = []; kl,vl = cas[1]
+   for i in iFS:
       if key == iFS[i].split(';')[1]:
          if i in kl: value = vl[kl.index(i)]
-   for i in oFS.keys():
+   for i in oFS:
       if key == oFS[i].split(';')[1]:
          if i in kl: value = vl[kl.index(i)]
 
    return value
 
+def getCASLang(cas,frgb):
+   # ~~> add DICTIONARY and STEERING FILE to the CAS file
+   lang = 1
+   kl = cas[1][0]
+   # Look to find the first key that is different in both language
+   i = 0
+   while kl[i][0] == '&' or \
+      ( kl[i] in frgb['FR'] and kl[i] in frgb['GB'] ):
+      i+=1
+   if kl[i] not in frgb['FR']: lang = 2
+
+   return lang
+
 def setKeyValue(key,cas,frgb,value):
-
-   kl,vl = cas
-   if key in frgb['GB'].keys():
-      if key in kl: vl[kl.index(key)] = [value]
-      elif frgb['GB'][key] in kl: vl[kl.index(frgb['GB'][key])] = [value]
+#~ detail:
+#~+   maintains both the list of key / value and the lines
+#~+      from the original file.
+#~+   add new key at the end of lines just in case the key exists already
+#~+      but in anycase, before $FIN
+#~assumption:
+#~+   single value is assumed at this stage
+#
+   lines,keys = cas
+   lang = getCASLang(cas,frgb)
+   if key in frgb['GB'] and lang == 1: key =  frgb['GB'][key]
+   if key in frgb['FR'] and lang == 2: key =  frgb['FR'][key]
+   kl,vl = keys
+   # ~~> Identify where is &FIN for possible insertion of new key before it
+   try:
+      for line,j in zip(lines,range(len(lines))):
+         if '&FIN' in line.strip(): jndex = j
+      kndex = kl.index('&FIN')
+   except:
+      jndex = len(lines)
+      kndex = len(kl)
+   # English keys
+   if key in frgb['GB']:
+      if key in kl:
+         vl[kl.index(key)] = [value]
+         lines.insert(jndex,format72(key+' : '+str(value)))
+      elif frgb['GB'][key] in kl:
+         vl[kl.index(frgb['GB'][key])] = [value]
+         lines.insert(jndex,format72(frgb['GB'][key]+' : '+str(value)))
       else:
-         kl.insert(0,key)      # insert instead of append so before &FIN
-         vl.insert(0,[value])
-   if key in frgb['FR'].keys():
-      if key in kl: vl[kl.index(key)] = [value]
-      elif frgb['FR'][key] in kl: vl[kl.index(frgb['FR'][key])] = [value]
+         kl.insert(kndex,key)
+         vl.insert(kndex,[value])
+         lines.insert(jndex,format72(key+' : '+str(value)))
+   # French keys
+   if key in frgb['FR']:
+      if key in kl:
+         vl[kl.index(key)] = [value]
+         lines.insert(jndex,format72(key+' : '+str(value)))
+      elif frgb['FR'][key] in kl:
+         vl[kl.index(frgb['FR'][key])] = [value]
+         lines.insert(jndex,format72(frgb['FR'][key]+' : '+str(value)))
       else:
-         kl.insert(0,key)      # insert instead of append so before &FIN
-         vl.insert(0,[value])
+         kl.insert(kndex,key)
+         vl.insert(kndex,[value])
+         lines.insert(jndex,format72(key+' : '+str(value)))
 
-   return (kl,vl)
+   return lines,(kl,vl)
+# _____             ________________________________________________
+# ____/ SPECIFICS  /_______________________________________________/
+#
+def format72(value):
+
+   val72 = ''
+   for i in range(len(value)/72+1):
+      val72 = val72 + ( value+72*' ' )[72*i:72*i+72] + '\n'
+
+   return val72.rstrip()
 
 # _____             ________________________________________________
 # ____/ MAIN CALL  /_______________________________________________/
@@ -436,12 +512,12 @@ if __name__ == "__main__":
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # ~~~~ Reads config file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   print '\n\nLoading Options and Configurations\n\
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'
+   print '\n\nLoading Options and Configurations\n'+'~'*72+'\n'
    USETELCFG = ''
-   if environ.has_key('USETELCFG'): USETELCFG = environ['USETELCFG']
+   PWD = path.dirname(path.dirname(path.dirname(path.dirname(sys.argv[0]))))
+   if 'USETELCFG' in environ: USETELCFG = environ['USETELCFG']
    SYSTELCFG = 'systel.cfg'
-   if environ.has_key('SYSTELCFG'): SYSTELCFG = environ['SYSTELCFG']
+   if 'SYSTELCFG' in environ: SYSTELCFG = environ['SYSTELCFG']
    if path.isdir(SYSTELCFG): SYSTELCFG = path.join(SYSTELCFG,'systel.cfg')
    parser = OptionParser("usage: %prog [options] \nuse -h for more help.")
    parser.add_option("-c", "--configname",
@@ -459,11 +535,6 @@ if __name__ == "__main__":
                       dest="rootDir",
                       default='',
                       help="specify the root, default is taken from config file" )
-   parser.add_option("-v", "--version",
-                      type="string",
-                      dest="version",
-                      default='',
-                      help="specify the version number, default is taken from config file" )
    parser.add_option("-k","--rank",type="string",dest="rank",default='all',
       help="the suite of validation ranks (all by defult)" )
    options, args = parser.parse_args()
@@ -472,37 +543,37 @@ if __name__ == "__main__":
       dircfg = path.dirname(options.configFile)
       if path.isdir(dircfg) :
          print ' ... in directory: ' + dircfg + '\n ... use instead: '
-         for dirpath,dirnames,filenames in walk(dircfg) : break
-         for file in filenames :
-            head,tail = path.splitext(file)
-            if tail == '.cfg' : print '    +> ',file
-      sys.exit()
+         _, _, filenames = walk(dircfg).next()
+         for fle in filenames :
+            head,tail = path.splitext(fle)
+            if tail == '.cfg' : print '    +> ',fle
+      sys.exit(1)
 
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # ~~~~ Works for all configurations unless specified ~~~~~~~~~~~~~~~
    cfgs = parseConfigFile(options.configFile,options.configName)
 
    #  /!\  for testing purposes ... no real use
-   for cfgname in cfgs.keys():
+   for cfgname in cfgs:
       # still in lower case
+      if not cfgs[cfgname].has_key('root'): cfgs[cfgname]['root'] = PWD
       if options.rootDir != '': cfgs[cfgname]['root'] = options.rootDir
-      if options.version != '': cfgs[cfgname]['version'] = options.version
       # parsing for proper naming
       if options.rank != '': cfgs[cfgname]['val_rank'] = options.rank
       cfg = parseConfig_ValidateTELEMAC(cfgs[cfgname])
 
       debug = True
 
-      for mod in cfg['VALIDATION'].keys():
+      for mod in cfg['VALIDATION']:
 # ~~ Scans all CAS files to launch validation ~~~~~~~~~~~~~~~~~~~~~~
-         print '\n\nConfiguration ' + cfgname + ', Module '+ mod + '\n\
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'
+         print '\n\nConfiguration ' + cfgname + ', Module '+ mod + '\n'+'~'*72+'\n'
          print '... reading module dictionary'
-         frgb,dico = scanDICO(path.join(path.join(cfg['MODULES'][mod]['path'],'lib'),mod+cfg['version']+'.dico'))
+         frgb,dico = scanDICO(path.join(path.join(cfg['MODULES'][mod]['path'],'lib'),mod+'.dico'))
          for casFile in cfg['VALIDATION'][mod]:
             print '... CAS file: ',casFile
-            casKeys = readCAS(scanCAS(casFile),dico,frgb)
+            casKeys = readCAS(scanCAS(getFileContent(casFile)),dico,frgb)
                #/!\ for testing purposes ... no real use.
+               #/!\ Note that casKeys is made of lines,(keys,values)
 
-   sys.exit()
+   sys.exit(0)
 

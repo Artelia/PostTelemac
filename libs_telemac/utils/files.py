@@ -27,6 +27,9 @@
 """@history 31/05/2012 -- Sebastien E. Bourban
          Addition of a simple unzipping method (unzip)
 """
+"""@history 15/04/20124-- Sebastien E. Bourban
+         function isNewer now processes files within a directory also.
+"""
 """@brief
 """
 
@@ -39,10 +42,17 @@ import shutil
 import time
 import difflib
 from os import path,walk,mkdir,getcwd,chdir,remove,rmdir,listdir,stat,makedirs
+try:
+   from os import symlink
+   SYMLINK_AVAIL = True
+except ImportError:
+   SYMLINK_AVAIL = False
+import errno
 from fnmatch import fnmatch #,translate
 from zipfile import ZipFile as zipfile
 from distutils.archive_util import make_archive
 from distutils.dep_util import newer
+import urllib2
 # ~~> dependencies towards other modules
 sys.path.append( path.join( path.dirname(sys.argv[0]), '..' ) ) # clever you !
 from utils.progressbar import ProgressBar
@@ -52,17 +62,21 @@ from utils.messages import filterMessage
 # ____/ Global Variables /_________________________________________/
 #
 
+def checkSymLink(use_link):
+   return ( SYMLINK_AVAIL and use_link )
+
+
 # _____                  ___________________________________________
 # ____/ General Toolbox /__________________________________________/
 #
 
-def addToList(list,name,value):
-   if list.get(name) != None:
-      if value not in list[name]:
-         list[name].append(value)
+def addToList(lst,name,value):
+   if lst.get(name) != None:
+      if value not in lst[name]:
+         lst[name].append(value)
    else:
-      list.update({name:[value]})
-   return list
+      lst.update({name:[value]})
+   return lst
 
 """@brief Make a list of all files in root that have
    the extension in [ext]
@@ -74,20 +88,28 @@ def getTheseFiles(root,exts):
    if path.exists(root) :
       #@note FD@EDF : allow scan of subdirectories...
       #@note SEB@HRW : there must be aother way -- walk is too long
-      for dirpath,dirnames,filenames in walk(root) : break
-      for file in filenames :
+      dirpath, _, filenames = walk(root).next()
+      for fle in filenames :
          for ext in exts :
-            head,tail = path.splitext(file)
-            if tail.lower() == ext.lower() : files.append(path.join(dirpath,file))
+            head,tail = path.splitext(fle)
+            if tail.lower() == ext.lower() : files.append(path.join(dirpath,fle))
    return files
 
 """
    Evaluate whether one file is more recent than the other
    Return 1 is ofile exists and is more recent than nfile, 0 otherwise
+   > newer(ofile,nfile) is True if ofile exists and is more recent than nfile
 """
 def isNewer(nfile,ofile):
-   if newer(nfile,ofile): return 0
-   return 1
+   # TODO: use of newer_group for the second part of the test.
+   i = 1
+   if path.isfile(ofile):
+      if newer(ofile,nfile): i = 0
+   elif path.isdir(ofile):
+      for file in listdir(ofile):
+         if path.isfile(path.join(ofile,file)):
+            if newer(path.join(ofile,file),nfile): i *= 0
+   return 1 - min(i,1)
 
 """
 
@@ -140,6 +162,18 @@ def createDirectories(po):
       pr = path.join(pr,pd.pop())
       mkdir(pr)
    return
+
+"""
+"""
+def symlinkFile(src, dest):
+   """ Copy a file to its destination """
+   # If link already exist overwrite it
+   try:
+      symlink(src, dest)
+   except OSError, e:
+      if e.errno == errno.EEXIST:
+         remove(dest)
+         symlink(src, dest)
 
 """
 """
@@ -234,7 +268,7 @@ def checkSafe(fi,safe,ck):
 """
 def matchSafe(fi,ex,safe,ck):
    # ~~> list all entries
-   for dp,dn,filenames in walk(safe): break
+   dp, _, filenames = walk(safe).next()
    if filenames == []: return True
    # ~~> match expression
    exnames = []
@@ -321,6 +355,18 @@ def diffTextFiles(fFile,tFile,options):
 
    return
 
+# _____                      _______________________________________
+# ____/ Internet connection /______________________________________/
+#
+
+def isOnline(url='http://www.opentelemac.org/', timeout=5):
+   try:
+      urllib2.urlopen(url,timeout=timeout)
+      return True
+   except urllib2.URLError:
+      print("... could not connect through to the internet.")
+   return False
+
 # _____             ________________________________________________
 # ____/ MAIN CALL  /_______________________________________________/
 #
@@ -335,4 +381,4 @@ if __name__ == "__main__":
 # ~~~~ Jenkins' success message ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    print '\n\nMy work is done\n\n'
 
-   sys.exit()
+   sys.exit(0)

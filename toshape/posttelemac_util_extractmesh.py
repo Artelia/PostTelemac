@@ -26,7 +26,7 @@ from os import path
 #from shapely.geometry import Polygon
 import sys
 import os.path
-
+"""
 try:
     #sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','libs_telemac'))
     sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','libs_telemac'))
@@ -42,7 +42,9 @@ try:
 except Exception, e :
     print str(e)
     print 'import '  + os.path.join(os.path.dirname(os.path.realpath(__file__)),'libs_telemac')
+"""
 
+from ..posttelemacparsers.posttelemac_selafin_parser import *
 debug = False
 
 
@@ -114,18 +116,28 @@ class SelafinContour2Shp(QtCore.QObject):
         #donnees process
         self.processtype = processtype
         #donnes delafin
-        slf = SELAFIN(os.path.normpath(selafinfilepath))
-            
+        self.parserhydrau = PostTelemacSelafinParser()
+        self.parserhydrau.loadHydrauFile(os.path.normpath(selafinfilepath))
+        
+        #slf = SELAFIN(os.path.normpath(selafinfilepath))
+        slf = self.parserhydrau.hydraufile
+        """
         self.slf_x = slf.MESHX
         self.slf_y = slf.MESHY
         self.slf_mesh = np.array(slf.IKLE3)
+        """
+        self.slf_x, self.slf_y  = self.parserhydrau.getMesh()
+        self.slf_mesh  = np.array( self.parserhydrau.getIkle() )
         
         
-        slf_time = [time,slf.tags["times"][time]]
-            
+        #slf_time = [time,slf.tags["times"][time]]
+        #slf_time = [time,slf.tags["times"][time]]
+        slf_time = [time,self.parserhydrau.getTimes()[time]]
             
         if parameter is not None:
-            self.slf_param = [parameter,slf.VARNAMES[parameter]]
+            #self.slf_param = [parameter,slf.VARNAMES[parameter]]
+            #self.slf_value = slf.getVALUES(slf_time[0])[self.slf_param[0]]
+            self.slf_param = [parameter,self.parserhydrau.getVarnames()[parameter]]
             self.slf_value = slf.getVALUES(slf_time[0])[self.slf_param[0]]
         else : 
             self.slf_value = None
@@ -335,11 +347,15 @@ class InitSelafinMesh2Shp(QtCore.QObject):
         
         
         try:
-            slf = SELAFIN(os.path.normpath(selafinfilepath))
+            #slf = SELAFIN(os.path.normpath(selafinfilepath))
+            parserhydrau = PostTelemacSelafinParser()
+            parserhydrau.loadHydrauFile(os.path.normpath(selafinfilepath))
+            slf = parserhydrau.hydraufile
         except:
             self.raiseError('fichier selafin n existe pas')
             
-        times = slf.tags["times"]
+        #times = slf.tags["times"]
+        times = parserhydrau.getTimes()
         if isinstance(time,int):            #cas des plugins et scripts
             if not time in range(len(times)):
                 self.raiseError(str(ctime()) + " Time non trouve dans  "+str(times))
@@ -352,7 +368,8 @@ class InitSelafinMesh2Shp(QtCore.QObject):
             
             
         if parameter is not None:
-            parameters=[str(slf.VARNAMES[i]).strip() for i in range(len(slf.VARNAMES))]
+            #parameters=[str(slf.VARNAMES[i]).strip() for i in range(len(slf.VARNAMES))]
+            parameters=[str(parserhydrau.getVarnames()[i]).strip() for i in range(len(parserhydrau.getVarnames()))]
             if not parameter.isdigit():
                 if parameter in parameters:
                     #self.slf_param = [parameters.index(parameter), parameter ]

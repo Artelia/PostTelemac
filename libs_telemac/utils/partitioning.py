@@ -171,7 +171,7 @@ class splitSELAFIN():
       i,vn = subsetVariablesSLF(var,self.slf.VARNAMES)
       if i == []:
          print '... Could not find ',var,', you may need another split method'
-         sys.exit()
+         sys.exit(1)
       # ~~> NSPLIT is the interger value of the variable PROCESSORS (time frame 0)
       NSPLIT = np.array( self.slf.getVariablesAt( 0,i )[0], dtype=np.int)
 
@@ -545,7 +545,7 @@ class splitSELAFIN():
             # ~~> Write polygons to double check
             fmti = '00000' + str(part)
             fmti = fmti[len(fmti)-5:]
-            fileName = path.join(path.dirname(self.slf.fileName),self.isDOMAIN+fmtn+'-'+fmti+'.i2s')
+            fileName = path.join(path.dirname(self.slf.file['name']),self.isDOMAIN+fmtn+'-'+fmti+'.i2s')
             putInS(fileName,[],'i2s',polyXY)
 
          # ~~> Convert node numbers into x,y
@@ -557,7 +557,7 @@ class splitSELAFIN():
                pxy.append([ self.slf.MESHX[n],self.slf.MESHY[n] ])
             polyXY.append(pxy)
          # ~~> Write polygons to double check
-         fileName = path.join(path.dirname(self.slf.fileName),self.isDOMAIN+'.i2s')
+         fileName = path.join(path.dirname(self.slf.file['name']),self.isDOMAIN+'.i2s')
          putInS(fileName,[],'i2s',polyXY)
 
       print '\n... Final check to the element partitioning'
@@ -567,14 +567,14 @@ class splitSELAFIN():
       if self.isDOMAIN != '':
          # ~~> This is optional
          print '\n... Printing the domain split into a SELAFIN'
-         fileRoot,fileExts = path.splitext(self.slf.fileName)
-         self.slf.fole = open(fileRoot+'_PROCS'+fileExts,'wb')
+         fileRoot,fileExts = path.splitext(self.slf.file['name'])
+         self.slf.fole.update({ 'hook': open(fileRoot+'_PROCS'+fileExts,'wb') })
          self.slf.appendHeaderSLF()
          self.slf.appendCoreTimeSLF(0)
          VARSOR = self.slf.getVALUES(0)
          for v in range(self.slf.NVAR): VARSOR[v] = self.NSPLIT
          self.slf.appendCoreVarsSLF(VARSOR)
-         self.slf.fole.close()
+         self.slf.fole['hook'].close()
 
       print '\n... Storing the global liquid boundary numbering (NUMLIQ)'
       # ~~> Implying NUMLIQ and the number NFRLIQ based on the joined-up lines
@@ -597,15 +597,15 @@ class splitSELAFIN():
       for part in range(self.NPARTS):
          for i in polyFILTER[part]:
             if i[0] == i[len(i)-1]: continue                # /!\ you are here adding one !
-            if i[0] in ISEG.keys(): ISEG[i[0]].update({ part:i[1]+1 })
+            if i[0] in ISEG: ISEG[i[0]].update({ part:i[1]+1 })
             else: ISEG.update({ i[0]:{ part:i[1]+1 } })
-            if i[len(i)-1] in ISEG.keys(): ISEG[i[len(i)-1]].update({ part:-i[len(i)-2]-1 })
+            if i[len(i)-1] in ISEG: ISEG[i[len(i)-1]].update({ part:-i[len(i)-2]-1 })
             else: ISEG.update({ i[len(i)-1]:{ part:-i[len(i)-2]-1 } })
       #   Switching parts of ISEG for final call: part 2
-      for i in ISEG.keys():
+      for i in ISEG:
          if len(ISEG[i]) != 2:
             print '... You have a boundary node surounded with more than two boundary segments: ',i
-            sys.exit()
+            sys.exit(1)
          parts = ISEG[i].keys()
          ISEG[i] = { parts[0]:ISEG[i][parts[1]], parts[1]:ISEG[i][parts[0]] }
 
@@ -617,9 +617,9 @@ class splitSELAFIN():
       while parts != []:
          part = parts[0]
          parts.pop(0)
-         for ip in NPTIR[part].keys():
+         for ip in NPTIR[part]:
             for ipart in parts:
-               if ip in NPTIR[ipart].keys():
+               if ip in NPTIR[ipart]:
                   NPTIR[part][ip].append(ipart)
                   NPTIR[ipart][ip].append(part)
 
@@ -646,12 +646,12 @@ class splitSELAFIN():
          self.slfn.MESHY = self.slf.MESHY[KNOLG[part]]
 
          # ~~> GEO file: File names
-         fileRoot,fileExts = path.splitext(self.slf.fileName)
-         self.slfn.fileName = fileRoot+fmtn+'-'+fmti+fileExts
+         fileRoot,fileExts = path.splitext(self.slf.file['name'])
+         self.slfn.file['name'] = fileRoot+fmtn+'-'+fmti+fileExts
 
          # ~~> GEO file: Printing
-         print '       ~> printing: ',self.slfn.fileName
-         self.slfn.fole = open(self.slfn.fileName,'wb')
+         print '       ~> printing: ',self.slfn.file['name']
+         self.slfn.fole.update({ 'hook': open(self.slfn.file['name'],'wb') })
          self.slfn.appendHeaderSLF()
          LVARSOR = np.zeros((self.slfn.NVAR,self.slfn.NPOIN2),dtype=np.float32)
          for t in range(len(self.slf.tags['times'])):
@@ -659,7 +659,7 @@ class splitSELAFIN():
             VARSOR = self.slf.getVALUES(t)
             for v in range(self.slfn.NVAR): LVARSOR[v] = VARSOR[v][KNOLG[part]]
             self.slfn.appendCoreVarsSLF(LVARSOR)
-         self.slfn.fole.close()
+         self.slfn.fole['hook'].close()
 
       if not self.isCONLIM: return
 
@@ -686,7 +686,7 @@ class splitSELAFIN():
                if np.count_nonzero( self.NSPLIT[e] ) < 2: continue
                for p1,p2 in zip([1,2,0],[0,1,2]):    # reverse order because looking from the other side
                   if self.NSPLIT[e[p1]] > 0 and self.NSPLIT[e[p2]] > 0:
-                     if not PEHALO.has_key((e[p1],e[p2])): PEHALO.update({ (e[p1],e[p2]):[0,[]] })
+                     if not (e[p1],e[p2]) in PEHALO: PEHALO.update({ (e[p1],e[p2]):[0,[]] })
                      PEHALO[(e[p1],e[p2])][1].append(k)
                      PEHALO[(e[p1],e[p2])][1].append(otherpart)
                pbar.update(ibar)
@@ -698,18 +698,18 @@ class splitSELAFIN():
             if np.count_nonzero( self.NSPLIT[e] ) < 2: continue
             for p1,p2,p3 in zip([0,1,2],[1,2,0],[2,0,1]):
                if self.NSPLIT[e[p1]] > 0 and self.NSPLIT[e[p2]] > 0:
-                  if PEHALO.has_key((e[p1],e[p2])):  # the good side opposes the dark side
+                  if (e[p1],e[p2]) in PEHALO:  # the good side opposes the dark side
                      PEHALO[(e[p1],e[p2])][0] = k
                      if self.NSPLIT[e[p3]] == 0: self.NSPLIT[e[p3]] = -1
                      if self.NSPLIT[e[p3]] == -1:
-                        if not SEHALO.has_key((e[p1],e[p3])): SEHALO.update({ (e[p1],e[p3]):[] })
+                        if not (e[p1],e[p3]) in SEHALO: SEHALO.update({ (e[p1],e[p3]):[] })
                         SEHALO[(e[p1],e[p3])].append(k)
-                        if not SEHALO.has_key((e[p2],e[p3])): SEHALO.update({ (e[p2],e[p3]):[] })
+                        if not (e[p2],e[p3]) in SEHALO: SEHALO.update({ (e[p2],e[p3]):[] })
                         SEHALO[(e[p2],e[p3])].append(k)
                      else: # self.NSPLIT[e[p3]] must be 2 !
-                        if not SEHALO.has_key((e[p3],e[p1])): SEHALO.update({ (e[p3],e[p1]):[] })
+                        if not (e[p3],e[p1]) in SEHALO: SEHALO.update({ (e[p3],e[p1]):[] })
                         if k not in SEHALO[(e[p3],e[p1])]: SEHALO[(e[p3],e[p1])].append(k)
-                        if not SEHALO.has_key((e[p2],e[p3])): SEHALO.update({ (e[p2],e[p3]):[] })
+                        if not (e[p2],e[p3]) in SEHALO: SEHALO.update({ (e[p2],e[p3]):[] })
                         if k not in SEHALO[(e[p2],e[p3])]: SEHALO[(e[p2],e[p3])].append(k)
                      if self.KSPLIT[j] >= 0: self.KSPLIT[j] = -(self.KSPLIT[j]+1)     # /!\ This is very dangerous but necessary
             pbar.update(ibar)
@@ -725,29 +725,29 @@ class splitSELAFIN():
             if np.count_nonzero( self.NSPLIT[e] ) < 2: continue
             for i in [0,1,2]:
                ii = (i+1)%3
-               if self.NSPLIT[e[i]] > 0 and self.NSPLIT[e[ii]] < 0 and SEHALO.has_key((e[i],e[ii])): SEHALO[(e[i],e[ii])].append(k) # correct orientation
-               if self.NSPLIT[e[i]] > 0 and self.NSPLIT[e[ii]] > 0 and SEHALO.has_key((e[ii],e[i])): SEHALO[(e[ii],e[i])].append(k) # opposite orientation
+               if self.NSPLIT[e[i]] > 0 and self.NSPLIT[e[ii]] < 0 and (e[i],e[ii]) in SEHALO: SEHALO[(e[i],e[ii])].append(k) # correct orientation
+               if self.NSPLIT[e[i]] > 0 and self.NSPLIT[e[ii]] > 0 and (e[ii],e[i]) in SEHALO: SEHALO[(e[ii],e[i])].append(k) # opposite orientation
                ii = (i+2)%3
-               if self.NSPLIT[e[i]] > 0 and self.NSPLIT[e[ii]] < 0 and SEHALO.has_key((e[i],e[ii])): SEHALO[(e[i],e[ii])].append(k) # correct orientation
-               if self.NSPLIT[e[i]] > 0 and self.NSPLIT[e[ii]] > 0 and SEHALO.has_key((e[i],e[ii])): SEHALO[(e[i],e[ii])].append(k) # opposite orientation
+               if self.NSPLIT[e[i]] > 0 and self.NSPLIT[e[ii]] < 0 and (e[i],e[ii]) in SEHALO: SEHALO[(e[i],e[ii])].append(k) # correct orientation
+               if self.NSPLIT[e[i]] > 0 and self.NSPLIT[e[ii]] > 0 and (e[i],e[ii]) in SEHALO: SEHALO[(e[i],e[ii])].append(k) # opposite orientation
             if self.KSPLIT[j] < 0: self.KSPLIT[j] = -self.KSPLIT[j] - 1    # /!\ back to a safe place
             pbar.update(k)
          pbar.finish()
          #   Step 3: finally cross reference information between SEHALO and PEHALO
          print '       ~> Combining sides surrounding the halo-elements'
-         for ie in PEHALO.keys():
+         for ie in PEHALO:
             if PEHALO[ie][0] == 0: continue
             k = PEHALO[ie][0]      # element number in its local part numbering
-            if not IFAPAR[part].has_key(k): IFAPAR[part].update({ k:[-2,-1,-2,-1,-2,-1] })
+            if not k in IFAPAR[part]: IFAPAR[part].update({ k:[-2,-1,-2,-1,-2,-1] })
             j = KELLG[part][k]
             e = self.slf.IKLE[j]
             for p1,p2 in zip([0,1,2],[1,2,0]):
-               if SEHALO.has_key((e[p1],e[p2])):
+               if (e[p1],e[p2]) in SEHALO:
                   if len(SEHALO[(e[p1],e[p2])]) > 1:
                      if SEHALO[(e[p1],e[p2])][0] == k: IFAPAR[part][k][2*p1] = SEHALO[(e[p1],e[p2])][1]
                      if SEHALO[(e[p1],e[p2])][1] == k: IFAPAR[part][k][2*p1] = SEHALO[(e[p1],e[p2])][0]
                      IFAPAR[part][k][1+2*p1] = part
-               if SEHALO.has_key((e[p2],e[p1])):
+               if (e[p2],e[p1]) in SEHALO:
                   if len(SEHALO[(e[p2],e[p1])]) > 1:
                      if SEHALO[(e[p2],e[p1])][0] == k: IFAPAR[part][k][2*p1] = SEHALO[(e[p2],e[p1])][1]
                      if SEHALO[(e[p2],e[p1])][1] == k: IFAPAR[part][k][2*p1] = SEHALO[(e[p2],e[p1])][0]
@@ -952,16 +952,16 @@ if __name__ == "__main__":
    partelName = path.join(PWD,'PARTEL.PAR')
    if not path.exists(partelName):
       print '... could not find the PARTEL.PAR file in ',PWD
-      sys.exit()
+      sys.exit(1)
    files = getFileContent(partelName)
    fileSLF = path.join(PWD,files[0].strip())
    if not path.exists(fileSLF):
       print '... could not find the file ',fileSLF,' in ',PWD
-      sys.exit()
+      sys.exit(1)
    fileCLM = path.join(PWD,files[1].strip())
    if not path.exists(fileCLM):
       print '... could not find the file ',fileCLM,' in ',PWD
-      sys.exit()
+      sys.exit(1)
    fileSEQ = path.join(PWD,'RESULT_SEQ_METIS')
    if not path.exists(fileSEQ): fileSEQ = ''
    splitCONLIM = False
@@ -976,4 +976,4 @@ if __name__ == "__main__":
 # ~~~~ Jenkins' success message ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    print '\n\nMy work is done\n\n'
 
-   sys.exit()
+   sys.exit(0)
