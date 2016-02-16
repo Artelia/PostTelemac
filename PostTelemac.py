@@ -96,8 +96,17 @@ class PostTelemac:
         self.actions = []
         self.menu = self.tr(u'&PostTelemac')
         # TODO: We are going to let the user set this up in a future iteration
-        self.toolbar = self.iface.addToolBar(u'PostTelemac')
-        self.toolbar.setObjectName(u'PostTelemac')
+        #toolbar
+        toolbars = self.iface.mainWindow().findChildren(QToolBar)
+        test = True
+        for toolbar1 in toolbars:
+            if toolbar1.windowTitle() == u'Telemac':
+                self.toolbar = toolbar1
+                test = False
+                break
+        if test:
+            self.toolbar = self.iface.addToolBar(u'Telemac')
+            self.toolbar.setObjectName(u'Telemac')
         
         self.dlg_about = None
         
@@ -226,9 +235,10 @@ class PostTelemac:
             self.iface.removePluginMenu(
                 self.tr(u'&PostTelemac'),
                 action)
-            self.iface.removeToolBarIcon(action)
+            self.toolbar.removeAction(action)
         # remove the toolbar
-        del self.toolbar
+        if len(self.toolbar.actions()) == 0 :
+            del self.toolbar
         if DOPROCESSING : Processing.removeProvider(self.provider)
 
     def run(self):
