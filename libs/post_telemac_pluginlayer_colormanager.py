@@ -143,7 +143,8 @@ class PostTelemacColorManager():
             return (None, None)
             
     def saveClrColorRamp(self,name,colors,levels):
-        path = os.path.join(os.path.dirname(__file__),'..', 'config', str(name) +'.clr')
+        #path = os.path.join(os.path.dirname(__file__),'..', 'config', str(name) +'.clr')
+        path = os.path.join(self.selafinlayer.propertiesdialog.posttelemacdir, str(name) +'.clr')
         f = open(path, 'w')
         f.write(str(name)+"\n")
         f.write("colors\n")

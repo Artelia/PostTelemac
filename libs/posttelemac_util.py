@@ -567,8 +567,7 @@ class PostTelemacUtils():
         self.selafinlayer.propertiesdialog.normalMessage(self.tr("2Shape - coutour creation launched - watch progress on log tab"))
         
         if  self.selafinlayer.propertiesdialog.lineEdit_contourname.text() == "":
-            name = (os.path.basename(os.path.normpath(self.selafinlayer.hydraufilepath)).split('.')[0]
-                             +"_"+str(self.selafinlayer.parametres[self.selafinlayer.param_displayed][1]).translate(None, "?,!.;")
+            name = (str(self.selafinlayer.parametres[self.selafinlayer.param_displayed][1]).translate(None, "?,!.;")
                              +"_t_"+str(int(self.selafinlayer.time_displayed)) )
         else:
             name = self.selafinlayer.propertiesdialog.lineEdit_contourname.text()

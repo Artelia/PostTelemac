@@ -39,6 +39,7 @@ except :
 #other import
 import os
 from time import ctime
+import shutil
 #local import
 from ..libs.posttelemac_util import *
 from posttelemacvirtualparameterdialog import *
@@ -77,6 +78,15 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.clickTool = QgsMapToolEmitPoint(self.canvas)   #specific map tool (ie mouse behaviour)
         self.crsselector = QgsGenericProjectionSelector()
         self.loaddirectory = None       #the directory of "load telemac" button
+        
+        #setup user dir in home
+        homedir = os.path.expanduser("~")
+        self.posttelemacdir = os.path.join(homedir,'.PostTelemac')
+        if not os.path.isdir(self.posttelemacdir):
+            #os.makedirs(self.posttelemacdir)
+            shutil.copytree(os.path.join(os.path.dirname(__file__),'..', 'config'), self.posttelemacdir)
+            
+            
         
         #********* ********** ******************************************
         #********* Connecting ******************************************
@@ -531,7 +541,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """
         name = self.dlg_color.lineEdit_name.text()
         if self.comboBox_clrramp_preset.findText(name) > -1 :
-            path = os.path.join(os.path.dirname(__file__),'..', 'config',name+'.clr')
+            #path = os.path.join(os.path.dirname(__file__),'..', 'config',name+'.clr')
+            path = os.path.join(self.posttelemacdir,name+'.clr')
             os.remove(path)
             self.dlg_color.close()
             self.InitMapRamp()
@@ -541,14 +552,14 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """
         load clr file and apply it
         """
-
         if isinstance(name,int):
             name = self.comboBox_clrramp_preset.currentText()
             
         if fullpath:
             path = name
         else:
-            path = os.path.join(os.path.dirname(__file__),'..', 'config',str(name)+'.clr')
+            #path = os.path.join(os.path.dirname(__file__),'..', 'config',str(name)+'.clr')
+            path = os.path.join(self.posttelemacdir,str(name)+'.clr')
         if name : 
             cmap, levels = self.layer.colormanager.readClrColorRamp(path)
             if cmap and levels:
@@ -562,7 +573,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         Load user defined color ramp in user defined color ramp combobox
         """
         self.comboBox_clrramp_preset.clear()
-        for file in os.listdir(os.path.join(os.path.dirname(__file__),'..', 'config')):
+        #for file in os.listdir(os.path.join(os.path.dirname(__file__),'..', 'config')):
+        for file in os.listdir(self.posttelemacdir):
             if file.endswith(".clr") and file.split('.')[0] :
                 self.comboBox_clrramp_preset.addItem(file.split('.')[0])
             
@@ -663,7 +675,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """
         Populate classes combobox on dialog creation
         """
-        f = open(os.path.join(os.path.dirname(__file__),'..', 'config','classes.txt'), 'r')
+        #f = open(os.path.join(os.path.dirname(__file__),'..', 'config','classes.txt'), 'r')
+        f = open(os.path.join(self.posttelemacdir,'classes.txt'), 'r')
         for line in f:
                 tabtemp=[]
                 for txt in line.split("=")[1].split("\n")[0].split(";"):
