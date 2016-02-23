@@ -81,14 +81,23 @@ class UserColorRampDialog(QtGui.QDialog, FORM_CLASS):
     def removerow(self):
         introw = self.tableWidget.currentRow()
         self.tableWidget.removeRow(introw)
-        self.tableWidget.setItem(introw, 1, QtGui.QTableWidgetItem(self.tableWidget.item(introw-1,2)))
+        if  introw != 0 and  introw != (self.tableWidget.rowCount()):
+            self.tableWidget.setItem(introw, 1, QtGui.QTableWidgetItem(self.tableWidget.item(introw-1,2)))
         
         
     def checkUpperLower(self, row,column):
+        try:
+            self.tableWidget.cellChanged.disconnect(self.checkUpperLower)
+        except Excetion, e:
+            pass
         if column == 1:
             self.tableWidget.setItem(row-1, 2, QtGui.QTableWidgetItem(self.tableWidget.item(row,column)))
         elif column == 2:
             self.tableWidget.setItem(row+1, 1, QtGui.QTableWidgetItem(self.tableWidget.item(row,column)))
+        
+        self.tableWidget.cellChanged.connect(self.checkUpperLower)
+        
+        
      
             
     def dialogIsFinished(self):
