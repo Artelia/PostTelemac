@@ -116,6 +116,7 @@ class SelafinContour2Shp(QtCore.QObject):
         #donnees process
         self.processtype = processtype
         self.quickprocessing = quickprocessing
+        #self.quickprocessing = True
         #donnes delafin
         self.parserhydrau = PostTelemacSelafinParser()
         self.parserhydrau.loadHydrauFile(os.path.normpath(selafinfilepath))
@@ -350,57 +351,67 @@ class SelafinContour2Shp(QtCore.QObject):
         return geomtemp1
      
     def InsertRinginFeature(self,f1,allfeatures2,vlOuterTempIndex,lvltemp1,counttotal):
-        #Correction des erreurs de geometrie des outers
-        if len(f1.geometry().validateGeometry())!=0:                                           
-            f1geom  = f1.geometry().buffer(0.01,5)
-        else:
-            f1geom = f1.geometry()
+        try:
+            #Correction des erreurs de geometrie des outers
+            if len(f1.geometry().validateGeometry())!=0:                                           
+                f1geom  = f1.geometry().buffer(0.01,5)
+                if f1geom.area() < f1.geometry().area():
+                    f1geom = f1.geometry()
+                    self.writeOutput(ctime() + ' - Warning : geometry '+str(f1.id())+' not valid before inserting rings')
+            else:
+                f1geom = f1.geometry()
+                
+            # requete spatiale pour avoir les inner dans les outers
+            ids = vlOuterTempIndex.intersects(f1geom.boundingBox())                                       
+
             
-        # requete spatiale pour avoir les inner dans les outers
-        ids = vlOuterTempIndex.intersects(f1geom.boundingBox())                                       
+            fet1surface=f1geom.area()
+            #Iteration sur tous les inners pour les inclures dans les outers ****
+            # creation d un tableau pour trier les inners par ordre de S decroissant
+            tab=[]
+            for id in ids:
+                f2geom = allfeatures2[id].geometry()
+                if len(f2geom.validateGeometry())!=0:
+                    f2geom= f2geom.buffer(0.01,5)
+                tab.append([f2geom.area(),f2geom])                          
+            if len(tab)>0:
+                tab.sort(reverse = True)
+                #Iteration pour enlever les inner des outers - coeur du script
+                for k in range(len(tab)):                                                
+                    try:
+                        if int(k)%100 == 0 and k != 0:
+                            self.verboseOutput(self.slf_param[1],lvltemp1,f1.id(),counttotal,k,len(ids))
 
-        
-        fet1surface=f1geom.area()
-        #Iteration sur tous les inners pour les inclures dans les outers ****
-        # creation d un tableau pour trier les inners par ordre de S decroissant
-        tab=[]
-        for id in ids:
-            f2geom = allfeatures2[id].geometry()
-            if len(f2geom.validateGeometry())!=0:
-                f2geom= f2geom.buffer(0.01,5)
-            tab.append([f2geom.area(),f2geom])                          
-        if len(tab)>0:
-            tab.sort(reverse = True)
-            #Iteration pour enlever les inner des outers - coeur du script
-            for k in range(len(tab)):                                                
-                try:
-                    if int(k)%100 == 0 and k != 0:
-                        self.verboseOutput(self.slf_param[1],lvltemp1,f1.id(),counttotal,k,len(ids))
-
-                    if tab[k][0]>=fet1surface:
-                        continue
-                    else:
-                        ring = self.do_ring(tab[k][1])
-                        tt1 = f1geom.addRing(ring)
-                        if tt1==5 and f1geom.intersects(tab[k][1]):
-                            f1geom=f1geom.difference(tab[k][1])
-                except Exception, e:
-                    strtxt = (str(ctime()) + " - "+str(self.slf_param[1] )
-                                           +" - Thread - Traitement du niveau " + str(lvltemp1)
-                                           +" - geometry n "+str(f1.id())+"/"+str(counttotal ) 
-                                           +" - ile n "+str(k)+"/"+str(len(ids))
-                                           +" - Probleme d integration ******** : "+str(e)+" "
-                                           +str( tab[k][0])+" "+str( self.get_outerinner(tab[k][1])))
-                    self.writeOutput(strtxt)
-        if len(f1geom.validateGeometry())!=0:
-            f1geom= f1geom.buffer(0.01,5)
-        if self.xform:
-            f1geom.transform(self.xform)
-        fet = QgsFeature()
-        fet.setGeometry(f1geom)  
-        fet.setAttributes([lvltemp1[0],lvltemp1[1]])
-        
-        return fet
+                        if tab[k][0]>=fet1surface:
+                            continue
+                        else:
+                            ring = self.do_ring(tab[k][1])
+                            tt1 = f1geom.addRing(ring)
+                            if tt1==5 and f1geom.intersects(tab[k][1]):
+                                f1geom=f1geom.difference(tab[k][1])
+                    except Exception, e:
+                        strtxt = (str(ctime()) + " - "+str(self.slf_param[1] )
+                                               +" - Thread - Traitement du niveau " + str(lvltemp1)
+                                               +" - geometry n "+str(f1.id())+"/"+str(counttotal ) 
+                                               +" - ile n "+str(k)+"/"+str(len(ids))
+                                               +" - Probleme d integration ******** : "+str(e)+" "
+                                               +str( tab[k][0])+" "+str( self.get_outerinner(tab[k][1])))
+                        self.writeOutput(strtxt)
+            if len(f1geom.validateGeometry())!=0:
+                f1geomtemp= f1geom.buffer(0.01,5)
+                if f1geomtemp.area() > f1geom.area():
+                    f1geom = f1geomtemp
+                else:
+                    self.writeOutput(ctime() + ' - Warning : geometry '+str(f1.id())+' not valid after inserting rings')
+            if self.xform:
+                f1geom.transform(self.xform)
+            fet = QgsFeature()
+            fet.setGeometry(f1geom)  
+            fet.setAttributes([lvltemp1[0],lvltemp1[1]])
+            return fet
+        except Exception, e:
+            self.writeOutput(str(ctime())  + ' - Erreur creation ring : ' + str(e))
+            return f1
      
     def do_ring(self,geom3):        
         ring = []
