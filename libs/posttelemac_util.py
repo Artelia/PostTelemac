@@ -27,6 +27,7 @@ from PyQt4 import QtGui, uic
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4.QtCore import SIGNAL, Qt
+import qgis
 #import numpy
 import numpy as np
 #import time
@@ -342,7 +343,7 @@ class PostTelemacUtils():
     
     
     def workerFinished(self,list1,list2,list3 = None):
-    
+        
         if self.graphtodo ==0:
             ax = self.selafinlayer.propertiesdialog.ax
             if not self.selafinlayer.propertiesdialog.checkBox.isChecked():
@@ -634,7 +635,43 @@ class PostTelemacUtils():
         #self.selafinlayer.propertiesdialog.textBrowser_main.append(ctime() + " - "+ str(os.path.basename(strpath).split('.')[0]) + self.tr(" created"))
         self.selafinlayer.propertiesdialog.normalMessage(str(os.path.basename(strpath).split('.')[0]) + self.tr(" created"))
 
-    
+    def rasterCreation(self):
+        #print 'ok'
+        #Points
+        layerstring = self.selafinlayer.hydraufilepath+'[' + str(self.selafinlayer.time_displayed) + ']'
+        print layerstring
+        layerpoint = QgsVectorLayer(layerstring, 'test', "ogr")
+        #Layerpoint for interpolation
+        ld1 = qgis.analysis.QgsInterpolator.LayerData()
+        ld1.vectorLayer=layerpoint
+        ld1.zCoordInterpolation=False
+        ld1.interpolationAttribute=self.selafinlayer.propertiesdialog.comboBox_parametreschooser_2.currentIndex()
+        ld1.mInputType=0
+        
+        #interpolator
+        #itp=qgis.analysis.QgsIDWInterpolator([ld1])
+        itp=qgis.analysis.QgsTINInterpolator([ld1])
+        
+        if self.selafinlayer.propertiesdialog.comboBox_rasterextent.currentIndex() == 0 :
+            rect = iface.mapCanvas().extent()
+        elif self.selafinlayer.propertiesdialog.comboBox_rasterextent.currentIndex() == 1 :
+            rect = layerpoint.extent()
+        
+        #raster creation
+        res = self.selafinlayer.propertiesdialog.spinBox_rastercellsize.value()
+        ncol = int( ( rect.xMaximum() - rect.xMinimum() ) / res )
+        print str(ncol)
+        ncol = 300
+        rasterfilepath = os.path.join(os.path.dirname(self.selafinlayer.hydraufilepath),'raster2.asc')
+        print rasterfilepath
+        test = qgis.analysis.QgsGridFileWriter(itp,rasterfilepath,rect,ncol,ncol,res,res)
+        print 'ok1'
+        test.writeFile(False)
+        
+        
+        
+        
+        
 
 
     #****************************************************************************************************

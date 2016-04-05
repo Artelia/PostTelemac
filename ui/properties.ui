@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>554</width>
-    <height>641</height>
+    <height>711</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1491,6 +1491,16 @@ max .res</string>
               </property>
              </item>
             </item>
+            <item>
+             <property name="text">
+              <string>Rasters</string>
+             </property>
+             <item>
+              <property name="text">
+               <string>Raster creation</string>
+              </property>
+             </item>
+            </item>
            </widget>
            <widget class="QStackedWidget" name="stackedWidget">
             <property name="sizePolicy">
@@ -1841,7 +1851,10 @@ max .res</string>
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="page">
+            <widget class="QWidget" name="page_flow">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <layout class="QGridLayout" name="gridLayout_12">
               <item row="0" column="0" colspan="2">
                <widget class="QGroupBox" name="groupBox_17">
@@ -2738,6 +2751,124 @@ max .res</string>
               </item>
               <item row="5" column="0">
                <spacer name="verticalSpacer_7">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="page_10">
+             <layout class="QVBoxLayout" name="verticalLayout_7">
+              <item>
+               <widget class="QGroupBox" name="groupBox_24">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>90</height>
+                 </size>
+                </property>
+                <property name="title">
+                 <string/>
+                </property>
+                <layout class="QGridLayout" name="gridLayout_26">
+                 <property name="horizontalSpacing">
+                  <number>20</number>
+                 </property>
+                 <item row="0" column="1">
+                  <widget class="QComboBox" name="comboBox_parametreschooser_2">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_36">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="text">
+                    <string>Parameter</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox_7">
+                <property name="title">
+                 <string>GroupBox</string>
+                </property>
+                <layout class="QGridLayout" name="gridLayout_6">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_37">
+                   <property name="text">
+                    <string>Cell size (0 : automatic)</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QSpinBox" name="spinBox_rastercellsize">
+                   <property name="maximum">
+                    <number>999999</number>
+                   </property>
+                   <property name="value">
+                    <number>2</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_38">
+                   <property name="text">
+                    <string>Extent</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QComboBox" name="comboBox_rasterextent">
+                   <item>
+                    <property name="text">
+                     <string>Current view</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Full Extent</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pushButton_createraster">
+                <property name="text">
+                 <string>Create raster</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="verticalSpacer_2">
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
                 </property>

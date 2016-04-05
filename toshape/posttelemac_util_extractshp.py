@@ -23,7 +23,10 @@ import threading
 from time import ctime
 import math
 from os import path
-#from shapely.geometry import Polygon
+#shapely
+from shapely import *
+from shapely.geometry import Polygon
+from shapely.wkb import loads
 import sys
 import os.path
 """
@@ -353,11 +356,23 @@ class SelafinContour2Shp(QtCore.QObject):
     def InsertRinginFeature(self,f1,allfeatures2,vlOuterTempIndex,lvltemp1,counttotal):
         try:
             #Correction des erreurs de geometrie des outers
-            if len(f1.geometry().validateGeometry())!=0:                                           
-                f1geom  = f1.geometry().buffer(0.01,5)
-                if f1geom.area() < f1.geometry().area():
-                    f1geom = f1.geometry()
-                    self.writeOutput(ctime() + ' - Warning : geometry '+str(f1.id())+' not valid before inserting rings')
+            if len(f1.geometry().validateGeometry()) != 0:
+                if True:
+                    f1geom  = f1.geometry().buffer(0.01,5)
+                    if f1geom.area() < f1.geometry().area():
+                        f1geom = f1.geometry()
+                        self.writeOutput(ctime() + ' - Warning : geometry '+str(f1.id())+' not valid before inserting rings')
+                else:
+                    geomshpapely = loads(f1.geometry().asWkb())
+                    resulttemp = self.repairPolygon(geomshpapely)
+                    if resulttemp != None:
+                        geom3 = [QgsPoint(point[0],point[1]) for point in list( resulttemp.exterior.coords )]
+                        geom2 = QgsGeometry.fromPolygon([geom3])
+                        f1geom = geom2
+                        self.writeOutput(ctime() + ' - geometry correction')
+                    else:
+                        f1geom  = f1.geometry()
+                    
             else:
                 f1geom = f1.geometry()
                 
@@ -372,7 +387,8 @@ class SelafinContour2Shp(QtCore.QObject):
             for id in ids:
                 f2geom = allfeatures2[id].geometry()
                 if len(f2geom.validateGeometry())!=0:
-                    f2geom= f2geom.buffer(0.01,5)
+                    f2geom= f2geom.buffer(0.00,5)
+                    
                 tab.append([f2geom.area(),f2geom])                          
             if len(tab)>0:
                 tab.sort(reverse = True)
@@ -420,6 +436,60 @@ class SelafinContour2Shp(QtCore.QObject):
             ring.append(QgsPoint(polygon[i][0],polygon[i][1]))
         ring.append(QgsPoint(polygon[0][0],polygon[0][1]))
         return ring
+        
+        
+    def repairPolygon(self,geometry):
+        buffer_worker = True
+        try:
+            geometry = geometry.buffer(0)
+        except :
+            buffer_worker = False
+            
+        if buffer_worker:
+            return geometry
+        
+        polygons = []
+        if geometry.geom_type == "Polygon":
+            polygons.append(geometry)
+        elif geometry.geom_type == "MultiPolygon":
+            polygons.extend(geometry.geoms)
+            
+            
+        fixed_polygons = []
+        for n, polygon in enumerate(polygons):
+            if not self.linear_ring_is_valid(polygon.exterior):
+                continue    #"unable to fix"
+        
+            interiors = []
+            for ring in polygon.interiors:
+                if self.linear_ring_is_valid(ring):
+                    interiors.append(ring)
+            
+            fixed_polygon = shapely.geometry.Polygon(polygon.exterior, interiors)
+            
+            try:
+                fixed_polygon = fixed_polygon.buffer(0)
+            except : 
+                continue
+            
+            if fixed_polygon.geom_type == "Polygon":
+                fixed_polygons.append(fixed_polygon)
+            elif fixed_polygon.geom_type == "MultiPolygon":
+                fixed_polygons.extend(fixed_polygon.geoms)
+                
+        if len(fixed_polygons) >  0 : 
+            return shapely.geometry.MultiPolygon(fixed_polygons)
+        else:
+            return None
+            
+    def linear_ring_is_valid(self,ring):
+        points = set()
+        for x,y in ring.coords:
+            points.add((x,y))
+        if len(points) < 3:
+            return False
+        else:
+            return True
      
      
     progress = QtCore.pyqtSignal(int)

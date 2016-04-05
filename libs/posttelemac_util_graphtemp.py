@@ -57,14 +57,21 @@ class graphTemp(QtCore.QObject):
                     abscisse = self.selafinlayer.hydrauparser.getTimes().tolist()
                     
                     param=self.selafinlayer.propertiesdialog.comboBox_parametreschooser.currentIndex()
-                    #param = self.selafinlayer.propertiesdialog.getTreeWidgetSelectedIndex(self.selafinlayer.propertiesdialog.treeWidget_parameters)[1]
-                    if self.selafinlayer.parametres[param][2]:
-                        dico = self.getDico(self.selafinlayer.parametres[param][2], self.selafinlayer.parametres, self.selafinlayer.values,enumpoint)
-                        tempordonees = eval(self.selafinlayer.parametres[param][2],{}, dico)
+
+                    if self.compare :
+                        triangles,numpointsfinal,pointsfinal,coef = self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getInterpFactorInTriangleFromPoint([x],[y])
+                        self.status.emit(str(triangles)+' ' +str(numpointsfinal)+' ' +str(pointsfinal)+' ' +str(coef))
+                        layer2serie = 0
+                        print str(numpointsfinal[0])
+                        for i, numpoint in enumerate(numpointsfinal[0]):
+                            #layer2serie += float(coef[0][i]) * self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getTimeSerie([numpoint],[self.selafinlayer.parametres[param[0]][3]],self.selafinlayer.parametres)
+                            layer2serie += float(coef[0][i]) * self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getTimeSerie([numpoint +1],[self.selafinlayer.parametres[param][3]],self.selafinlayer.parametres)
+                        print 'ok1'
+                        layer1serie = self.selafinlayer.hydrauparser.getTimeSerie([enumpoint + 1],[param],self.selafinlayer.parametres)
+                        tempordonees =  layer2serie  - layer1serie
                     else:
-                        #tempordonees = self.selafinlayer.slf.getSERIES([enumpoint + 1],[param],False)   #points in getseries begin with 1
-                        #tempordonees = self.selafinlayer.hydrauparser.getTimeSerie([enumpoint + 1],[param])   #points in getseries begin with 1
-                        tempordonees = self.getGraphTempSeries([enumpoint + 1],[param])   #points in getseries bein with 1
+                        tempordonees =  self.selafinlayer.hydrauparser.getTimeSerie([enumpoint + 1],[param],self.selafinlayer.parametres)
+                    
                     ordonnees = tempordonees[0][0].tolist()
                     list1.append(abscisse)
                     list2.append(ordonnees)
@@ -72,47 +79,7 @@ class graphTemp(QtCore.QObject):
         except Exception, e:
             self.status.emit(str(e))
             self.finished.emit([],[])
-        
-        
-    def getDico(self,expr, parametres, values,enumpoint):
-        dico = {}
-        try:
 
-            dico['sin'] = sin
-            dico['cos'] = cos
-            dico['abs'] = abs
-            dico['int'] = int
-            dico['if_then_else'] = self.selafinlayer.if_then_else
-            a = 'V{}'
-            nb_var = len(values)
-            i = 0
-            num_var = 0
-            while num_var < nb_var:
-                if not parametres[i][2]:
-                    #dico[a.format(i)] = self.selafinlayer.hydrauparser.getTimeSerie([enumpoint + 1],[i])
-                    dico[a.format(i)] = self.getGraphTempSeries([enumpoint + 1],[i])
-                num_var += 1
-                i += 1
-        except Exception, e:
-            print str(e)
-        return dico
-        
-    def getGraphTempSeries(self,num,param):
-        if self.compare :
-            x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint(num)[0]
-            triangles,numpointsfinal,pointsfinal,coef = self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getInterpFactorInTriangleFromPoint([x],[y])
-            layer2serie = 0
-            for i, numpoint in enumerate(numpointsfinal[0]):
-                layer2serie += float(coef[0][i]) * self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getTimeSerie([numpoint],[self.selafinlayer.parametres[param[0]][3]])
-            layer1serie = self.selafinlayer.hydrauparser.getTimeSerie(num,param)
-            return layer2serie  - layer1serie
-        else:
-            return self.selafinlayer.hydrauparser.getTimeSerie(num,param)
-        
-
-
-     
-     
     progress = QtCore.pyqtSignal(int)
     status = QtCore.pyqtSignal(str)
     error = QtCore.pyqtSignal(str)

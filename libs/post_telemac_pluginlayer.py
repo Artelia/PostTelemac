@@ -32,7 +32,7 @@ import numpy as np
 #import scipy
 #from scipy.spatial import cKDTree
 #import matplotlib
-#from matplotlib import tri
+from matplotlib import tri
 from matplotlib import colors
 #import PyQT
 from PyQt4.QtCore import *
@@ -251,24 +251,43 @@ class SelafinPluginLayer(QgsPluginLayer):
         if len(self.parametrestoload)>0:    #case of virtual parameters when loadin a selafin layer
             for param in self.parametrestoload:
                 self.parametres.append([len(self.parametres),param[1],param[2],len(self.parametres)])
-        try:    #load velocity parameters
-            self.parametrevx = self.propertiesdialog.postutils.getParameterName("VITESSEU")[0]
-            self.parametrevy = self.propertiesdialog.postutils.getParameterName("VITESSEV")[0]
-            self.propertiesdialog.tab_velocity.setEnabled(True)
-            for widget in self.propertiesdialog.tab_velocity.children():
-                widget.setEnabled(True)
-            for widget in self.propertiesdialog.groupBox_schowvel.children():
-                widget.setEnabled(True)
-            self.propertiesdialog.groupBox_schowvel.setChecked(True)
-            self.propertiesdialog.groupBox_schowvel.setChecked(False)
-        except Exception, e:
-            self.propertiesdialog.tab_velocity.setEnabled(False)
-            #TODO : disable utils dependant on velocity (flow, show velocity)
-        try:    #load water depth parameters
-            self.parametreh = self.propertiesdialog.postutils.getParameterName("HAUTEUR")[0]
-        except Exception, e:
-            pass
-            #TODO : disable utils dependant on velocity (flow, show velocity)
+        
+        self.identifyKeysParameters()
+                
+                
+    def identifyKeysParameters(self):
+        #load velocity parameters
+        if (self.parametrevx == None and self.parametrevy == None) :
+
+            if self.propertiesdialog.postutils.getParameterName("VITESSEU") == None and self.propertiesdialog.postutils.getParameterName("VITESSEV") == None:
+                self.propertiesdialog.tab_velocity.setEnabled(False)
+            else:
+                self.parametrevx = self.propertiesdialog.postutils.getParameterName("VITESSEU")[0]
+                self.parametrevy = self.propertiesdialog.postutils.getParameterName("VITESSEV")[0]
+                self.propertiesdialog.tab_velocity.setEnabled(True)
+                for widget in self.propertiesdialog.tab_velocity.children():
+                    widget.setEnabled(True)
+                for widget in self.propertiesdialog.groupBox_schowvel.children():
+                    widget.setEnabled(True)
+                self.propertiesdialog.groupBox_schowvel.setChecked(True)
+                self.propertiesdialog.groupBox_schowvel.setChecked(False)
+
+        #load water depth parameters
+        if self.parametreh == None :
+            if self.propertiesdialog.postutils.getParameterName("HAUTEUR") == None:
+                paramfreesurface = self.propertiesdialog.postutils.getParameterName("SURFACELIBRE")[0]
+                parambottom = self.propertiesdialog.postutils.getParameterName("BATHYMETRIE")[0]
+                self.parametreh = len(self.parametres)
+                self.parametres.append([len(self.parametres),"HAUTEUR D'EAU",'V'+str(paramfreesurface)+' - V'+str(parambottom),len(self.parametres)])
+            else:
+                self.parametreh = self.propertiesdialog.postutils.getParameterName("HAUTEUR")[0]
+                
+        if self.parametreh != None and self.parametrevx != None and self.parametrevy != None:
+            self.propertiesdialog.page_flow.setEnabled(True)
+        else:
+            self.propertiesdialog.page_flow.setEnabled(False)
+
+
             
     def clearParameters(self):
         self.param_displayed = None
@@ -304,6 +323,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         It emits a signal, because this method is redirected to a different method in comparetool  
         when tool "compare" is activated
         """
+        self.identifyKeysParameters()
         self.updatevalue.emit(onlyparamtimeunchanged)
         
     updatevalue = pyqtSignal(int)
@@ -576,7 +596,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         return (True,d)
         
     def initTriinterpolator(self):
-        self.triinterp = [tri.LinearTriInterpolator(self.hydrauparser.triangulation, self.values[i]) for i in range(len(self.parametres))]
+        self.triinterp = [matplotlib.tri.LinearTriInterpolator(self.hydrauparser.triangulation, self.values[i]) for i in range(len(self.parametres))]
         
     #****************************************************************************************************
     #************Method for saving/loading project with selafinlayer file***********************************

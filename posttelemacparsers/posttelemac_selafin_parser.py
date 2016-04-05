@@ -22,6 +22,7 @@ Versions :
 """
 import matplotlib
 from matplotlib import tri
+from numpy import *
 import numpy as np
 from scipy.spatial import cKDTree
 from ..libs_telemac.parsers.parserSELAFIN import SELAFIN
@@ -60,8 +61,27 @@ class PostTelemacSelafinParser():
         return self.hydraufile.getVALUES(time)
         
         
-    def getTimeSerie(self,arraynumpoint,arrayparam):
-        return self.hydraufile.getSERIES(arraynumpoint,arrayparam,False)
+    def getTimeSerie(self,arraynumpoint,arrayparam,layerparametres = None):
+        """
+        Warning : point index begin at 1
+        """
+        if False:
+            return self.hydraufile.getSERIES(arraynumpoint,arrayparam,False)
+        else:
+            #print 'arraypoint ' + str(arraynumpoint)
+            result = []
+            try:
+                for param in arrayparam:
+                    if layerparametres != None and layerparametres[param][2]:
+                        dico = self.getDico(layerparametres[param][2], layerparametres,arraynumpoint)
+                        tempordonees = eval(layerparametres[param][2],{}, dico)
+                        result.append(tempordonees[0])
+                    else:
+                        tempordonees = self.hydraufile.getSERIES(arraynumpoint,[param],False)
+                        result.append(tempordonees[0])
+            except Exception, e:
+                print 'getserie ' + str(e)
+            return np.array(result)
         
     def getMesh(self):
         return (self.hydraufile.MESHX, self.hydraufile.MESHY)
@@ -76,7 +96,75 @@ class PostTelemacSelafinParser():
     def getTimes(self):
         return self.hydraufile.tags["times"]
         
+    
+        
     #Others method - don't touch it 
+    
+    def getDico(self,expr, parametres,enumpoint):
+        dico = {}
+        try:
+            dico['sin'] = sin
+            dico['cos'] = cos
+            dico['abs'] = abs
+            dico['int'] = int
+            dico['if_then_else'] = self.if_then_else
+            a = 'V{}'
+            #nb_var = len(values)
+            nb_var = len( self.getValues(0) )
+            i = 0
+            num_var = 0
+            while num_var < nb_var:
+                if not parametres[i][2]:
+                    dico[a.format(i)] = self.getTimeSerie(enumpoint,[i])
+                num_var += 1
+                i += 1
+        except Exception, e:
+            print 'getdico ' + str(e)
+        return dico
+    
+    def if_then_else(self,ifstat,true1,false1):
+        """
+        Used for calculation of virtual parameters
+        """
+        #condition
+        if isinstance(ifstat,np.ndarray):
+            var2 = np.zeros(ifstat.shape)
+            temp1 = np.where(ifstat)
+        elif isinstance(ifstat,str):
+            val = eval(ifstat,{"__builtins__":None}, self.dico)
+            var2 = np.zeros(val.shape)
+            temp1 = np.where(val)
+        #True
+        if isinstance(true1,np.ndarray):
+            var2[temp1] = true1[temp1]
+        elif isinstance(true1, numbers.Number):
+            var2[temp1] = float(true1)
+        else:
+            pass
+        #False
+        mask = np.ones(var2.shape, np.bool)
+        mask[temp1] = 0
+        if isinstance(false1,np.ndarray):
+            var2[mask] = false1[mask]
+        elif isinstance(false1, numbers.Number):
+            var2[mask] = float(false1)
+        else:
+            pass
+        return var2
+    """
+    def getGraphTempSeries(self,num,param):
+        if self.compare :
+            x,y = self.getXYFromNumPoint(num)[0]
+            triangles,numpointsfinal,pointsfinal,coef = self.getInterpFactorInTriangleFromPoint([x],[y])
+            layer2serie = 0
+            for i, numpoint in enumerate(numpointsfinal[0]):
+                layer2serie += float(coef[0][i]) * self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getTimeSerie([numpoint],[self.selafinlayer.parametres[param[0]][3]])
+            layer1serie = self.selafinlayer.hydrauparser.getTimeSerie(num,param)
+            return layer2serie  - layer1serie
+        else:
+            return self.selafinlayer.hydrauparser.getTimeSerie(num,param)
+    """
+    
         
     def getXYFromNumPoint(self,arraynumpoint):
         meshx,meshy = self.getMesh()

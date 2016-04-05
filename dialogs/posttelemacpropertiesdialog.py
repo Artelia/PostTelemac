@@ -225,6 +225,9 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.pushButton_9.clicked.connect(self.set_utilcrs)
         self.pushButton_2.clicked.connect(self.create_shp_points)
         
+        #raster creation
+        self.pushButton_createraster.clicked.connect(self.postutils.rasterCreation)
+        
         #final action
         self.initTreewidgettoolsindextab()
         self.treeWidget_utils.expandAll()
@@ -428,6 +431,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
                 self.populatecombobox_param()
                 self.layer.updateSelafinValues()
                 self.setTreeWidgetIndex(self.treeWidget_parameters,0,index)
+                
             
     def delete_def_variables(self):
         """
@@ -440,6 +444,11 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             self.layer.parametres[index:index+1] = []
             self.populatecombobox_param()
             self.setTreeWidgetIndex(self.treeWidget_parameters,0,index-1)
+            #checkkeysparameter
+            self.layer.parametreh = None
+            self.layer.parametrevx = None
+            self.layer.parametrevy = None
+            
             self.layer.updateSelafinValues()
         
     #Display tools - contour - color ramp things ***********************************************
@@ -699,9 +708,11 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         Populate parameters comboboxes on dialog update
         """
         self.comboBox_parametreschooser.clear()
+        self.comboBox_parametreschooser_2.clear()
         for i in range(len(self.layer.parametres)):
             temp1 = [str(self.layer.parametres[i][0])+" : "+str(self.layer.parametres[i][1])]
             self.comboBox_parametreschooser.addItems(temp1)
+            self.comboBox_parametreschooser_2.addItems(temp1)
         
         self.treeWidget_parameters.clear()
         itms = []
@@ -770,7 +781,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
                                         [[-1,6],7, 'Max res' ] ,
                                         [[7,0],8,'2shape contour' ],
                                         [[7,1],9,'2shape mesh' ],
-                                        [[7,2],10,'2shape point' ]]
+                                        [[7,2],10,'2shape point' ],
+                                        [[8,0],11,'Raster creation']]
 
     
     def changepannelutils(self):

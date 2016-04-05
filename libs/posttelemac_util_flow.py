@@ -94,12 +94,12 @@ class computeFlow(QtCore.QObject):
                                     try:
                                         if i==0:    #init
                                             try:
-                                                h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh])[0][0])
+                                                h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.parametres)[0][0])
                                             except Exception , e :
                                                 self.status.emit('method 011 : ' + str(e))
-                                            uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv])[0][0])
+                                            uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.parametres)[0][0])
                                             uv2 = np.array([[value,0.0] for value in uv2])
-                                            vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv])[0][0])
+                                            vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.parametres)[0][0])
                                             vv2 = np.array([[0.0,value] for value in vv2])
                                             v2vect = uv2 + vv2
                                             #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
@@ -108,10 +108,10 @@ class computeFlow(QtCore.QObject):
                                             h1 = h2
                                             v1vect = v2vect
                                             xy1 = xy2
-                                            h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh])[0][0])
-                                            uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv])[0][0])
+                                            h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.parametres)[0][0])
+                                            uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.parametres)[0][0])
                                             uv2 = np.array([[value,0.0] for value in uv2])
-                                            vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv])[0][0])
+                                            vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.parametres)[0][0])
                                             vv2 = np.array([[0.0,value] for value in vv2])
                                             v2vect = uv2 + vv2
                                             #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
@@ -384,8 +384,8 @@ class computeFlow(QtCore.QObject):
         
     def valuebetweenEdges(self,xy,edges,param):
         xytemp = np.array(xy)
-        h11 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([edges[0] + 1],[param])[0][0])   #getseries begins at  1 
-        h12 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([edges[1] + 1 ],[param])[0][0])
+        h11 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([edges[0] + 1],[param],self.selafinlayer.parametres)[0][0])   #getseries begins at  1 
+        h12 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([edges[1] + 1 ],[param],self.selafinlayer.parametres)[0][0])
         """
         e1 = np.array([self.selafinlayer.slf.MESHX[edges[0]],self.selafinlayer.slf.MESHY[edges[0]]])
         e2 = np.array([self.selafinlayer.slf.MESHX[edges[1]],self.selafinlayer.slf.MESHY[edges[1]]])
