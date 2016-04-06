@@ -1499,6 +1499,10 @@ max .res</string>
               <property name="text">
                <string>Raster creation</string>
               </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>:/plugins/PostTelemac/icons/tools/layer_raster_add.png</normaloff>:/plugins/PostTelemac/icons/tools/layer_raster_add.png</iconset>
+              </property>
              </item>
             </item>
            </widget>
@@ -2822,7 +2826,7 @@ max .res</string>
                  <item row="0" column="0">
                   <widget class="QLabel" name="label_37">
                    <property name="text">
-                    <string>Cell size (0 : automatic)</string>
+                    <string>Cell size</string>
                    </property>
                   </widget>
                  </item>

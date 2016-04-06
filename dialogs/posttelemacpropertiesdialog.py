@@ -442,14 +442,14 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         if self.layer.parametres[index][2]:
             self.layer.param_displayed = index-1
             self.layer.parametres[index:index+1] = []
-            self.populatecombobox_param()
-            self.setTreeWidgetIndex(self.treeWidget_parameters,0,index-1)
             #checkkeysparameter
             self.layer.parametreh = None
             self.layer.parametrevx = None
             self.layer.parametrevy = None
-            
+            #update all
             self.layer.updateSelafinValues()
+            self.populatecombobox_param()
+            self.setTreeWidgetIndex(self.treeWidget_parameters,0,index-1)
         
     #Display tools - contour - color ramp things ***********************************************
 

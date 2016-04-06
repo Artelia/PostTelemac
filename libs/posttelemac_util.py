@@ -44,6 +44,7 @@ from posttelemac_util_graphtemp import *
 from posttelemac_util_flow import *
 from posttelemac_util_get_max import *
 from posttelemac_util_getcomparevalue import *
+from posttelemac_util_rasterize import *
 
 
 class PostTelemacUtils():
@@ -636,8 +637,13 @@ class PostTelemacUtils():
         self.selafinlayer.propertiesdialog.normalMessage(str(os.path.basename(strpath).split('.')[0]) + self.tr(" created"))
 
     def rasterCreation(self):
-        #print 'ok'
-        #Points
+        self.initclass=InitRasterize()
+        self.initclass.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
+        self.initclass.finished1.connect(self.rasterCreationFinished)
+        self.selafinlayer.propertiesdialog.normalMessage('Raster creation started')
+        self.initclass.start(self.selafinlayer)
+    
+        """
         layerstring = self.selafinlayer.hydraufilepath+'[' + str(self.selafinlayer.time_displayed) + ']'
         print layerstring
         layerpoint = QgsVectorLayer(layerstring, 'test', "ogr")
@@ -667,10 +673,60 @@ class PostTelemacUtils():
         test = qgis.analysis.QgsGridFileWriter(itp,rasterfilepath,rect,ncol,ncol,res,res)
         print 'ok1'
         test.writeFile(False)
+        """
+        """
+        #Extent  evaluation
+        if self.selafinlayer.propertiesdialog.comboBox_rasterextent.currentIndex() == 0 :
+            rect = iface.mapCanvas().extent()
+        elif self.selafinlayer.propertiesdialog.comboBox_rasterextent.currentIndex() == 1 :
+            rect = self.selafinlayer.extent()
+        #res 
+        res = self.selafinlayer.propertiesdialog.spinBox_rastercellsize.value()
+        #grid creation
+        xmin,xmax,ymin,ymax = [int(rect.xMinimum()), int(rect.xMaximum()), int(rect.yMinimum()), int(rect.yMaximum()) ]
+        xi, yi = np.meshgrid(np.arange(xmin, xmax, res), np.arange(ymin, ymax, res))
         
+        self.selafinlayer.initTriinterpolator()
+        paramindex = self.selafinlayer.propertiesdialog.comboBox_parametreschooser_2.currentIndex()
+        zi = self.selafinlayer.triinterp[paramindex](xi, yi)
         
+        nrows,ncols = np.shape(zi)
+        #xres = (xmax-xmin)/float(ncols)
+        #yres = (ymax-ymin)/float(nrows)
+        xres = res
+        yres = res
+        geotransform=(xmin,xres,0,ymin,0, yres) 
+
+         
+        raster_ut = os.path.join(os.path.dirname(self.selafinlayer.hydraufilepath),str(os.path.basename(self.selafinlayer.hydraufilepath).split('.')[0] ) + '_raster_'+str(self.selafinlayer.parametres[paramindex][1])+'.tif')
         
-        
+        #output_raster = gdal.GetDriverByName('GTiff').Create(raster_ut,ncols, nrows, 1 ,gdal.GDT_Float32,['TFW=YES', 'COMPRESS=PACKBITS'])  # Open the file, see here for information about compression: http://gis.stackexchange.com/questions/1104/should-gdal-be-set-to-produce-geotiff-files-with-compression-which-algorithm-sh
+        output_raster = gdal.GetDriverByName('GTiff').Create(raster_ut,ncols, nrows, 1 ,gdal.GDT_Float32,['TFW=YES', 'COMPRESS=PACKBITS'])  # Open the file, see here for information about compression: http://gis.stackexchange.com/questions/1104/should-gdal-be-set-to-produce-geotiff-files-with-compression-which-algorithm-sh
+        output_raster.SetGeoTransform(geotransform)  # Specify its coordinates
+        srs = osr.SpatialReference()                 # Establish its coordinate encoding
+        srs.ImportFromEPSG(2154)                     # This one specifies SWEREF99 16 30
+        output_raster.SetProjection( srs.ExportToWkt() )   # Exports the coordinate system to the file
+        output_raster.GetRasterBand(1).WriteArray(zi)   # Writes my array to the raster
+        """
+        """
+        try:
+            print str(raster_ut)
+            print str(os.path.basename(raster_ut).split('.')[0])
+            
+            rlayer = QgsRasterLayer(raster_ut, os.path.basename(raster_ut).split('.')[0])
+            
+            print str(rlayer.isValid())
+            print str(rlayer.crs().authid())
+            
+            QgsMapLayerRegistry.instance().addMapLayer(rlayer)
+        except Exception, e:
+            print str(e)
+        """
+    def rasterCreationFinished(self,strpath):
+        if strpath != None:
+            rlayer = QgsRasterLayer(strpath, os.path.basename(strpath).split('.')[0])
+            QgsMapLayerRegistry.instance().addMapLayer(rlayer)
+            self.selafinlayer.propertiesdialog.normalMessage(str(os.path.basename(strpath).split('.')[0]) + self.tr(" created"))
         
 
 

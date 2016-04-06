@@ -26,5 +26,6 @@
         <file>icons/tools/layer_shaded_relief_add.png</file>
         <file>icons/tools/Files_Copy.png</file>
         <file>icons/tools/Wizard_48x48.png</file>
+        <file>icons/tools/layer_raster_add.png</file>
     </qresource>
 </RCC>
