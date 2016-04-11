@@ -545,7 +545,10 @@ class SelafinPluginLayer(QgsPluginLayer):
     #****************************************************************************************************
 
     def name(self):
-        return os.path.basename(self.hydraufilepath).split('.')[0]
+        if self.hydraufilepath != None:
+            return os.path.basename(self.hydraufilepath).split('.')[0]
+        else:
+            return 'Empty PostTelemac pluginlayer'
         
     def bandCount(self):
         return len(self.parametres)
