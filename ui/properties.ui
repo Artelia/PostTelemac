@@ -3000,38 +3000,6 @@ max .res</string>
  <resources/>
  <connections>
   <connection>
-   <sender>comboBox_time</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>horizontalSlider_time</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>114</x>
-     <y>242</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>202</x>
-     <y>217</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>horizontalSlider_time</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>comboBox_time</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>202</x>
-     <y>217</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>114</x>
-     <y>242</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>comboBox_levelstype</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>stackedWidget_colorramp</receiver>

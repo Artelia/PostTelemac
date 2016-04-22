@@ -321,8 +321,9 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """
         str1 = self.tr("Result file chooser")
         str2 = self.tr("Telemac files")
+        str2_1 = self.tr("Anuga files")
         str3 = self.tr("All files")     
-        tempname = self.qfiledlg.getOpenFileName(None,str1,self.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
+        tempname = self.qfiledlg.getOpenFileName(None,str1,self.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" +str2_1 + " (*.sww);;"+ str3 + " (*)")
         if tempname:
             self.loaddirectory = os.path.dirname(tempname)
             self.layer.clearParameters()
@@ -359,12 +360,28 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
     
     def change_timetxt(self,intitmetireation):
         """Associated with time modification buttons"""
+        if self.sender() == self.comboBox_time:
+            try:
+                self.horizontalSlider_time.valueChanged.disconnect(self.change_timetxt)
+            except:
+                pass
+            self.horizontalSlider_time.setValue(intitmetireation)
+            self.horizontalSlider_time.valueChanged.connect(self.change_timetxt)
+        elif self.sender() == self.horizontalSlider_time:
+            try:
+                self.comboBox_time.currentIndexChanged.disconnect(self.change_timetxt)
+            except:
+                pass
+            self.comboBox_time.setCurrentIndex(intitmetireation)
+            self.comboBox_time.currentIndexChanged.connect(self.change_timetxt)
+        
         self.layer.changeTime(intitmetireation)
         time2 = time.strftime("%j:%H:%M:%S", time.gmtime(self.layer.hydrauparser.getTimes()[intitmetireation]))
         
         self.label_time.setText(self.tr("time (hours)") + " : " + str(time2) +"\n"+ 
                                 self.tr("time (iteration)") + " : "+ str(intitmetireation)+"\n"+
                                 self.tr("time (seconds)") + " : " + str(self.layer.hydrauparser.getTimes()[intitmetireation]))
+                                
             
     def sliderReleased(self):
         """Associated with time slider behaviour"""

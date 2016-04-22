@@ -62,11 +62,11 @@ class graphTemp(QtCore.QObject):
                         triangles,numpointsfinal,pointsfinal,coef = self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getInterpFactorInTriangleFromPoint([x],[y])
                         self.status.emit(str(triangles)+' ' +str(numpointsfinal)+' ' +str(pointsfinal)+' ' +str(coef))
                         layer2serie = 0
-                        print str(numpointsfinal[0])
+                        #print str(numpointsfinal[0])
                         for i, numpoint in enumerate(numpointsfinal[0]):
                             #layer2serie += float(coef[0][i]) * self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getTimeSerie([numpoint],[self.selafinlayer.parametres[param[0]][3]],self.selafinlayer.parametres)
                             layer2serie += float(coef[0][i]) * self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getTimeSerie([numpoint +1],[self.selafinlayer.parametres[param][3]],self.selafinlayer.parametres)
-                        print 'ok1'
+                        #print 'ok1'
                         layer1serie = self.selafinlayer.hydrauparser.getTimeSerie([enumpoint + 1],[param],self.selafinlayer.parametres)
                         tempordonees =  layer2serie  - layer1serie
                     else:
@@ -77,7 +77,7 @@ class graphTemp(QtCore.QObject):
                     list2.append(ordonnees)
             self.finished.emit(list1,list2)
         except Exception, e:
-            self.status.emit(str(e))
+            self.status.emit('graph temp ' + str(e))
             self.finished.emit([],[])
 
     progress = QtCore.pyqtSignal(int)

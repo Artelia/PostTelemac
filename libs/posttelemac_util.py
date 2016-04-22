@@ -319,8 +319,8 @@ class PostTelemacUtils():
         if self.graphtodo ==0:
             if not self.selafinlayer.propertiesdialog.checkBox.isChecked() and self.rubberband :
                 self.rubberband.reset(QGis.Point)
-            #self.initclass=InitGraphTemp()
-            self.initclass = self.initclassgraphtemp
+            self.initclass=InitGraphTemp()
+            #self.initclass = self.initclassgraphtemp
         elif self.graphtodo ==1:
             self.initclass=InitComputeFlow()
         self.initclass.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
@@ -344,6 +344,8 @@ class PostTelemacUtils():
     
     
     def workerFinished(self,list1,list2,list3 = None):
+        
+        #print 'wf ' + str(np.array(list1).shape) +' ' +str(np.array(list2).shape)
         
         if self.graphtodo ==0:
             ax = self.selafinlayer.propertiesdialog.ax
@@ -777,12 +779,14 @@ class PostTelemacUtils():
     def getParameterName(self,param):
         trouve = False
         f = open(os.path.join(os.path.dirname(__file__),'..', 'config','parametres.txt'), 'r')
+        #f = open(os.path.join(self.selafinlayer.propertiesdialog.posttelemacdir,'parametres.txt'), 'r')
         for line in f:
             #print str(param) + ' ' + str(line.split("=")[0])
             if  param == line.split("=")[0]:
                 tabtemp=[]
                 for txt in line.split("=")[1].split("\n")[0].split(";"):
                     tabtemp.append(str(txt))
+                
                 for paramtemp in self.selafinlayer.parametres:
                     #print str(paramtemp[1]) + ' ' +str(tabtemp)
                     if paramtemp[1] in tabtemp:

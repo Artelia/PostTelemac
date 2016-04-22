@@ -48,6 +48,7 @@ from ..dialogs.posttelemacpropertiesdialog import PostTelemacPropertiesDialog
 from post_telemac_pluginlayer_get_qimage import *
 from post_telemac_pluginlayer_colormanager import *
 from ..posttelemacparsers.posttelemac_selafin_parser import *
+from ..posttelemacparsers.posttelemac_anuga_parser import *
 
 """
 Global variable for making new graphs (matplotlib)  with maplotlib 
@@ -212,9 +213,14 @@ class SelafinPluginLayer(QgsPluginLayer):
         #Update name in symbology
         nom = os.path.basename(self.hydraufilepath).split('.')[0]
         self.setLayerName(nom)
+        extension = os.path.basename(self.hydraufilepath).split('.')[1]
         #Set selafin
-        self.hydrauparser = PostTelemacSelafinParser(self)
-        self.hydrauparser.loadHydrauFile(self.hydraufilepath)
+        if extension == 'sww':
+            self.hydrauparser = PostTelemacSWWParser(self)
+            self.hydrauparser.loadHydrauFile(self.hydraufilepath)
+        else:
+            self.hydrauparser = PostTelemacSelafinParser(self)
+            self.hydrauparser.loadHydrauFile(self.hydraufilepath)
         #nitialize layer's parameters
         if not self.param_displayed : self.param_displayed = 0
         if not self.lvl_contour : self.lvl_contour=self.levels[0]
@@ -275,19 +281,20 @@ class SelafinPluginLayer(QgsPluginLayer):
         #load water depth parameters
         if self.parametreh == None :
             if self.propertiesdialog.postutils.getParameterName("HAUTEUR") == None:
-                paramfreesurface = self.propertiesdialog.postutils.getParameterName("SURFACELIBRE")[0]
-                parambottom = self.propertiesdialog.postutils.getParameterName("BATHYMETRIE")[0]
-                self.parametreh = len(self.parametres)
-                self.parametres.append([len(self.parametres),"HAUTEUR D'EAU",'V'+str(paramfreesurface)+' - V'+str(parambottom),len(self.parametres)])
+                if self.propertiesdialog.postutils.getParameterName("SURFACELIBRE") != None and self.propertiesdialog.postutils.getParameterName("BATHYMETRIE") != None:
+                    paramfreesurface = self.propertiesdialog.postutils.getParameterName("SURFACELIBRE")[0]
+                    parambottom = self.propertiesdialog.postutils.getParameterName("BATHYMETRIE")[0]
+                    self.parametreh = len(self.parametres)
+                    self.parametres.append([len(self.parametres),"HAUTEUR D'EAU",'V'+str(paramfreesurface)+' - V'+str(parambottom),len(self.parametres)])
             else:
                 self.parametreh = self.propertiesdialog.postutils.getParameterName("HAUTEUR")[0]
-                
+        
+        
+        
         if self.parametreh != None and self.parametrevx != None and self.parametrevy != None:
             self.propertiesdialog.page_flow.setEnabled(True)
         else:
-            self.propertiesdialog.page_flow.setEnabled(False)
-
-
+            self.propertiesdialog.page_flow.setEnabled(False)            
             
     def clearParameters(self):
         self.param_displayed = None
@@ -712,6 +719,7 @@ class SelafinPluginLayer(QgsPluginLayer):
             del self.value
             del self.selafinqimage
             del self.networkxgraph
+            self.hydrauparser.hydraufile = None
             del self.hydrauparser
             #end : garbage collector 
             gc.collect()

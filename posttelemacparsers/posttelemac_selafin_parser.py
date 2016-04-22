@@ -39,6 +39,8 @@ class PostTelemacSelafinParser():
         self.skdtree = None
         self.triangulation = None
         self.trifind = None
+        self.translatex = 0.0
+        self.translatey = 0.0
         
     #Real Parser part to be modified
         
@@ -84,7 +86,7 @@ class PostTelemacSelafinParser():
             return np.array(result)
         
     def getMesh(self):
-        return (self.hydraufile.MESHX, self.hydraufile.MESHY)
+        return (self.hydraufile.MESHX + self.hydraufile.IPARAM[2], self.hydraufile.MESHY + self.hydraufile.IPARAM[3])
         
         
     def getVarnames(self):
