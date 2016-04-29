@@ -29,6 +29,7 @@ from qgis.gui import *
 from qgis.utils import *
 #import matplotlib
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import tri
 #import numpy
@@ -154,7 +155,9 @@ class Selafin2QImage():
                                                        cmap=  selafinlayer.cmap_mpl_contour,
                                                        norm=selafinlayer.norm_mpl_contour ,
                                                        alpha = selafinlayer.alpha_displayed/100.0,
-                                                       rasterized=True)
+                                                       nchunk = 10
+                                                       #rasterized=True
+                                                       )
 
                     if selafinlayer.showmesh:
                         self.meshplot = self.ax.triplot(self.triangulation, 'k,-',color = '0.5',linewidth = 0.5, alpha = selafinlayer.alpha_displayed/100.0)
@@ -225,9 +228,11 @@ class Selafin2QImage():
                                                    cmap=  selafinlayer.cmap_mpl_contour,
                                                    norm=selafinlayer.norm_mpl_contour ,
                                                    alpha = selafinlayer.alpha_displayed/100.0,
+                                                   nchunk = 10
                                                    #extent = tuple(rect),
-                                                   mask = self.mask ,
-                                                   rasterized=True)
+                                                   #mask = self.mask ,
+                                                   #rasterized=True
+                                                   )
 
                 if DEBUG : time1.append("tricontourf : "+str(round(time.clock()-timestart,3)))
                 
@@ -268,7 +273,7 @@ class Selafin2QImage():
                 self.ax.axes.axis('off')
                 self.ax.set_ylim([rect[2],rect[3]])
                 self.ax.set_xlim([rect[0],rect[1]])
-                self.mask = None
+                #self.mask = None
                 self.tritemp = None
                 self.image_mesh = None
                 self.goodpointindex = None
@@ -282,8 +287,9 @@ class Selafin2QImage():
                                                     norm=selafinlayer.norm_mpl_contour ,
                                                     alpha = selafinlayer.alpha_displayed/100.0,
                                                     #extent = tuple(rect),
-                                                    extend = 'neither',
-                                                    rasterized=True)
+                                                    extend = 'neither'
+                                                    #rasterized=True
+                                                    )
 
 
                                                                          
@@ -381,12 +387,15 @@ class Selafin2QImage():
         """
         Return a qimage of the matplotlib figure
         """
-        buf = cStringIO.StringIO()
-        self.fig.savefig(buf,transparent=True, dpi = dpi2)
-        buf.seek(0)
-        #image = QtGui.QImage.fromData(buf.getvalue(),format1)
-        image = QtGui.QImage.fromData(buf.getvalue())
-        image = image.scaled(image.width() * ratio , image.height() * ratio )
+        if True:
+            buf = cStringIO.StringIO()
+            #self.fig.savefig(buf,transparent=True, dpi = dpi2)
+            self.fig.savefig(buf, dpi = dpi2)
+            buf.seek(0)
+            #image = QtGui.QImage.fromData(buf.getvalue(),format1)
+            image = QtGui.QImage.fromData(buf.getvalue())
+            if ratio > 1.0 :
+                image = image.scaled(image.width() * ratio , image.height() * ratio )
         return image
         
     def getxynuminrenderer(self,selafin,rendererContext):

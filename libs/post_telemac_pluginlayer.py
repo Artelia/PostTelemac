@@ -158,6 +158,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         return True if successful
         image 2 is used to display only mesh (make the render faster)
         """
+        
         if self.hydrauparser !=None and self.hydrauparser.hydraufile !=None :
             bool1,image1,image2 = self.selafinqimage.getimage(self,rendererContext)
         else:
@@ -221,10 +222,14 @@ class SelafinPluginLayer(QgsPluginLayer):
         else:
             self.hydrauparser = PostTelemacSelafinParser(self)
             self.hydrauparser.loadHydrauFile(self.hydraufilepath)
-        #nitialize layer's parameters
+        #reinitialize layer's parameters
         if not self.param_displayed : self.param_displayed = 0
         if not self.lvl_contour : self.lvl_contour=self.levels[0]
         if not self.time_displayed : self.time_displayed = 0
+        self.parametrevx = None         #specific num for velolity x parameter
+        self.parametrevy = None
+        self.parametreh = None
+        #initialize parameters
         self.initSelafinParameters()
         self.triinterp = None
         #change levels
@@ -341,6 +346,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         called when loading selfin file, or when selafin's time is changed
         """
         if  onlyparamtimeunchanged < 0 :
+            self.triinterp = None
             self.values = self.getValues(self.time_displayed)
             self.value = self.values[self.param_displayed]
         else:
