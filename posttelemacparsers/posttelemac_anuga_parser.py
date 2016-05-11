@@ -49,6 +49,7 @@ class PostTelemacSWWParser():
         self.itertimecount = None
         self.skdtree = None
         self.triangulation = None
+        self.triangulationisvalid = [False,None]
         self.trifind = None
         self.varnames=None
         self.ikle = None
@@ -371,12 +372,43 @@ class PostTelemacSWWParser():
         meshx, meshy = self.getMesh()
         ikle = self.getIkle()
         self.triangulation = matplotlib.tri.Triangulation(meshx,meshy,np.array(ikle))
-        try:
+        bool1, error = self.checkTriangul()
+        if bool1:
             self.trifind = self.triangulation.get_trifinder()
-        except Exception, e:
-            print 'bug with trifinder ' + str(e)
-            print 'regenerate selafin file please'
-            #TODO : disable utils dependant trifind (valeurs,?)
+            self.triangulationisvalid = [True,None]
+        else:
+            self.triangulationisvalid = [False,error]
+        
+        
+    def checkTriangul(self):
+        import collections
+        d = collections.OrderedDict()
+        indexfinal = []
+        x,y = self.getMesh()
+        p = [[x[i],y[i]] for i in range(len(x))]
+        p1 = np.array(p)
+        for i, a in enumerate(p1):
+            t = tuple(a)
+            if t in d:
+                d[t] += 1
+                index1  = d.keys().index(t)
+                index2 = i
+                indexfinal += [[index1,index2 ]]
+            else:
+                d[t] = 1
+
+        result = []
+        for (key, value) in d.items():
+            result.append(list(key) + [value])
+
+        B = np.asarray(result)
+        c = np.where(B[:,2] >1)
+        
+        if len(c)>0:
+            return False,np.array(indexfinal)
+        else:
+            return True,None
+        
         
     def getNearestPoint(self,x,y):
         """

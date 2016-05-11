@@ -222,6 +222,9 @@ class SelafinPluginLayer(QgsPluginLayer):
         else:
             self.hydrauparser = PostTelemacSelafinParser(self)
             self.hydrauparser.loadHydrauFile(self.hydraufilepath)
+        #Parser error...
+        if self.hydrauparser.triangulationisvalid[0] == False:
+            self.propertiesdialog.errorMessage('Duplicated points : ' + str( (self.hydrauparser.triangulationisvalid[1] + 1).tolist()  ) + ' - Triangulation is invalid')
         #reinitialize layer's parameters
         if not self.param_displayed : self.param_displayed = 0
         if not self.lvl_contour : self.lvl_contour=self.levels[0]
@@ -596,23 +599,30 @@ class SelafinPluginLayer(QgsPluginLayer):
         if  self.triinterp:
             pass
         else:
-            self.initTriinterpolator()
+            success = self.initTriinterpolator()
         #getvalues
-        try:
-            v= [float(self.triinterp[i].__call__([qgspointfromcanvas.x()],[qgspointfromcanvas.y()])) for i in range(len(self.parametres))]
-        except Exception, e :
-            v = None
-        #send results
         d = OrderedDict()
-        for param in self.parametres:
+        if success:
             try:
-                d[ QString(param[1]) ] = v[param[0]]
-            except:
-                d[ param[1] ] = v[param[0]]
-        return (True,d)
+                v= [float(self.triinterp[i].__call__([qgspointfromcanvas.x()],[qgspointfromcanvas.y()])) for i in range(len(self.parametres))]
+            except Exception, e :
+                v = None
+            #send results
+            for param in self.parametres:
+                try:
+                    d[ QString(param[1]) ] = v[param[0]]
+                except:
+                    d[ param[1] ] = v[param[0]]
+            return (True,d)
+        else:
+            return (False,d)
         
     def initTriinterpolator(self):
-        self.triinterp = [matplotlib.tri.LinearTriInterpolator(self.hydrauparser.triangulation, self.values[i]) for i in range(len(self.parametres))]
+        if self.hydrauparser.triangulationisvalid[0]:
+            self.triinterp = [matplotlib.tri.LinearTriInterpolator(self.hydrauparser.triangulation, self.values[i]) for i in range(len(self.parametres))]
+            return True
+        else:
+            return False
         
     #****************************************************************************************************
     #************Method for saving/loading project with selafinlayer file***********************************
