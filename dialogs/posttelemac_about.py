@@ -20,13 +20,7 @@ Impl
 
  ***************************************************************************/
 """
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from qgis.gui import *
-from qgis.core import *
-from PyQt4 import QtGui, uic
-
+from PyQt4 import uic, QtGui
 import os
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(

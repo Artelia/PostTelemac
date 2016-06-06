@@ -12,28 +12,26 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from qgis.core import *
-from qgis.gui import *
-
-import resources_rc
+#import QT
+from PyQt4 import QtCore ,QtGui
+#import qgis
+import qgis.core
+#Other standart libs import
 import os.path
-from time import ctime
-
+import time
 import sys
 import subprocess
 sys.path.append(os.path.join(os.path.dirname(__file__),'libs_telemac'))
-
+#Posttelemac library import
+import resources_rc
 from libs.post_telemac_pluginlayer import SelafinPluginLayer
 from libs.post_telemac_pluginlayer_type import SelafinPluginLayerType
 from dialogs.posttelemac_about import aboutDialog
 
 #Processing
-from processing.core.Processing import Processing
 DOPROCESSING = False #set to false to make the plugin reloader work
-
 if DOPROCESSING:
+    from processing.core.Processing import Processing
     from posttelemacprovider.PostTelemacProvider import PostTelemacProvider
     cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
     if cmd_folder not in sys.path:
@@ -67,7 +65,7 @@ class PostTelemac:
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
-        locale = QSettings().value('locale/userLocale')[0:2]
+        locale = QtCore.QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(
             self.plugin_dir,
             'i18n',
@@ -75,10 +73,10 @@ class PostTelemac:
 
         if os.path.exists(locale_path):
             #app=QApplication([''])
-            self.translator = QTranslator()
+            self.translator = QtCore.QTranslator()
             #self.translator = QTranslator(app)
             self.translator.load(locale_path)
-            QCoreApplication.installTranslator(self.translator)
+            QtCore.QCoreApplication.installTranslator(self.translator)
             """
 
             if qVersion() > '4.3.3':
@@ -97,7 +95,7 @@ class PostTelemac:
         self.menu = self.tr(u'&PostTelemac')
         # TODO: We are going to let the user set this up in a future iteration
         #toolbar
-        toolbars = self.iface.mainWindow().findChildren(QToolBar)
+        toolbars = self.iface.mainWindow().findChildren(QtGui.QToolBar)
         test = True
         for toolbar1 in toolbars:
             if toolbar1.windowTitle() == u'Telemac':
@@ -124,7 +122,7 @@ class PostTelemac:
         :rtype: QString
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-        return QCoreApplication.translate('PostTelemac', message)
+        return QtCore.QCoreApplication.translate('PostTelemac', message)
 
 
     def add_action(
@@ -177,8 +175,8 @@ class PostTelemac:
         :rtype: QAction
         """
 
-        icon = QIcon(icon_path)
-        action = QAction(icon, text, parent)
+        icon = QtGui.QIcon(icon_path)
+        action = QtGui.QAction(icon, text, parent)
         action.triggered.connect(callback)
         action.setEnabled(enabled_flag)
 
@@ -245,7 +243,7 @@ class PostTelemac:
         """Run method that performs all the real work"""
         self.slf.append(SelafinPluginLayer(self.tr('Click properties to load selafin file')))     #add selafin to list otherwise it can not work with multiple selafin files
         self.slf[len(self.slf)-1].setRealCrs(self.iface.mapCanvas().mapSettings().destinationCrs())   #to prevent weird bug with weird crs
-        QgsMapLayerRegistry.instance().addMapLayer(self.slf[len(self.slf)-1])
+        qgis.core.QgsMapLayerRegistry.instance().addMapLayer(self.slf[len(self.slf)-1])
         self.iface.showLayerProperties(self.slf[len(self.slf)-1])
         #check library things
         self.checkLibrary()
@@ -266,36 +264,36 @@ class PostTelemac:
     #Specific functions
     def addToRegistry(self):
         #Add telemac_viewer in QgsPluginLayerRegistry
-        if u'selafin_viewer' in QgsPluginLayerRegistry.instance().pluginLayerTypes():
-            QgsPluginLayerRegistry.instance().removePluginLayerType('selafin_viewer')
+        if u'selafin_viewer' in qgis.core.QgsPluginLayerRegistry.instance().pluginLayerTypes():
+            qgis.core.QgsPluginLayerRegistry.instance().removePluginLayerType('selafin_viewer')
         self.pluginLayerType = SelafinPluginLayerType()
-        QgsPluginLayerRegistry.instance().addPluginLayerType(self.pluginLayerType)
+        qgis.core.QgsPluginLayerRegistry.instance().addPluginLayerType(self.pluginLayerType)
 
     
     def checkLibrary(self):
         try:
             import matplotlib
-            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Matplotlib loaded'))
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(time.ctime()+self.tr(' - Matplotlib loaded'))
         except Exception, e :
-            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Install Matplotlib (Start menu/All programs/OSGeo4W/setup/advanced install - "maplotlib" library) and restard qgis'))
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(time.ctime()+self.tr(' - Install Matplotlib (Start menu/All programs/OSGeo4W/setup/advanced install - "maplotlib" library) and restard qgis'))
         try:
             import shapely
-            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Shapely loaded'))
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(time.ctime()+self.tr(' - Shapely loaded'))
         except Exception, e :
-            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Install shapely (Start menu/All programs/OSGeo4W/setup/advanced install - "python-shapely" library) and restard qgis'))
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(time.ctime()+self.tr(' - Install shapely (Start menu/All programs/OSGeo4W/setup/advanced install - "python-shapely" library) and restard qgis'))
         try:
             import networkx
-            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - networkx loaded'))
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(time.ctime()+self.tr(' - networkx loaded'))
         except Exception, e :
-            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Install networkx (Start menu/All programs/OSGeo4W/setup/advanced install - "networkx" library) and restard qgis'))
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(time.ctime()+self.tr(' - Install networkx (Start menu/All programs/OSGeo4W/setup/advanced install - "networkx" library) and restard qgis'))
         try:
             import numpy
-            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - numpy loaded'))
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(time.ctime()+self.tr(' - numpy loaded'))
         except Exception, e :
-            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Install numpy (Start menu/All programs/OSGeo4W/setup/advanced install - "python-numpy" library) and restard qgis'))
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(time.ctime()+self.tr(' - Install numpy (Start menu/All programs/OSGeo4W/setup/advanced install - "python-numpy" library) and restard qgis'))
         try:
             import scipy
-            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - scipy loaded'))
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(time.ctime()+self.tr(' - scipy loaded'))
         except Exception, e :
-            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(ctime()+self.tr(' - Install scipy (Start menu/All programs/OSGeo4W/setup/advanced install - "python-scipy" library) and restard qgis'))
+            self.slf[len(self.slf)-1].propertiesdialog.textBrowser_main.append(time.ctime()+self.tr(' - Install scipy (Start menu/All programs/OSGeo4W/setup/advanced install - "python-scipy" library) and restard qgis'))
             

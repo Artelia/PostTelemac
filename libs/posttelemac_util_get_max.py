@@ -1,12 +1,10 @@
 # -*- coding: utf8 -*-
+
 import os
 import numpy as np
-from math import pi
-from time import ctime
+import math
+import time
 #import PyQT
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtCore import SIGNAL, Qt
 from PyQt4 import QtCore, QtGui
 
 from ..libs_telemac.other.Class_Serafin import Serafin
@@ -85,7 +83,7 @@ class runGetMax(QtCore.QObject):
             for  time in self.selafinlayer.hydrauparser.getTimes()[itermin:iterfin]:
                 num_time = np.where(self.selafinlayer.hydrauparser.getTimes() == time)[0][0]
                 if (num_time - itermin)%10 == 0:
-                    self.status.emit(ctime() + ' - Maximum creation - time '+ str(time))
+                    self.status.emit(time.ctime() + ' - Maximum creation - time '+ str(time))
                 if num_time != itermin:
                     #var = resin.read(time)
                     var = self.selafinlayer.getValues(num_time)
@@ -145,7 +143,7 @@ class runGetMax(QtCore.QObject):
                     val_intensite = np.power(np.power(u,2)+np.power(v,2),0.5)
                     var_max = np.vstack((var_max, val_intensite))
                 if self.direction:
-                    val_direction = np.arctan2(u,v)*360./(2.*pi) +\
+                    val_direction = np.arctan2(u,v)*360./(2.*math.pi) +\
                                     np.minimum(np.arctan2(u,v),0.0)/np.arctan2(u,v)*360.
 
                     ## Dans la creation des directions il peut y avoir des divisions par 0

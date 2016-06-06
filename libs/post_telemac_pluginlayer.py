@@ -14,41 +14,27 @@
  ***************************************************************************/
  Implementation of QgsPluginLayer class, used to show selafin res
  
-Versions :
-Impl
-0.0 : debut
 
  ***************************************************************************/
 """
-
-
-#import qgis
-from qgis.core import *
-from qgis.gui import *
-from qgis.utils import *
-#import numpy
-from numpy import *
-import numpy as np
-#import scipy
-#from scipy.spatial import cKDTree
-#import matplotlib
+#Standart import
+import qgis.core
+import qgis.utils
+from  PyQt4 import QtCore, QtGui
+#mtplotlib
 from matplotlib import tri
-from matplotlib import colors
-#import PyQT
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
 # other import
-from collections import OrderedDict #for identify
+import collections
+#from collections import OrderedDict #for identify
 import gc
-import os.path
-import time
-import numbers
+import os
 #local import 
 from ..dialogs.posttelemacpropertiesdialog import PostTelemacPropertiesDialog
 from post_telemac_pluginlayer_get_qimage import *
 from post_telemac_pluginlayer_colormanager import *
 from ..posttelemacparsers.posttelemac_selafin_parser import *
 from ..posttelemacparsers.posttelemac_anuga_parser import *
+from post_telemac_pluginlayer_renderer import PostTelemacPluginLayerRenderer
 
 """
 Global variable for making new graphs (matplotlib)  with maplotlib 
@@ -62,13 +48,13 @@ selafininstancecount = 2
 debug = False
 DEBUGTIME = False
 
-class SelafinPluginLayer(QgsPluginLayer):
+class SelafinPluginLayer(qgis.core.QgsPluginLayer):
     """
     QgsPluginLayer implmentation for drawing selafin file results
     
     """
-    CRS=QgsCoordinateReferenceSystem()
-    LAYER_TYPE="selafin_viewer"
+    CRS = qgis.core.QgsCoordinateReferenceSystem()
+    LAYER_TYPE = "selafin_viewer"
     
     def __init__(self,nom1 = None):
         """
@@ -77,21 +63,20 @@ class SelafinPluginLayer(QgsPluginLayer):
             load PostTelemacPropertiesDialog class related to this SelafinPluginLayer
             load Selafin2QImage class wich is called to create the qimage needed to draw
         """
-        QgsPluginLayer.__init__(self, SelafinPluginLayer.LAYER_TYPE,nom1)
+        qgis.core.QgsPluginLayer.__init__(self, SelafinPluginLayer.LAYER_TYPE,nom1)
         self.setValid(True)
-        self.realCRS = QgsCoordinateReferenceSystem()
+        self.realCRS = qgis.core.QgsCoordinateReferenceSystem()
         self.xform = None       #transformation for reprojection
+        self.renderer = None
         #global variable init
         global selafininstancecount
         self.instancecount = int(selafininstancecount)
         #selafin file - properties
         self.hydraufilepath = None               # selafin file name
-        self.parametres=[]              #Parameters of selafin file [[rank,name,None or formula for virtual parameter,identify corresponding value],...]
-        self.parametrevx = None         #specific num for velolity x parameter
-        self.parametrevy = None
-        self.parametreh = None
-        self.parametrestoload = []    #virtual parameters to load with projet
-        self.dico = {}                  #dico for eval for virtual parametre
+        self.parametrestoload = {'virtual_parameters' : [],
+                                 'xtranslation' : 0.0,
+                                 'ytranslation' : 0.0}    #virtual parameters to load with projet
+        #self.dico = {}                  #dico for eval for virtual parametre
         self.param_displayed=None        #temp parameter of selafin file
         self.lvl_contour=[]            #level for contour of selafin file 
         self.lvl_vel = []             #Level for velocity 
@@ -103,7 +88,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         self.colormanager = PostTelemacColorManager(self)
         self.hydrauparser = None
         #properties dialog
-        self.canvas = iface.mapCanvas()
+        self.canvas = qgis.utils.iface.mapCanvas()
         self.propertiesdialog = PostTelemacPropertiesDialog(self)
         #matplotlib things and others
         #self.triangulation = None       #matplotlib triangulation of the mesh
@@ -133,8 +118,6 @@ class SelafinPluginLayer(QgsPluginLayer):
         self.propertiesdialog.color_palette_changed_vel(0)
         #levels
         self.levels=[self.propertiesdialog.predeflevels[i][1] for i in range(len(self.propertiesdialog.predeflevels))]
-        #networkx - to draw path with the mesh 
-        self.networkxgraph =  None
         """
         #Add 3 to global variable : 
             figure (selafininstancecount) used for get_image, 
@@ -145,19 +128,19 @@ class SelafinPluginLayer(QgsPluginLayer):
         
         #Connectors
         self.canvas.destinationCrsChanged.connect(self.changecrs)
-        QgsMapLayerRegistry.instance().layersWillBeRemoved["QStringList"].connect(self.RemoveScenario)  #to close properties dialog when layer deleted
+        qgis.core.QgsMapLayerRegistry.instance().layersWillBeRemoved["QStringList"].connect(self.RemoveScenario)  #to close properties dialog when layer deleted
         self.updatevalue.connect(self.updateSelafinValues1)
 
     #****************************************************************************************************
     #************* Typical plugin layer methods***********************************************************
     #****************************************************************************************************
-            
+    """
     def draw(self, rendererContext):
-        """ 
-        implementation of method from QgsPluginLayer to draw on he mapcanvas 
-        return True if successful
-        image 2 is used to display only mesh (make the render faster)
-        """
+        
+        #implementation of method from QgsPluginLayer to draw on he mapcanvas 
+        #return True if successful
+        #image 2 is used to display only mesh (make the render faster)
+        
         
         if self.hydrauparser !=None and self.hydrauparser.hydraufile !=None :
             bool1,image1,image2 = self.selafinqimage.getimage(self,rendererContext)
@@ -172,6 +155,11 @@ class SelafinPluginLayer(QgsPluginLayer):
             painter.drawImage(0,0,image2)
         painter.restore()
         return bool1
+    """
+        
+    def createMapRenderer(self, rendererContext):
+        self.renderer = PostTelemacPluginLayerRenderer(self, rendererContext)
+        return self.renderer
 
     def extent(self):
         """ 
@@ -180,10 +168,10 @@ class SelafinPluginLayer(QgsPluginLayer):
         """
         if self.hydrauparser != None and self.hydrauparser.hydraufile != None :
             meshx,meshy = self.hydrauparser.getMesh()
-            rect = QgsRectangle(float(min(meshx)), float(min(meshy)), float(max(meshx)),  float(max(meshy)))
+            rect = qgis.core.QgsRectangle(float(min(meshx)), float(min(meshy)), float(max(meshx)),  float(max(meshy)))
             return self.xform.transformBoundingBox(rect)
         else:
-            return QgsRectangle()
+            return qgis.core.QgsRectangle()
             
     def legendSymbologyItems(self, iconSize):
         """ 
@@ -215,6 +203,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         nom = os.path.basename(self.hydraufilepath).split('.')[0]
         self.setLayerName(nom)
         extension = os.path.basename(self.hydraufilepath).split('.')[1]
+        
         #Set selafin
         if extension == 'sww':
             self.hydrauparser = PostTelemacSWWParser(self)
@@ -222,26 +211,22 @@ class SelafinPluginLayer(QgsPluginLayer):
         else:
             self.hydrauparser = PostTelemacSelafinParser(self)
             self.hydrauparser.loadHydrauFile(self.hydraufilepath)
-        #Parser error...
-        if self.hydrauparser.triangulationisvalid[0] == False:
-            self.propertiesdialog.errorMessage('Duplicated points : ' + str( (self.hydrauparser.triangulationisvalid[1] + 1).tolist()  ) + ' - Triangulation is invalid')
+        
         #reinitialize layer's parameters
         if not self.param_displayed : self.param_displayed = 0
         if not self.lvl_contour : self.lvl_contour=self.levels[0]
         if not self.time_displayed : self.time_displayed = 0
-        self.parametrevx = None         #specific num for velolity x parameter
-        self.parametrevy = None
-        self.parametreh = None
+        
         #initialize parameters
-        self.initSelafinParameters()
         self.triinterp = None
         #change levels
         self.change_lvl_contour(self.lvl_contour)
         self.change_lvl_vel(self.lvl_vel)
+        
         #initialise selafin crs
         if  self.crs().authid() == u'':
-            self.setRealCrs(iface.mapCanvas().mapRenderer().destinationCrs())
-        self.xform = QgsCoordinateTransform(self.realCRS, iface.mapCanvas().mapSettings().destinationCrs())
+            self.setRealCrs(qgis.utils.iface.mapCanvas().mapRenderer().destinationCrs())
+        self.xform = qgis.core.QgsCoordinateTransform(self.realCRS, qgis.utils.iface.mapCanvas().mapSettings().destinationCrs())
         self.selafinqimage.changeTriangulationCRS()
         #update selafin values
         self.updateSelafinValues()
@@ -249,82 +234,16 @@ class SelafinPluginLayer(QgsPluginLayer):
         self.propertiesdialog.update()
         #final update
         self.triggerRepaint()
-        iface.legendInterface().refreshLayerSymbology(self)
-        iface.mapCanvas().setExtent(self.extent())
-
-    def initSelafinParameters(self):
-        """
-        Called load_selafin by when changing selafin file
-        Set selafin variables
-        """
-        #self.initTriangul()
-        self.parametres = []
-        #load  parametres in self.parametres
-        for i,name in enumerate(self.hydrauparser.getVarnames()):
-            self.parametres.append([i,name.strip(),None,i])
-        if len(self.parametrestoload)>0:    #case of virtual parameters when loadin a selafin layer
-            for param in self.parametrestoload:
-                self.parametres.append([len(self.parametres),param[1],param[2],len(self.parametres)])
-        
-        self.identifyKeysParameters()
-                
-                
-    def identifyKeysParameters(self):
-        #load velocity parameters
-        if (self.parametrevx == None and self.parametrevy == None) :
-
-            if self.propertiesdialog.postutils.getParameterName("VITESSEU") == None and self.propertiesdialog.postutils.getParameterName("VITESSEV") == None:
-                self.propertiesdialog.tab_velocity.setEnabled(False)
-            else:
-                self.parametrevx = self.propertiesdialog.postutils.getParameterName("VITESSEU")[0]
-                self.parametrevy = self.propertiesdialog.postutils.getParameterName("VITESSEV")[0]
-                self.propertiesdialog.tab_velocity.setEnabled(True)
-                for widget in self.propertiesdialog.tab_velocity.children():
-                    widget.setEnabled(True)
-                for widget in self.propertiesdialog.groupBox_schowvel.children():
-                    widget.setEnabled(True)
-                self.propertiesdialog.groupBox_schowvel.setChecked(True)
-                self.propertiesdialog.groupBox_schowvel.setChecked(False)
-
-        #load water depth parameters
-        if self.parametreh == None :
-            if self.propertiesdialog.postutils.getParameterName("HAUTEUR") == None:
-                if self.propertiesdialog.postutils.getParameterName("SURFACELIBRE") != None and self.propertiesdialog.postutils.getParameterName("BATHYMETRIE") != None:
-                    paramfreesurface = self.propertiesdialog.postutils.getParameterName("SURFACELIBRE")[0]
-                    parambottom = self.propertiesdialog.postutils.getParameterName("BATHYMETRIE")[0]
-                    self.parametreh = len(self.parametres)
-                    self.parametres.append([len(self.parametres),"HAUTEUR D'EAU",'V'+str(paramfreesurface)+' - V'+str(parambottom),len(self.parametres)])
-            else:
-                self.parametreh = self.propertiesdialog.postutils.getParameterName("HAUTEUR")[0]
-        
-        
-        
-        if self.parametreh != None and self.parametrevx != None and self.parametrevy != None:
-            self.propertiesdialog.page_flow.setEnabled(True)
-        else:
-            self.propertiesdialog.page_flow.setEnabled(False)            
-            
+        qgis.utils.iface.legendInterface().refreshLayerSymbology(self)
+        qgis.utils.iface.mapCanvas().setExtent(self.extent())
+    
+    
     def clearParameters(self):
         self.param_displayed = None
         self.lvl_contour = None
         self.time_displayed = None
         self.alpha_displayed = 100.0
     
-    """
-    def initTriangul(self,ct=None):
-        if ct:
-            pass
-        if self.hydrauparser.hydraufile:
-            meshx, meshy = self.hydrauparser.getMesh()
-            ikle = self.hydrauparser.getIkle()
-            self.triangulation = matplotlib.tri.Triangulation(meshx,meshy,np.array(ikle))
-            try:
-                self.trifind = self.triangulation.get_trifinder()
-            except Exception, e:
-                print 'bug with trifinder ' + str(e)
-                print 'regenerate selafin file please'
-                #TODO : disable utils dependant trifind (valeurs,?)
-    """
             
 
     #****************************************************************************************************
@@ -338,10 +257,10 @@ class SelafinPluginLayer(QgsPluginLayer):
         It emits a signal, because this method is redirected to a different method in comparetool  
         when tool "compare" is activated
         """
-        self.identifyKeysParameters()
+        self.hydrauparser.identifyKeysParameters()
         self.updatevalue.emit(onlyparamtimeunchanged)
         
-    updatevalue = pyqtSignal(int)
+    updatevalue = QtCore.pyqtSignal(int)
             
     def updateSelafinValues1(self, onlyparamtimeunchanged = -1):
         """
@@ -350,76 +269,12 @@ class SelafinPluginLayer(QgsPluginLayer):
         """
         if  onlyparamtimeunchanged < 0 :
             self.triinterp = None
-            self.values = self.getValues(self.time_displayed)
+            self.values = self.hydrauparser.getValues(self.time_displayed)
             self.value = self.values[self.param_displayed]
         else:
             self.value = self.values[self.param_displayed]
 
-            
-    def getValues(self,time):
-        """
-        Get the values of paameters for time time
-        """
-        values = self.hydrauparser.getValues(time)
-        for param in self.parametres:
-            if param[2]:        #for virtual parameter - compute it
-                self.dico = self.getDico(param[2], self.parametres, values)
-                val = eval(param[2],{"__builtins__":None}, self.dico)
-                values = np.vstack((values,val))
-        return values
 
-
-    
-    def getDico(self,expr, parametres, values):
-        """
-        Used for calculation of virtual parameters
-        """
-        dico = {}
-        dico['sin'] = sin
-        dico['cos'] = cos
-        dico['abs'] = abs
-        dico['int'] = int
-        dico['if_then_else'] = self.if_then_else
-        a = 'V{}'
-        nb_var = len(values)
-        i = 0
-        num_var = 0
-        while num_var < nb_var:
-            dico[a.format(i)] = values[i]
-            num_var += 1
-            i += 1
-        return dico
-        
-    def if_then_else(self,ifstat,true1,false1):
-        """
-        Used for calculation of virtual parameters
-        """
-        #condition
-        if isinstance(ifstat,np.ndarray):
-            var2 = np.zeros(ifstat.shape)
-            temp1 = np.where(ifstat)
-        elif isinstance(ifstat,str):
-            val = eval(ifstat,{"__builtins__":None}, self.dico)
-            var2 = np.zeros(val.shape)
-            temp1 = np.where(val)
-        #True
-        if isinstance(true1,np.ndarray):
-            var2[temp1] = true1[temp1]
-        elif isinstance(true1, numbers.Number):
-            var2[temp1] = float(true1)
-        else:
-            pass
-        #False
-        mask = np.ones(var2.shape, np.bool)
-        mask[temp1] = 0
-        if isinstance(false1,np.ndarray):
-            var2[mask] = false1[mask]
-        elif isinstance(false1, numbers.Number):
-            var2[mask] = float(false1)
-        else:
-            pass
-        return var2
-        
     #****************************************************************************************************
     #Change variables                                                  *********************************
     #****************************************************************************************************
@@ -428,35 +283,16 @@ class SelafinPluginLayer(QgsPluginLayer):
         """
         change the color map and layer symbology
         """
-        if len(self.lvl_contour)>=2:
-            lvls=self.lvl_contour
-            tab1 = []
-            max1=256
-            if len(lvls) == 2 :
-                tab1=[1.0]
-            else:
-                tab1 = [int(max1*i/(len(lvls)-2)) for i in range(len(lvls)-1)]
-            self.color_mpl_contour = cm(tab1)
-            self.cmap_mpl_contour,self.norm_mpl_contour = matplotlib.colors.from_levels_and_colors(lvls,self.color_mpl_contour)
-        iface.legendInterface().refreshLayerSymbology(self)
+        self.cmap_mpl_contour, self.norm_mpl_contour, self.color_mpl_contour = self.colormanager.changeColorMap(cm,self.lvl_contour)
+        qgis.utils.iface.legendInterface().refreshLayerSymbology(self)
         self.triggerRepaint()
         
     def change_cm_vel(self,cm):
         """
         change the color map and layer symbology
         """
-        if len(self.lvl_vel)>=2:
-            lvls=self.lvl_vel
-            tab1 = []
-            max1=256
-            for i in range(len(lvls)-1):
-                if len(lvls)==2:
-                    tab1.append(1.0)
-                else:
-                    tab1.append(int(max1*i/(len(lvls)-2)))
-            self.color_mpl_vel = cm(tab1)
-            self.cmap_mpl_vel,self.norm_mpl_vel = matplotlib.colors.from_levels_and_colors(lvls,self.color_mpl_vel)
-        iface.legendInterface().refreshLayerSymbology(self)
+        self.cmap_mpl_vel,self.norm_mpl_vel , self.color_mpl_vel = self.colormanager.changeColorMap(cm,self.lvl_vel)
+        qgis.utils.iface.legendInterface().refreshLayerSymbology(self)
         self.triggerRepaint()
         
     def change_lvl_contour(self,tab):
@@ -465,7 +301,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         """
         self.lvl_contour = tab
         self.change_cm_contour(self.cmap_mpl_contour_raw)
-        iface.legendInterface().refreshLayerSymbology(self)
+        qgis.utils.iface.legendInterface().refreshLayerSymbology(self)
         self.propertiesdialog.lineEdit_levelschoosen.setText(str(self.lvl_contour))
         self.triggerRepaint()
         
@@ -475,7 +311,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         """
         self.lvl_vel = tab
         self.change_cm_vel( self.cmap_mpl_vel_raw)
-        iface.legendInterface().refreshLayerSymbology(self)
+        qgis.utils.iface.legendInterface().refreshLayerSymbology(self)
         self.propertiesdialog.lineEdit_levelschoosen_2.setText(str(self.lvl_vel))
         self.triggerRepaint()
         
@@ -497,7 +333,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         """When changing parameter value for display"""
         self.param_displayed = int1
         self.updateSelafinValues(int1)
-        iface.legendInterface().refreshLayerSymbology(self)
+        qgis.utils.iface.legendInterface().refreshLayerSymbology(self)
         self.forcerefresh = True
         self.triggerRepaint()
         
@@ -508,8 +344,8 @@ class SelafinPluginLayer(QgsPluginLayer):
         So the layer.crs is the same as the canvas.crs, and reprojection is done in selafinqimage using layer.realCRS
         """
         self.realCRS = qgscoordinatereferencesystem
-        self.setCrs(iface.mapCanvas().mapSettings().destinationCrs())
-        self.xform  = QgsCoordinateTransform(self.realCRS, iface.mapCanvas().mapSettings().destinationCrs())
+        self.setCrs(qgis.utils.iface.mapCanvas().mapSettings().destinationCrs())
+        self.xform  = qgis.core.QgsCoordinateTransform(self.realCRS, qgis.utils.iface.mapCanvas().mapSettings().destinationCrs())
         self.selafinqimage.changeTriangulationCRS() 
         self.forcerefresh = True
         self.triggerRepaint()
@@ -523,8 +359,8 @@ class SelafinPluginLayer(QgsPluginLayer):
     def changecrs(self):
         """Associated with mapcanvascrschaned slot and changing layer crs in property dialog"""
         try:
-            self.setCrs(iface.mapCanvas().mapSettings().destinationCrs())
-            self.xform  = QgsCoordinateTransform(self.realCRS, iface.mapCanvas().mapSettings().destinationCrs())
+            self.setCrs(qgis.utils.iface.mapCanvas().mapSettings().destinationCrs())
+            self.xform  = qgis.core.QgsCoordinateTransform(self.realCRS, qgis.utils.iface.mapCanvas().mapSettings().destinationCrs())
             self.selafinqimage.changeTriangulationCRS()
             self.forcerefresh = True
             self.triggerRepaint()
@@ -540,7 +376,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         Called when PostTelemacPropertiesDialog 's "plot velocity" checkbox is checked
         """
         self.forcerefresh = True
-        iface.legendInterface().refreshLayerSymbology(self)
+        qgis.utils.iface.legendInterface().refreshLayerSymbology(self)
         self.triggerRepaint()
     
     def showMesh(self,int1):
@@ -567,7 +403,7 @@ class SelafinPluginLayer(QgsPluginLayer):
             return 'Empty PostTelemac pluginlayer'
         
     def bandCount(self):
-        return len(self.parametres)
+        return len(self.hydrauparser.parametres)
         
     def rasterUnitsPerPixel(self):
         # Only required so far for the profile tool
@@ -595,20 +431,20 @@ class SelafinPluginLayer(QgsPluginLayer):
         compute value of selafin parameters at point qgspoint
         return tuple with (success,  dictionnary with {parameter : value} )
         """
-        qgspointfromcanvas= self.xform.transform(qgspointfromcanvas,QgsCoordinateTransform.ReverseTransform)
+        qgspointfromcanvas= self.xform.transform(qgspointfromcanvas,qgis.core.QgsCoordinateTransform.ReverseTransform)
         if  self.triinterp:
-            pass
+            success = True
         else:
             success = self.initTriinterpolator()
         #getvalues
-        d = OrderedDict()
+        d = collections.OrderedDict()
         if success:
             try:
-                v= [float(self.triinterp[i].__call__([qgspointfromcanvas.x()],[qgspointfromcanvas.y()])) for i in range(len(self.parametres))]
+                v= [float(self.triinterp[i].__call__([qgspointfromcanvas.x()],[qgspointfromcanvas.y()])) for i in range(len(self.hydrauparser.parametres))]
             except Exception, e :
                 v = None
             #send results
-            for param in self.parametres:
+            for param in self.hydrauparser.parametres:
                 try:
                     d[ QString(param[1]) ] = v[param[0]]
                 except:
@@ -619,7 +455,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         
     def initTriinterpolator(self):
         if self.hydrauparser.triangulationisvalid[0]:
-            self.triinterp = [matplotlib.tri.LinearTriInterpolator(self.hydrauparser.triangulation, self.values[i]) for i in range(len(self.parametres))]
+            self.triinterp = [matplotlib.tri.LinearTriInterpolator(self.hydrauparser.triangulation, self.values[i]) for i in range(len(self.hydrauparser.parametres))]
             return True
         else:
             return False
@@ -634,9 +470,9 @@ class SelafinPluginLayer(QgsPluginLayer):
         return True ifsuccessful
         """
         element = node.toElement()
-        prj = QgsProject.instance()
+        prj = qgis.core.QgsProject.instance()
         hydraufilepath=prj.readPath( element.attribute('meshfile') )
-        self.setRealCrs(QgsCoordinateReferenceSystem( prj.readPath( element.attribute('crs') ) ) )
+        self.setRealCrs(qgis.core.QgsCoordinateReferenceSystem( prj.readPath( element.attribute('crs') ) ) )
         self.param_displayed = int(element.attribute('parametre'))
         self.alpha_displayed = int(element.attribute('alpha'))
         self.time_displayed = int(element.attribute('time'))
@@ -663,7 +499,13 @@ class SelafinPluginLayer(QgsPluginLayer):
         strtemp =  element.attribute('virtual_param').split(';')
         count = int((len(strtemp)-1)/2)
         for i in range(count):
-            self.parametrestoload.append([i,strtemp[2*i],strtemp[2*i+1]])
+            self.parametrestoload['virtual_parameters'].append([i,strtemp[2*i],strtemp[2*i+1]])
+        try:
+            self.parametrestoload['xtranslation'] = float(element.attribute('xtranslation'))
+            self.parametrestoload['ytranslation'] = float(element.attribute('ytranslation'))
+        except Exception, e:
+            pass
+        
         self.load_selafin(hydraufilepath)
         return True
         
@@ -674,7 +516,7 @@ class SelafinPluginLayer(QgsPluginLayer):
         implementation of method from QgsMapLayer to save layer in  qgsproject
         return True ifsuccessful
         """
-        prj = QgsProject.instance()
+        prj = qgis.core.QgsProject.instance()
         element = node.toElement()
         element.setAttribute("crs", self.realCRS.authid())
         element.setAttribute("type", "plugin")
@@ -689,9 +531,11 @@ class SelafinPluginLayer(QgsPluginLayer):
         element.setAttribute("level_type", self.propertiesdialog.comboBox_levelstype.currentIndex())
         element.setAttribute("level_value", self.propertiesdialog.comboBox_genericlevels.currentIndex())
         element.setAttribute("level_step", self.propertiesdialog.lineEdit_levelmin.text()+";"+self.propertiesdialog.lineEdit_levelmax.text()+";"+self.propertiesdialog.lineEdit_levelstep.text())
+        element.setAttribute("xtranslation", self.hydrauparser.translatex)
+        element.setAttribute("ytranslation", self.hydrauparser.translatey)
         #Virtuall param things
         strtrmp = ''
-        for param in self.parametres:
+        for param in self.hydrauparser.parametres:
             if param[2]:
                 strtrmp += param[1]+';'+param[2]+';'
         element.setAttribute("virtual_param", strtrmp)
@@ -734,13 +578,13 @@ class SelafinPluginLayer(QgsPluginLayer):
             del self.values
             del self.value
             del self.selafinqimage
-            del self.networkxgraph
-            self.hydrauparser.hydraufile = None
-            del self.hydrauparser
+            if self.hydrauparser != None:
+                self.hydrauparser.hydraufile = None
+                del self.hydrauparser
             #end : garbage collector 
             gc.collect()
             #close connexions
-            QgsMapLayerRegistry.instance().layersWillBeRemoved.disconnect(self.RemoveScenario)
+            qgis.core.QgsMapLayerRegistry.instance().layersWillBeRemoved.disconnect(self.RemoveScenario)
             self.canvas.destinationCrsChanged.disconnect(self.changecrs)
 
     #****************************************************************************************************
@@ -751,5 +595,5 @@ class SelafinPluginLayer(QgsPluginLayer):
     
     def tr(self, message):  
         """Used for translation"""
-        return QCoreApplication.translate('SelafinPluginLayer', message, None, QApplication.UnicodeUTF8)
+        return QtCore.QCoreApplication.translate('SelafinPluginLayer', message, None, QtGui.QApplication.UnicodeUTF8)
     

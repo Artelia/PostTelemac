@@ -1,19 +1,10 @@
 # -*- coding: utf-8 -*-
 
-#import qgis
-from qgis.core import *
-from qgis.gui import *
-from qgis.utils import *
-
 #import PyQT
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtCore import SIGNAL, Qt
 from PyQt4 import QtCore, QtGui
 
 #imports divers
-from time import ctime
-import os.path
+import os
 import subprocess
 
 

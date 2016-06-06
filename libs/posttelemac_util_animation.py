@@ -1,22 +1,16 @@
 # -*- coding: utf-8 -*-
 
-#import qgis
-from qgis.core import *
-from qgis.gui import *
-from qgis.utils import *
 #import numpy
 import numpy as np
 #import matplotlib
-import matplotlib
+#import matplotlib
 #import PyQT
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtCore import SIGNAL, Qt
 from PyQt4 import QtCore, QtGui
-
+import qgis.utils
+import qgis.core
 #imports divers
-from time import ctime
-import os.path
+import time
+import os
 import tempfile
 import subprocess
 import shutil
@@ -38,14 +32,14 @@ class PostTelemacAnimation(QtCore.QObject):
         try:
             
             self.pluginlayer.propertiesdialog.tabWidget.setCurrentIndex(2)
-            iface.mapCanvas().freeze(True)
+            qgis.utils.iface.mapCanvas().freeze(True)
             
-            txt = ctime()+ " Film - NE PAS MODIFIER L'ESPACE DESSIN DURANT L'OPERATION "
+            txt = time.ctime()+ " Film - NE PAS MODIFIER L'ESPACE DESSIN DURANT L'OPERATION "
             if self.outputtype:self.pluginlayer.propertiesdialog.textBrowser_2.append(txt)
             else: self.status.emit(txt)
             
             #Cherche le composeur voulu
-            for composeurview in iface.activeComposers():
+            for composeurview in qgis.utils.iface.activeComposers():
                 if composeurview.composerWindow().windowTitle() == self.pluginlayer.propertiesdialog.comboBox_compositions.currentText():
                     composition = composeurview.composition()
             
@@ -55,7 +49,7 @@ class PostTelemacAnimation(QtCore.QObject):
             nameslf =  os.path.basename(self.pluginlayer.hydraufilepath).split('.')[0]
             nameavi = os.path.join(dir,nameslf+'.avi')
 
-            txt = ctime()+ ' - Film - creation du fichier ' + str(nameavi)
+            txt = time.ctime()+ ' - Film - creation du fichier ' + str(nameavi)
             if self.outputtype:self.pluginlayer.propertiesdialog.textBrowser_2.append(txt)
             else: self.status.emit(txt)
             
@@ -69,9 +63,9 @@ class PostTelemacAnimation(QtCore.QObject):
             ax = None
             matplotlibimagepath = None
             fig = None
-            maps = [item for item in composition.items() if item.type() == QgsComposerItem.ComposerMap and item.scene()]
-            images = [item for item in composition.items() if item.type() == QgsComposerItem.ComposerPicture and item.scene()]
-            legends = [item for item in composition.items() if item.type() == QgsComposerItem.ComposerLegend and item.scene()]
+            maps = [item for item in composition.items() if item.type() == qgis.core.QgsComposerItem.ComposerMap and item.scene()]
+            images = [item for item in composition.items() if item.type() == qgis.core.QgsComposerItem.ComposerPicture and item.scene()]
+            legends = [item for item in composition.items() if item.type() == qgis.core.QgsComposerItem.ComposerLegend and item.scene()]
             if self.pluginlayer.propertiesdialog.comboBox_8.currentIndex() != 0:
                 for image in images:
                     if image.id() == self.pluginlayer.propertiesdialog.comboBox_8.currentText():
@@ -105,7 +99,7 @@ class PostTelemacAnimation(QtCore.QObject):
                         fig.savefig(matplotlibimagepath,format='jpg',dpi = 80 )
                         composeurimage.setPicturePath(matplotlibimagepath)
                     self.pluginlayer.changeTime(i)
-                    txt =ctime()+ ' - Film - iteration n '+ str(self.pluginlayer.time_displayed)
+                    txt = time.ctime()+ ' - Film - iteration n '+ str(self.pluginlayer.time_displayed)
                     if self.outputtype:self.pluginlayer.propertiesdialog.textBrowser_2.append(txt)
                     else: self.status.emit(txt)
                     
@@ -137,7 +131,7 @@ class PostTelemacAnimation(QtCore.QObject):
 
                     if compt == 0:
                         image.save(os.path.join(dir,nameslf+'_preview.'+format),format)
-                        txt =ctime()+ ' - Film - previsulation du film ici : ' + str(os.path.join(dir,nameslf+'_preview.' + format))
+                        txt =time.ctime()+ ' - Film - previsulation du film ici : ' + str(os.path.join(dir,nameslf+'_preview.' + format))
                         if self.outputtype:self.pluginlayer.propertiesdialog.textBrowser_2.append(txt)
                         else: self.status.emit(txt)
                     
@@ -150,16 +144,16 @@ class PostTelemacAnimation(QtCore.QObject):
             ffmpeg_res, logfile = self.images_to_video(tmp_img_dir,output_file,fps)
             if ffmpeg_res:
                 shutil.rmtree(self.tempdir)
-                txt =(ctime()+ ' - Film - fichier cree ' + str(nameavi))
+                txt =(time.ctime()+ ' - Film - fichier cree ' + str(nameavi))
                 if self.outputtype:self.pluginlayer.propertiesdialog.textBrowser_2.append(txt)
                 else: self.status.emit(txt)
                 
             else:
-                txt =ctime()+ ' - Film - erreur '
+                txt = time.ctime()+ ' - Film - erreur '
                 if self.outputtype:self.pluginlayer.propertiesdialog.textBrowser_2.append(txt)
                 else: self.status.emit(txt)
                 
-            iface.mapCanvas().freeze(False)
+            qgis.utils.iface.mapCanvas().freeze(False)
         
         except Exception, e : 
             txt =str(e)

@@ -31,39 +31,17 @@ Versions :
 
 
 #import qgis
-from qgis.core import *
-from qgis.gui import *
-from qgis.utils import *
 from processing.core.GeoAlgorithmExecutionException import  GeoAlgorithmExecutionException
 from processing.tools.vector import VectorWriter
 #import numpy
 import numpy as np
 #import matplotlib
-from matplotlib.path import Path
-import matplotlib.pyplot as plt
-from matplotlib import tri
+import matplotlib
 #import PyQT
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtCore import SIGNAL, Qt
 from PyQt4 import QtCore, QtGui
-#import telemac python
-
-#from ..libs_telemac.utils.files import getFileContent
-#from ..libs_telemac.parsers.parserSortie import getValueHistorySortie
-#from ..libs_telemac.parsers.parserSELAFIN import getValueHistorySLF,   getValuePolylineSLF,subsetVariablesSLF
-#from ..libs_telemac.parsers.parserSELAFIN import SELAFIN
-
-#from ..libs_telemac.parsers.parserStrings import parseArrayPaires
 #imports divers
-import threading
-from time import ctime
-import math
-from os import path
-from shapely.geometry import Polygon
-import sys
-import os.path
-from matplotlib import tri
+import time
+
 from ..posttelemacparsers.posttelemac_selafin_parser import *
 
 #*************************************************************************
@@ -138,11 +116,11 @@ class getCompareValue(QtCore.QObject):
 
                     #projection of slf2 to slf1
                     #triinterp
-                    triang = tri.Triangulation(meshx2,meshy2,np.array(ikle2))
+                    triang = matplotlib.tri.Triangulation(meshx2,meshy2,np.array(ikle2))
                     self.triinterp = []
                     for i in range(lenvarnames):
                         if self.layer.parametres[i][3] is not None:
-                            self.triinterp.append(tri.LinearTriInterpolator(triang, self.hydrauparsercompared.getValues(self.layer.time_displayed)[self.layer.parametres[i][3]]))
+                            self.triinterp.append(matplotlib.tri.LinearTriInterpolator(triang, self.hydrauparsercompared.getValues(self.layer.time_displayed)[self.layer.parametres[i][3]]))
                         else:
                             self.triinterp.append(None)
                     valuesslf2 = []

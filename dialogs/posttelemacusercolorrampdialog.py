@@ -20,14 +20,16 @@ Impl
 
  ***************************************************************************/
 """
-
+"""
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.gui import *
 from qgis.core import *
-from PyQt4 import QtGui, uic
-
+"""
+from PyQt4 import uic, QtGui
 import os
+import qgis.gui
+
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__),'..', 'ui', 'usercolorramp.ui'))
@@ -63,8 +65,8 @@ class UserColorRampDialog(QtGui.QDialog, FORM_CLASS):
     def populateDialog(self):
         self.tableWidget.setRowCount(len(self.selafinlayer.lvl_contour)-1)
         for i in range(len(self.selafinlayer.lvl_contour)-1):
-            colorwdg = QgsColorButtonV2()
-            colorwdg.setColor(QColor(self.selafinlayer.color_mpl_contour[i][0]*255,self.selafinlayer.color_mpl_contour[i][1]*255,self.selafinlayer.color_mpl_contour[i][2]*255))
+            colorwdg = qgis.gui.QgsColorButtonV2()
+            colorwdg.setColor(QtGui.QColor(self.selafinlayer.color_mpl_contour[i][0]*255,self.selafinlayer.color_mpl_contour[i][1]*255,self.selafinlayer.color_mpl_contour[i][2]*255))
             self.tableWidget.setCellWidget(i,0,colorwdg)
             self.tableWidget.setItem(i, 1, QtGui.QTableWidgetItem(str(self.selafinlayer.lvl_contour[i])))
             self.tableWidget.setItem(i, 2, QtGui.QTableWidgetItem(str(self.selafinlayer.lvl_contour[i+1])))
@@ -72,7 +74,7 @@ class UserColorRampDialog(QtGui.QDialog, FORM_CLASS):
     def addrow(self):
         introw = self.tableWidget.currentRow()
         self.tableWidget.insertRow(introw+1)
-        colorwdg = QgsColorButtonV2()
+        colorwdg = qgis.gui.QgsColorButtonV2()
         self.tableWidget.setCellWidget(introw+1,0,colorwdg)
         self.tableWidget.setItem(introw+1, 1, QtGui.QTableWidgetItem(self.tableWidget.item(introw,2)))
         self.tableWidget.setItem(introw+1, 2, QtGui.QTableWidgetItem(self.tableWidget.item(introw+2,1)))

@@ -24,9 +24,9 @@ Versions :
 """
 
 #import qgis
-from qgis.core import *
-from qgis.gui import *
-from qgis.utils import *
+import qgis.core 
+#import PyQT
+from PyQt4 import QtGui
 #import matplotlib
 import matplotlib
 matplotlib.use('Agg')
@@ -34,8 +34,7 @@ import matplotlib.pyplot as plt
 from matplotlib import tri
 #import numpy
 import numpy as np
-#import PyQT
-from PyQt4 import  QtGui, QtCore
+
 #other imports
 from time import ctime
 import cStringIO
@@ -43,6 +42,7 @@ import gc
 import time
 
 DEBUG = False
+PRECISION = 0.01
 
 
 class Selafin2QImage():
@@ -83,11 +83,11 @@ class Selafin2QImage():
             print str('changecrs : '+str(e))
         
     def getTransformedCoords(self,xcoords,ycoords,direction = True):
-        coordinatesAsPoints = [ QgsPoint(xcoords[i], ycoords[i]) for i in range(len(xcoords))]
+        coordinatesAsPoints = [ qgis.core.QgsPoint(xcoords[i], ycoords[i]) for i in range(len(xcoords))]
         if direction:
             transformedCoordinatesAsPoints = [self.selafinlayer.xform.transform(point) for point in coordinatesAsPoints]
         else:
-            transformedCoordinatesAsPoints = [self.selafinlayer.xform.transform(point,QgsCoordinateTransform.ReverseTransform) for point in coordinatesAsPoints]
+            transformedCoordinatesAsPoints = [self.selafinlayer.xform.transform(point,qgis.core.QgsCoordinateTransform.ReverseTransform) for point in coordinatesAsPoints]
         xcoordsfinal = [point.x() for point in transformedCoordinatesAsPoints]
         ycoordsfinal = [point.y() for point in transformedCoordinatesAsPoints]
         return xcoordsfinal,ycoordsfinal
@@ -167,18 +167,37 @@ class Selafin2QImage():
                     self.image_mesh = None
                     self.goodpointindex  = None
                     
-                if selafinlayer.showvelocityparams['show'] :
+                if selafinlayer.showvelocityparams['show']:
+                
                     try:
                         self.quiverplot.remove()
                     except Exception, e:
-                        pass 
+                        pass
+                    
                     tabx,taby,tabvx,tabvy = self.getVelocity(selafinlayer,rendererContext)
-                    C = np.sqrt(np.array(tabvx)**2 + np.array(tabvy)**2)
-                    self.quiverplot = self.ax.quiver(tabx,taby,tabvx,tabvy,C,
-                                               scale=selafinlayer.showvelocityparams['norm'],
-                                               scale_units='xy',
-                                               cmap=  selafinlayer.cmap_mpl_vel,
-                                               norm=selafinlayer.norm_mpl_vel)
+                    C = np.sqrt(tabvx**2 + tabvy**2)
+                    
+                    tabx = tabx[np.where(C > PRECISION) ]
+                    taby = taby[np.where(C > PRECISION) ]
+                    tabvx = tabvx[np.where(C > PRECISION) ]
+                    tabvy = tabvy[np.where(C > PRECISION) ]
+                    C = C[np.where(C > PRECISION)]
+                    
+                    if selafinlayer.showvelocityparams['norm'] >=0 :
+                        self.quiverplot = self.ax.quiver(tabx,taby,tabvx,tabvy,C,
+                                                   scale=selafinlayer.showvelocityparams['norm'],
+                                                   scale_units='xy',
+                                                   cmap=  selafinlayer.cmap_mpl_vel,
+                                                   norm=selafinlayer.norm_mpl_vel)
+                    else:
+                        UN = np.array(tabvx)/C
+                        VN = np.array(tabvy)/C
+                        self.quiverplot = self.ax.quiver(tabx,taby,UN,VN,C,
+                                                   cmap=  selafinlayer.cmap_mpl_vel,
+                                                   scale=-1/selafinlayer.showvelocityparams['norm'],
+                                                   scale_units='xy'
+                                                   )
+                                                   
                     if DEBUG : time1.append("quiver : "+str(round(time.clock()-timestart,3)))
                 
                 self.ax.set_ylim([rect[2],rect[3]])
@@ -239,12 +258,29 @@ class Selafin2QImage():
                 
                 if selafinlayer.showvelocityparams['show']:
                     tabx,taby,tabvx,tabvy = self.getVelocity(selafinlayer,rendererContext)
-                    C = np.sqrt(np.array(tabvx)**2 + np.array(tabvy)**2)
-                    self.quiverplot = self.ax.quiver(tabx,taby,tabvx,tabvy,C,
-                                               scale=selafinlayer.showvelocityparams['norm'],
-                                               scale_units='xy',
-                                               cmap=  selafinlayer.cmap_mpl_vel,
-                                               norm=selafinlayer.norm_mpl_vel)
+                    C = np.sqrt(tabvx**2 + tabvy**2)
+                    
+                    tabx = tabx[np.where(C > PRECISION) ]
+                    taby = taby[np.where(C > PRECISION) ]
+                    tabvx = tabvx[np.where(C > PRECISION) ]
+                    tabvy = tabvy[np.where(C > PRECISION) ]
+                    C = C[np.where(C > PRECISION)]
+                    
+                    if selafinlayer.showvelocityparams['norm'] >=0 :
+                        self.quiverplot = self.ax.quiver(tabx,taby,tabvx,tabvy,C,
+                                                   scale=selafinlayer.showvelocityparams['norm'],
+                                                   scale_units='xy',
+                                                   cmap=  selafinlayer.cmap_mpl_vel,
+                                                   norm=selafinlayer.norm_mpl_vel)
+                    else:
+                        UN = np.array(tabvx)/C
+                        VN = np.array(tabvy)/C
+                        self.quiverplot = self.ax.quiver(tabx,taby,UN,VN,C,
+                                                   cmap=  selafinlayer.cmap_mpl_vel,
+                                                   scale=-1/selafinlayer.showvelocityparams['norm'],
+                                                   scale_units='xy'
+                                                   )
+                                                   
                     if DEBUG : time1.append("quiver : "+str(round(time.clock()-timestart,3)))
                 
                 self.ax.set_ylim([rect[2],rect[3]])
@@ -298,12 +334,29 @@ class Selafin2QImage():
 
                 if selafinlayer.showvelocityparams['show']:
                     tabx,taby,tabvx,tabvy = self.getVelocity(selafinlayer,rendererContext)
-                    C = np.sqrt(np.array(tabvx)**2 + np.array(tabvy)**2)
-                    self.quiverplot = self.ax.quiver(tabx,taby,tabvx,tabvy,C,
-                                                scale=selafinlayer.showvelocityparams['norm'],
-                                                scale_units='xy',
-                                                cmap=  selafinlayer.cmap_mpl_vel,
-                                                norm=selafinlayer.norm_mpl_vel)
+                    C = np.sqrt(tabvx**2 + tabvy**2)
+                    
+                    tabx = tabx[np.where(C > PRECISION) ]
+                    taby = taby[np.where(C > PRECISION) ]
+                    tabvx = tabvx[np.where(C > PRECISION) ]
+                    tabvy = tabvy[np.where(C > PRECISION) ]
+                    C = C[np.where(C > PRECISION)]
+                    
+                    if selafinlayer.showvelocityparams['norm'] >=0 :
+                        self.quiverplot = self.ax.quiver(tabx,taby,tabvx,tabvy,C,
+                                                   scale=selafinlayer.showvelocityparams['norm'],
+                                                   scale_units='xy',
+                                                   cmap=  selafinlayer.cmap_mpl_vel,
+                                                   norm=selafinlayer.norm_mpl_vel)
+                    else:
+                        UN = np.array(tabvx)/C
+                        VN = np.array(tabvy)/C
+                        self.quiverplot = self.ax.quiver(tabx,taby,UN,VN,C,
+                                                   cmap=  selafinlayer.cmap_mpl_vel,
+                                                   scale=-1/selafinlayer.showvelocityparams['norm'],
+                                                   scale_units='xy'
+                                                   )
+
                     if DEBUG : time1.append("quiver : "+str(round(time.clock()-timestart,3)))
 
                 
@@ -366,8 +419,8 @@ class Selafin2QImage():
             tabvy =  selafin.triinterp[selafin.parametrevy].__call__(tabx,taby)
             """
             tempx1, tempy1 = self.getTransformedCoords(tabx,taby,False)
-            tabvx =  selafin.triinterp[selafin.parametrevx].__call__(tempx1,tempy1)
-            tabvy =  selafin.triinterp[selafin.parametrevy].__call__(tempx1,tempy1)
+            tabvx =  selafin.triinterp[selafin.hydrauparser.parametrevx].__call__(tempx1,tempy1)
+            tabvy =  selafin.triinterp[selafin.hydrauparser.parametrevy].__call__(tempx1,tempy1)
 
         elif selafin.showvelocityparams['type'] == 2:
             if not self.goodpointindex == None :
@@ -379,9 +432,9 @@ class Selafin2QImage():
                 taby = taby[goodnum]
             else:
                 tabx, taby, goodnum = self.getxynuminrenderer(selafin,rendererContext)
-            tabvx=selafin.values[selafin.parametrevx][goodnum]
-            tabvy=selafin.values[selafin.parametrevy][goodnum]
-        return tabx,taby,tabvx,tabvy
+            tabvx=selafin.values[selafin.hydrauparser.parametrevx][goodnum]
+            tabvy=selafin.values[selafin.hydrauparser.parametrevy][goodnum]
+        return np.array(tabx),np.array(taby),np.array(tabvx),np.array(tabvy)
         
     def saveImage(self,ratio,dpi2):
         """

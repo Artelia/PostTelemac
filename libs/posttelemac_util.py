@@ -20,18 +20,8 @@ Versions :
 
  ***************************************************************************/
 """
-
-
-#import PyQT
-from PyQt4 import QtGui, uic
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtCore import SIGNAL, Qt
-import qgis
-#import numpy
+#standart libraries import
 import numpy as np
-#import time
-from time import ctime
 #import divers
 from ..mpldatacursor import datacursor
 from selectlinetool import SelectLineTool
@@ -45,6 +35,7 @@ from posttelemac_util_flow import *
 from posttelemac_util_get_max import *
 from posttelemac_util_getcomparevalue import *
 from posttelemac_util_rasterize import *
+
 
 
 class PostTelemacUtils():
@@ -83,7 +74,9 @@ class PostTelemacUtils():
         """
         #qgspointtransformed = self.selafinlayer.xform.transform(qgspoint,QgsCoordinateTransform.ReverseTransform)
         if self.selafinlayer.propertiesdialog.comboBox_values_method.currentIndex() == 0 :
-            numnearest = self.getNearest([qgspointfromcanvas.x(),qgspointfromcanvas.y()])
+            qgspoint= self.selafinlayer.xform.transform(QgsPoint(qgspointfromcanvas[0],qgspointfromcanvas[1]),QgsCoordinateTransform.ReverseTransform)
+            point1 = [[qgspoint.x(),qgspoint.y()]]
+            numnearest = self.selafinlayer.hydrauparser.getNearestPoint(point1[0][0], point1[0][1])
             x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([numnearest])[0]
             qgspointfromcanvas = self.selafinlayer.xform.transform( QgsPoint(x,y) )
 
@@ -451,18 +444,18 @@ class PostTelemacUtils():
         
         
     def getCorrespondingParameters(self):
-        for var in self.selafinlayer.parametres:
+        for var in self.selafinlayer.hydrauparser.parametres:
             for param in self.compareprocess.hydrauparsercompared.getVarnames() :
                 if var[1] in param.strip()  :
-                    self.selafinlayer.parametres[var[0]][3] = self.compareprocess.hydrauparsercompared.getVarnames().index(param)
+                    self.selafinlayer.hydrauparser.parametres[var[0]][3] = self.compareprocess.hydrauparsercompared.getVarnames().index(param)
                     break
                 else:
-                    self.selafinlayer.parametres[var[0]][3] = None
-        self.selafinlayer.propertiesdialog.lineEdit.setText(str([[param[0],param[3]] for param in self.selafinlayer.parametres]))
+                    self.selafinlayer.hydrauparser.parametres[var[0]][3] = None
+        self.selafinlayer.propertiesdialog.lineEdit.setText(str([[param[0],param[3]] for param in self.selafinlayer.hydrauparser.parametres]))
         
     def reinitCorrespondingParameters(self):
-        for i, var in enumerate(self.selafinlayer.parametres):
-                self.selafinlayer.parametres[i][3] = i
+        for i, var in enumerate(self.selafinlayer.hydrauparser.parametres):
+                self.selafinlayer.hydrauparser.parametres[i][3] = i
         
     def compare1(self,int1):
         try:
@@ -478,8 +471,8 @@ class PostTelemacUtils():
                 self.initclassgraphtemp.compare = True
                 self.selafinlayer.triinterp = None
                 #desactive non matching parameters
-                for i in range(len(self.selafinlayer.parametres)):
-                    if self.selafinlayer.parametres[i][3] == None:
+                for i in range(len(self.selafinlayer.hydrauparser.parametres)):
+                    if self.selafinlayer.hydrauparser.parametres[i][3] == None:
                         self.selafinlayer.propertiesdialog.treeWidget_parameters.topLevelItem(i).setFlags(Qt.ItemIsSelectable)
                 self.compareprocess.comparetime = None
                 self.selafinlayer.forcerefresh = True
@@ -557,21 +550,27 @@ class PostTelemacUtils():
                              self.selafinlayer.propertiesdialog.checkBox_5.isChecked(),               #bool for comuting velocity
                              self.selafinlayer.parametrevx if self.selafinlayer.propertiesdialog.checkBox_5.isChecked() else None,
                              self.selafinlayer.parametrevy if self.selafinlayer.propertiesdialog.checkBox_5.isChecked() else None,
-                             [self.selafinlayer.hydrauparser.getValues(self.selafinlayer.time_displayed)[i] for i in range(len([param for param in self.selafinlayer.parametres if not param[2]]))],                          #tab of values
+                             #[self.selafinlayer.hydrauparser.getValues(self.selafinlayer.time_displayed)[i] for i in range(len([param for param in self.selafinlayer.hydrauparser.parametres if not param[2]]))],                          #tab of values
+                             [self.selafinlayer.hydrauparser.getValues(self.selafinlayer.time_displayed)[i] for i in range(len([param for param in self.selafinlayer.hydrauparser.parametres]))],                          #tab of values
                              self.selafinlayer.crs().authid(),      #selafin crs
-                              None,   #if no none, specify crs of output file
-                              None,           #change generic outputname to specific one
-                             None,         #if not none, create shp in this directory
-                             None)    #needed for toolbox processing
+                             translatex = self.selafinlayer.hydrauparser.translatex,
+                             translatey = self.selafinlayer.hydrauparser.translatey,
+                             selafintransformedcrs = None,   #if no none, specify crs of output file
+                             outputshpname = None,           #change generic outputname to specific one
+                             outputshppath = None,         #if not none, create shp in this directory
+                             outputprocessing = None)    #needed for toolbox processing
+                             
+                             
 
     def create_shp(self):
         self.initclass=InitSelafinContour2Shp()
         self.initclass.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
+        self.initclass.error.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
         self.initclass.finished1.connect(self.workershapeFinished)
         self.selafinlayer.propertiesdialog.normalMessage(self.tr("2Shape - coutour creation launched - watch progress on log tab"))
         
         if  self.selafinlayer.propertiesdialog.lineEdit_contourname.text() == "":
-            name = (str(self.selafinlayer.parametres[self.selafinlayer.param_displayed][1]).translate(None, "?,!.;")
+            name = (str(self.selafinlayer.hydrauparser.parametres[self.selafinlayer.param_displayed][1]).translate(None, "?,!.;")
                              +"_t_"+str(int(self.selafinlayer.time_displayed)) )
         else:
             name = self.selafinlayer.propertiesdialog.lineEdit_contourname.text()
@@ -579,16 +578,17 @@ class PostTelemacUtils():
         self.initclass.start(0,                 #0 : thread inside qgis (plugin) - 1 : thread processing - 2 : modeler (no thread) - 3 : modeler + shpouput - 4: outsideqgis
                          os.path.normpath(self.selafinlayer.hydraufilepath),                 #path to selafin file
                          int(self.selafinlayer.time_displayed),                            #time to process (selafin time iteration)
-                         self.selafinlayer.parametres[self.selafinlayer.param_displayed][1],                     #parameter to process name (string) or id (int)
+                         self.selafinlayer.hydrauparser.parametres[self.selafinlayer.param_displayed][1],                     #parameter to process name (string) or id (int)
                          self.selafinlayer.lvl_contour,                       #levels to create
                          self.selafinlayer.crs().authid(),      #selafin crs
-                         self.selafinlayer.propertiesdialog.pushButton_contourcrs.text() if self.selafinlayer.propertiesdialog.checkBox_contourcrs.isChecked() else None,   #if no none, specify crs of output file
-                         False,                #quickprocess option - don't make ring
-                          name,           #change generic outputname to specific one
-                          None,         #if not none, create shp in this directory
-                         self.selafinlayer.value,          #force value for plugin
-                          None)
-        
+                         translatex = self.selafinlayer.hydrauparser.translatex,
+                         translatey = self.selafinlayer.hydrauparser.translatey,
+                         selafintransformedcrs = self.selafinlayer.propertiesdialog.pushButton_contourcrs.text() if self.selafinlayer.propertiesdialog.checkBox_contourcrs.isChecked() else None,   #if no none, specify crs of output file
+                         quickprocessing = False,                #quickprocess option - don't make ring
+                          outputshpname = name,           #change generic outputname to specific one
+                         outputshppath = None,         #if not none, create shp in this directory
+                         forcedvalue = self.selafinlayer.value,          #force value for plugin
+                         outputprocessing = None)
         
 
             
@@ -603,15 +603,17 @@ class PostTelemacUtils():
         self.initclass.start(0,                 #0 : thread inside qgis (plugin) - 1 : thread processing - 2 : modeler (no thread) - 3 : modeler + shpouput - 4: outsideqgis
                          os.path.normpath(self.selafinlayer.hydraufilepath),                 #path to selafin file
                          int(self.selafinlayer.time_displayed),                            #time to process (selafin time iteration)
-                         str(self.getParameterName('BATHYMETRIE')[0]) if self.selafinlayer.propertiesdialog.checkBox_3.isChecked() else None,     #parameter to process name (string) or id (int)
-                         self.selafinlayer.propertiesdialog.doubleSpinBox.value(),                 #z amplify
-                         self.selafinlayer.propertiesdialog.doubleSpinBox_3.value(),                    #azimuth for hillshade
-                         self.selafinlayer.propertiesdialog.doubleSpinBox_2.value(),                    #zenith for hillshade
-                         self.selafinlayer.crs().authid(),      #selafin crs
-                         self.selafinlayer.propertiesdialog.pushButton_7.text() if self.selafinlayer.propertiesdialog.checkBox_2.isChecked() else None,   #if no none, specify crs of output file
-                          None,           #change generic outputname to specific one
-                          None,         #if not none, create shp in this directory
-                          None)
+                         parameter = str(self.getParameterName('BATHYMETRIE')[0]) if self.selafinlayer.propertiesdialog.checkBox_3.isChecked() else None,     #parameter to process name (string) or id (int)
+                         facteurz = self.selafinlayer.propertiesdialog.doubleSpinBox.value(),                 #z amplify
+                         azimuth = self.selafinlayer.propertiesdialog.doubleSpinBox_3.value(),                    #azimuth for hillshade
+                         zenith = self.selafinlayer.propertiesdialog.doubleSpinBox_2.value(),                    #zenith for hillshade
+                         selafincrs = self.selafinlayer.crs().authid(),      #selafin crs
+                         translatex = self.selafinlayer.hydrauparser.translatex,
+                         translatey = self.selafinlayer.hydrauparser.translatey,
+                         selafintransformedcrs = self.selafinlayer.propertiesdialog.pushButton_7.text() if self.selafinlayer.propertiesdialog.checkBox_2.isChecked() else None,   #if no none, specify crs of output file
+                         outputshpname = None,           #change generic outputname to specific one
+                         outputshppath = None,         #if not none, create shp in this directory
+                         outputprocessing = None)
             
             
     def workershapeFinished(self,strpath):
@@ -787,7 +789,7 @@ class PostTelemacUtils():
                 for txt in line.split("=")[1].split("\n")[0].split(";"):
                     tabtemp.append(str(txt))
                 
-                for paramtemp in self.selafinlayer.parametres:
+                for paramtemp in self.selafinlayer.hydrauparser.parametres:
                     #print str(paramtemp[1]) + ' ' +str(tabtemp)
                     if paramtemp[1] in tabtemp:
                         trouve = True
@@ -802,13 +804,13 @@ class PostTelemacUtils():
         return QCoreApplication.translate('PostTelemacUtils', message, None, QApplication.UnicodeUTF8)
         
     ""
-        
+    """
     def getNearest(self,pointfromcanvas):
-        """
-        Get the nearest point in selafin mesh
-        point is an array [x,y]
-        return num of selafin MESH point
-        """
+        
+        #Get the nearest point in selafin mesh
+        #point is an array [x,y]
+        #return num of selafin MESH point
+        
         qgspoint= self.selafinlayer.xform.transform(QgsPoint(pointfromcanvas[0],pointfromcanvas[1]),QgsCoordinateTransform.ReverseTransform)
         point1 = [[qgspoint.x(),qgspoint.y()]]
         if not self.skdtree :
@@ -817,7 +819,7 @@ class PostTelemacUtils():
             self.skdtree = cKDTree(self.arraymesh,leafsize=100)
         numfinal = self.skdtree.query(point1,k=1)[1][0]
         return numfinal
-        
+    """
         
     
 class ThreadLaucnher(QtCore.QObject):

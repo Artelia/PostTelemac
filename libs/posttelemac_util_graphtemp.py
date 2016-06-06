@@ -1,23 +1,11 @@
 # -*- coding: utf-8 -*-
 
-#import qgis
-from qgis.core import *
-from qgis.gui import *
-from qgis.utils import *
-#import numpy
-from numpy import *
-import numpy as np
+
 #import PyQT
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtCore import SIGNAL, Qt
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore
 #imports divers
-from time import ctime
-import math
 import sys
-import os.path
-from scipy.spatial import cKDTree
+import os
 
 debug = False
 
@@ -65,12 +53,12 @@ class graphTemp(QtCore.QObject):
                         #print str(numpointsfinal[0])
                         for i, numpoint in enumerate(numpointsfinal[0]):
                             #layer2serie += float(coef[0][i]) * self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getTimeSerie([numpoint],[self.selafinlayer.parametres[param[0]][3]],self.selafinlayer.parametres)
-                            layer2serie += float(coef[0][i]) * self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getTimeSerie([numpoint +1],[self.selafinlayer.parametres[param][3]],self.selafinlayer.parametres)
+                            layer2serie += float(coef[0][i]) * self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getTimeSerie([numpoint +1],[self.selafinlayer.hydrauparser.parametres[param][3]],self.selafinlayer.hydrauparser.parametres)
                         #print 'ok1'
-                        layer1serie = self.selafinlayer.hydrauparser.getTimeSerie([enumpoint + 1],[param],self.selafinlayer.parametres)
+                        layer1serie = self.selafinlayer.hydrauparser.getTimeSerie([enumpoint + 1],[param],self.selafinlayer.hydrauparser.parametres)
                         tempordonees =  layer2serie  - layer1serie
                     else:
-                        tempordonees =  self.selafinlayer.hydrauparser.getTimeSerie([enumpoint + 1],[param],self.selafinlayer.parametres)
+                        tempordonees =  self.selafinlayer.hydrauparser.getTimeSerie([enumpoint + 1],[param],self.selafinlayer.hydrauparser.parametres)
                     
                     ordonnees = tempordonees[0][0].tolist()
                     list1.append(abscisse)

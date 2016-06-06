@@ -108,6 +108,8 @@ class SelafinContour2Shp(QtCore.QObject):
                  parameter,                     #parameter to process name (string) or id (int)
                  levels,                       #levels to create
                  selafincrs = 'EPSG:2154',      #selafin crs
+                 translatex = 0,
+                 translatey = 0,
                  selafintransformedcrs = None,   #if no none, specify crs of output file
                  quickprocessing = False,                #quickprocess option - don't make ring
                  outputshpname = None,           #change generic outputname to specific one
@@ -132,6 +134,9 @@ class SelafinContour2Shp(QtCore.QObject):
         self.slf_mesh = np.array(slf.IKLE3)
         """
         self.slf_x, self.slf_y  = self.parserhydrau.getMesh()
+        self.slf_x = self.slf_x + translatex
+        self.slf_y = self.slf_y + translatey
+        
         self.slf_mesh  = np.array( self.parserhydrau.getIkle() )
 
         if self.processtype==0:
@@ -520,6 +525,8 @@ class InitSelafinContour2Shp(QtCore.QObject):
                  parameter,                     #parameter to process name (string) or id (int)
                  levels,                       #levels to create
                  selafincrs = 'EPSG:2154',      #selafin crs
+                 translatex = 0,
+                 translatey = 0,
                  selafintransformedcrs = None,   #if no none, specify crs of output file
                  quickprocessing = False,                #quickprocess option - don't make ring
                  outputshpname = None,           #change generic outputname to specific one
@@ -534,8 +541,8 @@ class InitSelafinContour2Shp(QtCore.QObject):
             parserhydrau = PostTelemacSelafinParser()
             parserhydrau.loadHydrauFile(os.path.normpath(selafinfilepath))
             slf = parserhydrau.hydraufile
-        except:
-            self.raiseError('fichier selafin n existe pas')
+        except Exception, e :
+            self.raiseError('fichier selafin n existe pas ' + str(e))
             
         #times = slf.tags["times"]
         times = parserhydrau.getTimes()
@@ -560,7 +567,20 @@ class InitSelafinContour2Shp(QtCore.QObject):
                     self.raiseError( str(parameter) + " parameter pas trouve dans "+str(parameters))
         
         #Launch worker
-        self.worker = SelafinContour2Shp(processtype,selafinfilepath,time,parameter,levels,selafincrs,selafintransformedcrs,quickprocessing,outputshpname,outputshppath,forcedvalue,outputprocessing)
+        self.worker = SelafinContour2Shp(processtype,
+                                         selafinfilepath,
+                                         time,
+                                         parameter,
+                                         levels,
+                                         selafincrs,
+                                         translatex = translatex,
+                                         translatey = translatey,
+                                         selafintransformedcrs = selafintransformedcrs,
+                                         quickprocessing = quickprocessing,
+                                         outputshpname = outputshpname,
+                                         outputshppath = outputshppath,
+                                         forcedvalue = forcedvalue,
+                                         outputprocessing = outputprocessing)
         if processtype in [0,1]:
             self.worker.moveToThread(self.thread)
             self.thread.started.connect(self.worker.createShp)

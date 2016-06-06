@@ -107,6 +107,8 @@ class SelafinContour2Shp(QtCore.QObject):
                  azimuth = None,                    #azimuth for hillshade
                  zenith = None,                    #zenith for hillshade
                  selafincrs = 'EPSG:2154',      #selafin crs
+                 translatex = 0,
+                 translatey = 0,
                  selafintransformedcrs = None,   #if no none, specify crs of output file
                  outputshpname = None,           #change generic outputname to specific one
                  outputshppath = None,         #if not none, create shp in this directory
@@ -127,6 +129,9 @@ class SelafinContour2Shp(QtCore.QObject):
         self.slf_mesh = np.array(slf.IKLE3)
         """
         self.slf_x, self.slf_y  = self.parserhydrau.getMesh()
+        self.slf_x = self.slf_x + translatex
+        self.slf_y = self.slf_y + translatey
+        
         self.slf_mesh  = np.array( self.parserhydrau.getIkle() )
         
         
@@ -337,6 +342,8 @@ class InitSelafinMesh2Shp(QtCore.QObject):
                  azimuth = None,                    #azimuth for hillshade
                  zenith = None,                    #zenith for hillshade
                  selafincrs = 'EPSG:2154',      #selafin crs
+                 translatex = 0,
+                 translatey = 0,
                  selafintransformedcrs = None,   #if no none, specify crs of output file
                  outputshpname = None,           #change generic outputname to specific one
                  outputshppath = None,         #if not none, create shp in this directory
@@ -379,7 +386,22 @@ class InitSelafinMesh2Shp(QtCore.QObject):
             else : 
                 parameter = int(parameter)
         
-        self.worker = SelafinContour2Shp(processtype,selafinfilepath,time,parameter,facteurz,azimuth,zenith,selafincrs,selafintransformedcrs,outputshpname,outputshppath,outputprocessing)
+        self.worker = SelafinContour2Shp(processtype,
+                                         selafinfilepath,
+                                         time,
+                                         parameter,
+                                         facteurz = facteurz,
+                                         azimuth = azimuth,
+                                         zenith = zenith,
+                                         selafincrs = selafincrs,
+                                         translatex = translatex,
+                                         translatey = translatey,
+                                         selafintransformedcrs = selafintransformedcrs,
+                                         outputshpname = outputshpname,
+                                         outputshppath = outputshppath,
+                                         outputprocessing = outputprocessing)
+                                         
+                                         
         if processtype in [0,1]:
             self.worker.moveToThread(self.thread)
             self.thread.started.connect(self.worker.createShp)

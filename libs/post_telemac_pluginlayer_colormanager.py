@@ -21,10 +21,9 @@ Versions :
  ***************************************************************************/
 """
 
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
-from matplotlib.colors import LinearSegmentedColormap
+import matplotlib.colors
 import os
+from PyQt4 import  QtGui,  QtCore 
 
 
 class PostTelemacColorManager():
@@ -88,7 +87,7 @@ class PostTelemacColorManager():
                         dict[identcolors[col]].append((float(otherscol[i][0]),float(otherscol[i][col+1])/255.0,float(otherscol[i][col+1])/255.0))
                 dict[identcolors[col]].append((1,float(otherscol[lendict-1][col+1])/255.0,float(otherscol[lendict-1][col+1])/255.0))
                 dict[identcolors[col]] = tuple(dict[identcolors[col]])
-            cmap = LinearSegmentedColormap('temp', dict)
+            cmap = matplotlib.colors.LinearSegmentedColormap('temp', dict)
             return cmap
         else:
             return None
@@ -97,21 +96,20 @@ class PostTelemacColorManager():
         
     def generateSymbologyItems(self,iconSize):
         if self.selafinlayer.hydrauparser != None and self.selafinlayer.hydrauparser.hydraufile != None and self.selafinlayer.color_mpl_contour != None:
-            lst = [(  (str(self.selafinlayer.parametres[self.selafinlayer.param_displayed][1]), QPixmap())  )]
+            lst = [(  (str(self.selafinlayer.hydrauparser.parametres[self.selafinlayer.param_displayed][1]), QtGui.QPixmap())  )]
             for i in range(len(self.selafinlayer.lvl_contour)-1):
-                pix = QPixmap(iconSize)
+                pix = QtGui.QPixmap(iconSize)
                 r,g,b,a = self.selafinlayer.color_mpl_contour[i][0]*255,self.selafinlayer.color_mpl_contour[i][1]*255,self.selafinlayer.color_mpl_contour[i][2]*255,self.selafinlayer.color_mpl_contour[i][3]*255
-                pix.fill(QColor(r,g,b))
+                pix.fill(QtGui.QColor(r,g,b))
                 lst.append( (str(self.selafinlayer.lvl_contour[i])+"/"+str(self.selafinlayer.lvl_contour[i+1]), pix))
             
             if self.selafinlayer.propertiesdialog.groupBox_schowvel.isChecked() :
-                lst.append((self.tr('VELOCITY'),QPixmap()))
+                lst.append((self.tr('VELOCITY'),QtGui.QPixmap()))
                 for i in range(len(self.selafinlayer.lvl_vel)-1):
-                    pix = QPixmap(iconSize)
+                    pix = QtGui.QPixmap(iconSize)
                     r,g,b,a = self.selafinlayer.color_mpl_vel[i][0]*255,self.selafinlayer.color_mpl_vel[i][1]*255,self.selafinlayer.color_mpl_vel[i][2]*255,self.selafinlayer.color_mpl_vel[i][3]*255
-                    pix.fill(QColor(r,g,b))
+                    pix.fill(QtGui.QColor(r,g,b))
                     lst.append( (str(self.selafinlayer.lvl_vel[i])+"/"+str(self.selafinlayer.lvl_vel[i+1]), pix))
-                
             return lst
         else:
             return []
@@ -154,6 +152,23 @@ class PostTelemacColorManager():
         f.write(str(';'.join(str(lvl) for lvl in levels))+"\n")
         f.close()
         
+        
+    def changeColorMap(self,cm,levels1):
+        if len(levels1)>=2:
+            lvls=levels1
+            tab1 = []
+            max1=256
+            if len(lvls) == 2 :
+                tab1=[1.0]
+            else:
+                tab1 = [int(max1*i/(len(lvls)-2)) for i in range(len(lvls)-1)]
+            color_mpl_contour = cm(tab1)
+            #self.cmap_mpl_contour,self.norm_mpl_contour = matplotlib.colors.from_levels_and_colors(lvls,self.color_mpl_contour)
+            cmap_mpl,norm_mpl = matplotlib.colors.from_levels_and_colors(lvls,color_mpl_contour)
+            return (cmap_mpl, norm_mpl, color_mpl_contour)
+        else :
+            return None,None,None
+        
     #****************************************************************************************************
     #************translation                                        ***********************************
     #****************************************************************************************************
@@ -162,4 +177,4 @@ class PostTelemacColorManager():
     
     def tr(self, message):  
         """Used for translation"""
-        return QCoreApplication.translate('PostTelemacColorManager', message, None, QApplication.UnicodeUTF8)
+        return QtCore.QCoreApplication.translate('PostTelemacColorManager', message, None, QtGui.QApplication.UnicodeUTF8)

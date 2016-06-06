@@ -21,15 +21,9 @@ Versions :
  ***************************************************************************/
 """
 
-#import qgis
-from qgis.gui import *
-from qgis.core import *
 #import Qt
-from PyQt4 import uic
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt4 import uic, QtCore, QtGui
 #import matplotlib
-import matplotlib
 from matplotlib import *
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 try:
@@ -38,12 +32,13 @@ except :
     from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 #other import
 import os
-from time import ctime
+import time
 import shutil
 #local import
 from ..libs.posttelemac_util import *
 from posttelemacvirtualparameterdialog import *
 from posttelemacusercolorrampdialog import *
+from posttelemac_xytranslation import *
 from ..posttelemacparsers.posttelemac_selafin_parser import *
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__),'..', 'ui', 'properties.ui'))
@@ -77,7 +72,12 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.maptooloriginal = self.canvas.mapTool()        #Initial map tool (ie mouse behaviour)
         self.clickTool = QgsMapToolEmitPoint(self.canvas)   #specific map tool (ie mouse behaviour)
         self.crsselector = QgsGenericProjectionSelector()
-        self.loaddirectory = None       #the directory of "load telemac" button
+        
+        if QtCore.QSettings().value("posttelemac/lastdirectory") != '':
+            self.loaddirectory = QtCore.QSettings().value("posttelemac/lastdirectory")       #the directory of "load telemac" button
+        else:
+            self.loaddirectory = None
+            
         
         #setup user dir in home
         homedir = os.path.expanduser("~")
@@ -93,6 +93,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         #********* ********** ******************************************
         self.pushButton_loadslf.clicked.connect(self.loadSelafin)
         self.pushButton_crs.clicked.connect(self.set_layercrs)
+        self.pushbutton_crstranslation.clicked.connect(self.translateCrs)
 
         #********* ********** ******************************************
         #tab  ************************************************
@@ -135,6 +136,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.doubleSpinBox_vel_spatial_step.valueChanged.connect(self.setVelocityRendererParams)
         self.doubleSpinBox_vel_scale.valueChanged.connect(self.setVelocityRendererParams)
         self.spinBox_vel_relative.valueChanged.connect(self.setVelocityRendererParams)
+        self.comboBox_viewer_arow.currentIndexChanged.connect(self.setVelocityRendererParams)
+        self.doubleSpinBox_uniform_vel_arrow.valueChanged.connect(self.setVelocityRendererParams)
         #colorramp
         self.comboBox_genericlevels_2.currentIndexChanged.connect(self.change_cmchoosergenericlvl_vel)
         self.comboBox_clrgame_2.currentIndexChanged.connect(self.color_palette_changed_vel)
@@ -248,7 +251,9 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             alphatemp = self.layer.alpha_displayed
             #name
             self.label_loadslf.setText(os.path.basename(self.layer.hydraufilepath).split('.')[0])
+            
             self.loaddirectory = os.path.dirname(self.layer.hydraufilepath)
+            QtCore.QSettings().setValue("posttelemac/lastdirectory", self.loaddirectory)
             #param
             self.populatecombobox_param()
             if paramtemp:
@@ -297,7 +302,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """
         self.textBrowser_main.setTextColor(QColor("red"))
         self.textBrowser_main.setFontWeight(QFont.Bold)
-        self.textBrowser_main.append(ctime() + ' - '+ str)
+        self.textBrowser_main.append(time.ctime() + ' - '+ str)
         self.textBrowser_main.setTextColor(QColor("black"))
         self.textBrowser_main.setFontWeight(QFont.Normal)
         self.textBrowser_main.verticalScrollBar().setValue(self.textBrowser_main.verticalScrollBar().maximum())
@@ -306,7 +311,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """
         Show message error str in main textbrowser
         """
-        self.textBrowser_main.append(ctime() + ' - '+ str)
+        self.textBrowser_main.append(time.ctime() + ' - '+ str)
         self.textBrowser_main.setTextColor(QColor("black"))
         self.textBrowser_main.setFontWeight(QFont.Normal)
         self.textBrowser_main.verticalScrollBar().setValue(self.textBrowser_main.verticalScrollBar().maximum())
@@ -326,6 +331,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         tempname = self.qfiledlg.getOpenFileName(None,str1,self.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" +str2_1 + " (*.sww);;"+ str3 + " (*)")
         if tempname:
             self.loaddirectory = os.path.dirname(tempname)
+            QtCore.QSettings().setValue("posttelemac/lastdirectory", self.loaddirectory)
             self.layer.clearParameters()
             self.layer.load_selafin(tempname)
             nom = os.path.basename(tempname).split('.')[0]
@@ -347,6 +353,22 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         else:
             source.setText(crs)
         self.layer.setRealCrs(QgsCoordinateReferenceSystem(crs))
+        
+    def translateCrs(self):
+        if self.layer.hydrauparser != None:
+            self.dlg_xytranslate = xyTranslationDialog()
+            self.dlg_xytranslate.setXandY(self.layer.hydrauparser.translatex, self.layer.hydrauparser.translatey )
+            self.dlg_xytranslate.setWindowModality(2)
+            r = self.dlg_xytranslate.exec_()
+            xtranslate,ytranslate = self.dlg_xytranslate.dialogIsFinished()
+            if xtranslate != None and ytranslate != None:
+                self.layer.hydrauparser.setXYTranslation(xtranslate,ytranslate )
+                self.layer.selafinqimage.changeTriangulationCRS()
+                self.layer.forcerefresh = True
+                self.layer.triggerRepaint()
+                qgis.utils.iface.mapCanvas().setExtent(self.layer.extent())
+        else:
+            QMessageBox.about(self, "My message box", 'Load a file first')
         
     """
     #*********************************************************************************
@@ -402,7 +424,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """When changing parameter value"""
         position = self.getTreeWidgetSelectedIndex(self.treeWidget_parameters)
         self.layer.changeParam(position[1])
-        if self.layer.parametres[position[1]][2]:
+        if self.layer.hydrauparser.parametres[position[1]][2]:
             self.pushButton_param_edit.setEnabled(True)
             self.pushButton_param_delete.setEnabled(True)
         else:
@@ -422,12 +444,12 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             lst_param = ["", "", ""]
         elif source == self.pushButton_param_edit:
             index = self.getTreeWidgetSelectedIndex(self.treeWidget_parameters)[1]
-            if self.layer.parametres[index][2]:
-                lst_param = [self.layer.parametres[index][1], self.layer.parametres[index][2], ""]
+            if self.layer.hydrauparser.parametres[index][2]:
+                lst_param = [self.layer.hydrauparser.parametres[index][1], self.layer.hydrauparser.parametres[index][2], ""]
             else:
                 return False
         
-        lst_var = [param for param in self.layer.parametres if not param[2]]
+        lst_var = [param for param in self.layer.hydrauparser.parametres if not param[2]]
         #launch dialog
         self.dlg_dv = DefVariablesDialog(lst_param, lst_var)
         self.dlg_dv.setWindowModality(2)
@@ -439,12 +461,12 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             itms = []
             new_var = self.dlg_dv.dialogIsFinished()
             if source == self.pushButton_param_add:
-                self.layer.parametres.append([len(self.layer.parametres),new_var[0],new_var[1]])
+                self.layer.hydrauparser.parametres.append([len(self.layer.hydrauparser.parametres),new_var[0],new_var[1]])
                 self.populatecombobox_param()
                 self.layer.updateSelafinValues()
-                self.setTreeWidgetIndex(self.treeWidget_parameters,0,len(self.layer.parametres)-1)
+                self.setTreeWidgetIndex(self.treeWidget_parameters,0,len(self.layer.hydrauparser.parametres)-1)
             elif source == self.pushButton_param_edit:
-                self.layer.parametres[index] = [index,new_var[0],new_var[1]]
+                self.layer.hydrauparser.parametres[index] = [index,new_var[0],new_var[1]]
                 self.populatecombobox_param()
                 self.layer.updateSelafinValues()
                 self.setTreeWidgetIndex(self.treeWidget_parameters,0,index)
@@ -456,9 +478,9 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         When clicking on delete virtual parameter
         """
         index = self.getTreeWidgetSelectedIndex(self.treeWidget_parameters)[1]
-        if self.layer.parametres[index][2]:
+        if self.layer.hydrauparser.parametres[index][2]:
             self.layer.param_displayed = index-1
-            self.layer.parametres[index:index+1] = []
+            self.layer.hydrauparser.parametres[index:index+1] = []
             #checkkeysparameter
             self.layer.parametreh = None
             self.layer.parametrevx = None
@@ -613,21 +635,38 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         set parameters for velocity rendering in layer.showvelocityparams like this :
             [enabled Bool, type int , poinst step float , lenght of normal velocity float ]
         """
-        if self.comboBox_vel_method.currentIndex() == 0 :
-            self.layer.showvelocityparams = {'show' : self.groupBox_schowvel.isChecked(),
-                                            'type' : self.comboBox_vel_method.currentIndex(),
-                                            'step' : self.spinBox_vel_relative.value(),
-                                            'norm' : 1/self.doubleSpinBox_vel_scale.value()}
-        elif self.comboBox_vel_method.currentIndex() == 1 :
-            self.layer.showvelocityparams = {'show' : self.groupBox_schowvel.isChecked(),
-                                            'type' : self.comboBox_vel_method.currentIndex(),
-                                            'step' : self.doubleSpinBox_vel_spatial_step.value(),
-                                            'norm' :1/self.doubleSpinBox_vel_scale.value()}
-        elif  self.comboBox_vel_method.currentIndex() == 2 :
-            self.layer.showvelocityparams = {'show' : self.groupBox_schowvel.isChecked(),
-                                            'type' : self.comboBox_vel_method.currentIndex(),
-                                            'step' : None,
-                                            'norm' : 1/self.doubleSpinBox_vel_scale.value()}
+        if self.comboBox_viewer_arow.currentIndex() == 0 :
+            if self.comboBox_vel_method.currentIndex() == 0 :
+                self.layer.showvelocityparams = {'show' : self.groupBox_schowvel.isChecked(),
+                                                'type' : self.comboBox_vel_method.currentIndex(),
+                                                'step' : self.spinBox_vel_relative.value(),
+                                                'norm' : 1/self.doubleSpinBox_vel_scale.value()}
+            elif self.comboBox_vel_method.currentIndex() == 1 :
+                self.layer.showvelocityparams = {'show' : self.groupBox_schowvel.isChecked(),
+                                                'type' : self.comboBox_vel_method.currentIndex(),
+                                                'step' : self.doubleSpinBox_vel_spatial_step.value(),
+                                                'norm' :1/self.doubleSpinBox_vel_scale.value()}
+            elif  self.comboBox_vel_method.currentIndex() == 2 :
+                self.layer.showvelocityparams = {'show' : self.groupBox_schowvel.isChecked(),
+                                                'type' : self.comboBox_vel_method.currentIndex(),
+                                                'step' : None,
+                                                'norm' : 1/self.doubleSpinBox_vel_scale.value()}
+        elif self.comboBox_viewer_arow.currentIndex() == 1 :
+            if self.comboBox_vel_method.currentIndex() == 0 :
+                self.layer.showvelocityparams = {'show' : self.groupBox_schowvel.isChecked(),
+                                                'type' : self.comboBox_vel_method.currentIndex(),
+                                                'step' : self.spinBox_vel_relative.value(),
+                                                'norm' : -self.doubleSpinBox_uniform_vel_arrow.value()}
+            elif self.comboBox_vel_method.currentIndex() == 1 :
+                self.layer.showvelocityparams = {'show' : self.groupBox_schowvel.isChecked(),
+                                                'type' : self.comboBox_vel_method.currentIndex(),
+                                                'step' : self.doubleSpinBox_vel_spatial_step.value(),
+                                                'norm' :-self.doubleSpinBox_uniform_vel_arrow.value()}
+            elif  self.comboBox_vel_method.currentIndex() == 2 :
+                self.layer.showvelocityparams = {'show' : self.groupBox_schowvel.isChecked(),
+                                                'type' : self.comboBox_vel_method.currentIndex(),
+                                                'step' : None,
+                                                'norm' : -self.doubleSpinBox_uniform_vel_arrow.value()}
         self.layer.showVelocity()
             
     def color_palette_changed_vel(self,int):
@@ -726,28 +765,28 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """
         self.comboBox_parametreschooser.clear()
         self.comboBox_parametreschooser_2.clear()
-        for i in range(len(self.layer.parametres)):
-            temp1 = [str(self.layer.parametres[i][0])+" : "+str(self.layer.parametres[i][1])]
+        for i in range(len(self.layer.hydrauparser.parametres)):
+            temp1 = [str(self.layer.hydrauparser.parametres[i][0])+" : "+str(self.layer.hydrauparser.parametres[i][1])]
             self.comboBox_parametreschooser.addItems(temp1)
             self.comboBox_parametreschooser_2.addItems(temp1)
         
         self.treeWidget_parameters.clear()
         itms = []
-        for i in range(len(self.layer.parametres)):
+        for i in range(len(self.layer.hydrauparser.parametres)):
             itm = QTreeWidgetItem()
-            itm.setText(0, str(self.layer.parametres[i][0]))
-            itm.setText(1, str(self.layer.parametres[i][1]))
-            if self.layer.parametres[i][2]:
-                itm.setText(2, str(self.layer.parametres[i][2]))
+            itm.setText(0, str(self.layer.hydrauparser.parametres[i][0]))
+            itm.setText(1, str(self.layer.hydrauparser.parametres[i][1]))
+            if self.layer.hydrauparser.parametres[i][2]:
+                itm.setText(2, str(self.layer.hydrauparser.parametres[i][2]))
             else:
                 itm.setText(2, self.tr('Raw data'))
             itms.append(itm)
         self.treeWidget_parameters.addTopLevelItems(itms)
         self.tableWidget_values.clearContents()
-        self.tableWidget_values.setRowCount(len(self.layer.parametres))
-        for i, param in enumerate(self.layer.parametres):
+        self.tableWidget_values.setRowCount(len(self.layer.hydrauparser.parametres))
+        for i, param in enumerate(self.layer.hydrauparser.parametres):
             self.tableWidget_values.setItem(i, 0, QtGui.QTableWidgetItem(param[1]))
-        self.tableWidget_values.setFixedHeight((self.tableWidget_values.rowHeight(0) - 1)*(len(self.layer.parametres) + 1) + 1)
+        self.tableWidget_values.setFixedHeight((self.tableWidget_values.rowHeight(0) - 1)*(len(self.layer.hydrauparser.parametres) + 1) + 1)
  
 
     def populatecombobox_colorpalette(self):
@@ -1003,7 +1042,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
     
     def tr(self, message):  
         """Used for translation"""
-        return QCoreApplication.translate('PostTelemacPropertiesDialog', message, None, QApplication.UnicodeUTF8)
+        return QtCore.QCoreApplication.translate('PostTelemacPropertiesDialog', message, None, QtGui.QApplication.UnicodeUTF8)
 
             
     def eventFilter(self,target,event):

@@ -1,27 +1,19 @@
 # -*- coding: utf-8 -*-
 
-
-from qgis.core import *
-from qgis.gui import *
-from qgis.utils import *
+import qgis.gui
 #import numpy
 import numpy as np
 #import matplotlib
-from matplotlib.path import Path
+#from matplotlib.path import Path
 import matplotlib.pyplot as plt
 #import PyQT
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtCore import SIGNAL, Qt
 from PyQt4 import QtCore, QtGui
 #imports divers
 import time
-from time import ctime
 import math
-from shapely.geometry import *
-import os.path    
-import networkx as nx
-#import selafinslicemesh
+import shapely
+#from shapely.geometry import *
+import os
 from ..libs_telemac.samplers.meshes import *
     
 debug = False
@@ -57,20 +49,18 @@ class computeFlow(QtCore.QObject):
             for lineelement in self.polyline:
                 temp3 = self.getLines(lineelement,METHOD)
                 result=[]
-                parameterh = self.selafinlayer.parametreh
-                parameteruv = self.selafinlayer.parametrevx
-                parametervv = self.selafinlayer.parametrevy 
+                parameterh = self.selafinlayer.hydrauparser.parametreh
+                parameteruv = self.selafinlayer.hydrauparser.parametrevx
+                parametervv = self.selafinlayer.hydrauparser.parametrevy 
                 #self.slf = self.selafinlayer.slf
                 
                 if METHOD == 0 :
-                    if not self.selafinlayer.networkxgraph:
-                        G=nx.Graph()
-                        G.add_edges_from([(edge[0],edge[1]) for edge in self.selafinlayer.hydrauparser.triangulation.edges])
-                        self.selafinlayer.networkxgraph = G
-                    else:
-                        G = self.selafinlayer.networkxgraph
+                    if self.selafinlayer.hydrauparser.networkxgraph == None:
+                        self.selafinlayer.hydrauparser.createNetworkxGraph()
+                    G = self.selafinlayer.hydrauparser.networkxgraph
+                    
                 
-                if isinstance(temp3,LineString):
+                if isinstance(temp3,shapely.geometry.linestring.LineString):
                     temp3 = [temp3]
                 
                 for line in temp3:
@@ -88,18 +78,19 @@ class computeFlow(QtCore.QObject):
                                 if triangle != -1:
                                     enumpointfin = self.getNearestPointEdge(linetemp[points + 1][0],linetemp[points + 1][1],triangle)
 
-                                shortest = nx.shortest_path(G, enumpointdebut, enumpointfin)
+                                #shortest = nx.shortest_path(G, enumpointdebut, enumpointfin)
+                                shortest = self.selafinlayer.hydrauparser.getShortestPath(enumpointdebut, enumpointfin)
                                 
                                 for i,elem in enumerate(shortest):
                                     try:
                                         if i==0:    #init
                                             try:
-                                                h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.parametres)[0][0])
+                                                h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.hydrauparser.parametres)[0][0])
                                             except Exception , e :
                                                 self.status.emit('method 011 : ' + str(e))
-                                            uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.parametres)[0][0])
+                                            uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.hydrauparser.parametres)[0][0])
                                             uv2 = np.array([[value,0.0] for value in uv2])
-                                            vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.parametres)[0][0])
+                                            vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.hydrauparser.parametres)[0][0])
                                             vv2 = np.array([[0.0,value] for value in vv2])
                                             v2vect = uv2 + vv2
                                             #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
@@ -108,10 +99,10 @@ class computeFlow(QtCore.QObject):
                                             h1 = h2
                                             v1vect = v2vect
                                             xy1 = xy2
-                                            h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.parametres)[0][0])
-                                            uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.parametres)[0][0])
+                                            h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                            uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.hydrauparser.parametres)[0][0])
                                             uv2 = np.array([[value,0.0] for value in uv2])
-                                            vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.parametres)[0][0])
+                                            vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.hydrauparser.parametres)[0][0])
                                             vv2 = np.array([[0.0,value] for value in vv2])
                                             v2vect = uv2 + vv2
                                             #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
@@ -218,7 +209,7 @@ class computeFlow(QtCore.QObject):
         Method0 : line slighlty inside the area of modelisation
         Method1 : line slighlty outside
         """
-        templine1 = LineString([(i[0],i[1]) for i in polyline1[:-1]])
+        templine1 = shapely.geometry.linestring.LineString([(i[0],i[1]) for i in polyline1[:-1]])
         temp2_in = []
         temp2_out = []
         meshx,meshy = self.selafinlayer.hydrauparser.getMesh()
@@ -232,25 +223,25 @@ class computeFlow(QtCore.QObject):
             for path in collection.get_paths():
                 for polygon in path.to_polygons(): 
                     tuplepoly = [(i[0],i[1]) for i in polygon]
-                    polygons = Polygon(tuplepoly)
+                    polygons = shapely.geometry.polygon.Polygon(tuplepoly)
                     if templine1.intersects(polygons):
                         if  ( np.cross(polygon, np.roll(polygon, -1, axis=0)).sum() / 2.0 >0 ):     #outer polygon
                             inter = templine1.intersection(polygons.buffer(-buffervalue))
-                            if isinstance(inter,LineString):
+                            if isinstance(inter,shapely.geometry.linestring.LineString):
                                 temp2_out.append(inter)
                             else:
                                 for line3 in   inter:      
                                     temp2_out.append(line3)
                         else:                                                                        #inner polygon
                             inter = templine1.intersection(polygons.buffer(buffervalue))
-                            if isinstance(inter,LineString):
+                            if isinstance(inter,shapely.geometry.linestring.LineString):
                                 temp2_in.append(inter)
                             else:
                                 for line3 in   inter:      
                                     temp2_in.append(line3)
         
-        temp2out_line = MultiLineString(temp2_out)
-        temp2in_line = MultiLineString(temp2_in)
+        temp2out_line = shapely.geometry.multilinestring.MultiLineString(temp2_out)
+        temp2in_line = shapely.geometry.multilinestring.MultiLineString(temp2_in)
 
         linefinal = []        
         for lineout in temp2out_line:
@@ -258,14 +249,14 @@ class computeFlow(QtCore.QObject):
             for linein in temp2in_line:
                 if lineout.length > linein.length and lineout.intersects(linein.buffer(0.01)):
                     templine = templine.difference(linein.buffer(0.02))
-            if isinstance(templine,LineString):
+            if isinstance(templine,shapely.geometry.linestring.LineString):
                 linefinal.append(templine)
             else:
                 for line3 in   templine:      
                     linefinal.append(line3)
 
         #to keep line direction
-        multitemp = MultiLineString(linefinal)
+        multitemp = shapely.geometry.multilinestring.MultiLineString(linefinal)
         multidef =  templine1.intersection(multitemp.buffer(0.01))
 
         return multidef
@@ -279,7 +270,7 @@ class computeFlow(QtCore.QObject):
         for i in range(len(linetemp)-1) :
             resulttemp=[]
             lintemp1=np.array([[linetemp[i][0],linetemp[i][1]],[linetemp[i+1][0],linetemp[i+1][1]]])
-            lintemp1shapely=LineString([(linetemp[i][0],linetemp[i][1]),(linetemp[i+1][0],linetemp[i+1][1])])
+            lintemp1shapely=shapely.geometry.linestring.LineString([(linetemp[i][0],linetemp[i][1]),(linetemp[i+1][0],linetemp[i+1][1])])
             meshx,meshy = self.selafinlayer.hydrauparser.getMesh()
             ikle = self.selafinlayer.hydrauparser.getIkle()
             
@@ -301,7 +292,7 @@ class computeFlow(QtCore.QObject):
                 x1,y1 = self.selafinlayer.hydrauparser.getXYFromNumPoint([edgestemp[0]])[0]
                 x2,y2 = self.selafinlayer.hydrauparser.getXYFromNumPoint([edgestemp[1]])[0]
                 #line4 = LineString([(self.selafinlayer.slf.MESHX[edgestemp[0]],self.selafinlayer.slf.MESHY[edgestemp[0]]),(self.selafinlayer.slf.MESHX[edgestemp[1]],self.selafinlayer.slf.MESHY[edgestemp[1]])])
-                line4 = LineString([(x1,y1),(x2,y2)])
+                line4 = shapely.geometry.linestring.LineString([(x1,y1),(x2,y2)])
                 if line4.crosses(lintemp1shapely):
                     temp_edges.append(edgestemp)
                     temp_point.append([quoi[0][0][i][0],quoi[0][0][i][1]])
@@ -384,8 +375,8 @@ class computeFlow(QtCore.QObject):
         
     def valuebetweenEdges(self,xy,edges,param):
         xytemp = np.array(xy)
-        h11 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([edges[0] + 1],[param],self.selafinlayer.parametres)[0][0])   #getseries begins at  1 
-        h12 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([edges[1] + 1 ],[param],self.selafinlayer.parametres)[0][0])
+        h11 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([edges[0] + 1],[param],self.selafinlayer.hydrauparser.parametres)[0][0])   #getseries begins at  1 
+        h12 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([edges[1] + 1 ],[param],self.selafinlayer.hydrauparser.parametres)[0][0])
         """
         e1 = np.array([self.selafinlayer.slf.MESHX[edges[0]],self.selafinlayer.slf.MESHY[edges[0]]])
         e2 = np.array([self.selafinlayer.slf.MESHX[edges[1]],self.selafinlayer.slf.MESHY[edges[1]]])
@@ -510,29 +501,29 @@ class InitComputeFlow(QtCore.QObject):
     emitpoint = QtCore.pyqtSignal(float,float)
     
     
-class FlowMapTool(QgsMapTool):
+class FlowMapTool(qgis.gui.QgsMapTool):
 
     def __init__(self, canvas,button):
-        QgsMapTool.__init__(self,canvas)
+        qgis.gui.QgsMapTool.__init__(self,canvas)
         self.canvas = canvas
-        self.cursor = QCursor(Qt.CrossCursor)
+        self.cursor = QtGui.QCursor(QtCore.Qt.CrossCursor)
         self.button = button
 
     def canvasMoveEvent(self,event):
-        self.emit( SIGNAL("moved"), {'x': event.pos().x(), 'y': event.pos().y()} )
+        self.emit( QtCore.SIGNAL("moved"), {'x': event.pos().x(), 'y': event.pos().y()} )
 
 
     def canvasReleaseEvent(self,event):
-        if event.button() == Qt.RightButton:
-            self.emit( SIGNAL("rightClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+        if event.button() == QtCore.Qt.RightButton:
+            self.emit( QtCore.SIGNAL("rightClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
         else:
-            self.emit( SIGNAL("leftClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+            self.emit( QtCore.SIGNAL("leftClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
 
     def canvasDoubleClickEvent(self,event):
-        self.emit( SIGNAL("doubleClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+        self.emit( QtCore.SIGNAL("doubleClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
 
     def activate(self):
-        QgsMapTool.activate(self)
+        qgis.gui.QgsMapTool.activate(self)
         self.canvas.setCursor(self.cursor)
         #print  'activate'
         #self.button.setEnabled(False)
@@ -542,13 +533,13 @@ class FlowMapTool(QgsMapTool):
 
 
     def deactivate(self):
-        self.emit( SIGNAL("deactivate") )
+        self.emit( QtCore.SIGNAL("deactivate") )
         #self.button.setCheckable(False)
         #self.button.setEnabled(True)
         #print  'deactivate'
-        QgsMapTool.deactivate(self)
+        qgis.gui.QgsMapTool.deactivate(self)
 
 
     def setCursor(self,cursor):
-        self.cursor = QCursor(cursor)
+        self.cursor = QtGui.QCursor(cursor)
     

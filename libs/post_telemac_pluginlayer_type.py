@@ -1,27 +1,23 @@
 #import qgis
-from qgis.core import *
-from qgis.gui import *
-from qgis.utils import *
+import qgis.core
+import qgis.utils
+
 #import PyQT
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt4 import QtCore
 #import posttelemac
 from post_telemac_pluginlayer import SelafinPluginLayer
 
-
-
-
-class SelafinPluginLayerType(QgsPluginLayerType):
+class SelafinPluginLayerType(qgis.core.QgsPluginLayerType):
 
     def __init__(self):
-        QgsPluginLayerType.__init__(self, SelafinPluginLayer.LAYER_TYPE)
-        self.iface = iface
+        qgis.core.QgsPluginLayerType.__init__(self, SelafinPluginLayer.LAYER_TYPE)
+        self.iface = qgis.utils.iface
 
     def createLayer(self):
         return SelafinPluginLayer()
         
     def showLayerProperties(self, layer):
-        self.iface.addDockWidget( Qt.RightDockWidgetArea, layer.propertiesdialog )
+        self.iface.addDockWidget( QtCore.Qt.RightDockWidgetArea, layer.propertiesdialog )
         self.iface.mapCanvas().setRenderFlag(True)
         return True
 

@@ -36,7 +36,7 @@ import numpy as np
 import math
 from scipy.spatial import cKDTree
 import matplotlib.path as mplPath
-from scipy.spatial import Delaunay
+#from scipy.spatial import Delaunay
 from matplotlib.tri import Triangulation
 sys.path.append( path.join( path.dirname(sys.argv[0]), '..' ) )
 # ~~> dependencies towards other modules

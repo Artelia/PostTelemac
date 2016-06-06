@@ -114,6 +114,8 @@ class SelafinContour2Pts(QtCore.QObject):
                  paramvy,
                  ztri,                          #tab of values
                  selafincrs ,      #selafin crs
+                 translatex = 0,
+                 translatey = 0,
                  selafintransformedcrs = None,   #if no none, specify crs of output file
                  outputshpname = None,           #change generic outputname to specific one
                  outputshppath = None,         #if not none, create shp in this directory
@@ -140,6 +142,8 @@ class SelafinContour2Pts(QtCore.QObject):
         self.mesh = np.array(slf.IKLE3)
         """
         self.x, self.y  = self.parserhydrau.getMesh()
+        self.x = self.x + translatex
+        self.y = self.y + translatey
         self.mesh  = np.array( self.parserhydrau.getIkle() )
         
         self.time = time
@@ -432,21 +436,7 @@ class InitSelafinMesh2Pts(QtCore.QObject):
         self.thread = QtCore.QThread()
         self.worker = None
 
-    """
-    def start(self, 
-                 processtype,                 #0 : thread inside qgis (plugin) - 1 : thread processing - 2 : modeler (no thread) - 3 : modeler + shpouput - 4: outsideqgis
-                 selafinfilepath,                 #path to selafin file
-                 time,                            #time to process (selafin time in interation if int, or second if str)
-                 parameter = None,                     #parameter to process name (string) or id (int) for hillsahde, none if not hillshade
-                 facteurz = None,                 #z amplify
-                 azimuth = None,                    #azimuth for hillshade
-                 zenith = None,                    #zenith for hillshade
-                 selafincrs = 'EPSG:2154',      #selafin crs
-                 selafintransformedcrs = None,   #if no none, specify crs of output file
-                 outputshpname = None,           #change generic outputname to specific one
-                 outputshppath = None,         #if not none, create shp in this directory
-                 outputprocessing = None):    #needed for toolbox processing
-    """
+
     def start(self, 
                  processtype,                 #0 : thread inside qgis (plugin) - 1 : thread processing - 2 : modeler (no thread) - 3 : modeler + shpouput - 4: outsideqgis
                  selafinfilepath,                 #path to selafin file
@@ -457,6 +447,8 @@ class InitSelafinMesh2Pts(QtCore.QObject):
                  paramvy,
                  ztri,                          #tab of values
                  selafincrs ,      #selafin crs
+                 translatex = 0,
+                 translatey = 0,
                  selafintransformedcrs = None,   #if no none, specify crs of output file
                  outputshpname = None,           #change generic outputname to specific one
                  outputshppath = None,         #if not none, create shp in this directory
@@ -511,10 +503,15 @@ class InitSelafinMesh2Pts(QtCore.QObject):
                                          paramvy,
                                          ztri,                          #tab of values
                                          selafincrs ,      #selafin crs
-                                         selafintransformedcrs = None,   #if no none, specify crs of output file
-                                         outputshpname = None,           #change generic outputname to specific one
-                                         outputshppath = None,         #if not none, create shp in this directory
-                                         outputprocessing = None)    #needed for toolbox processing
+                                         translatex = translatex ,
+                                         translatey = translatey ,
+                                         selafintransformedcrs = selafintransformedcrs,   #if no none, specify crs of output file
+                                         outputshpname = outputshpname,           #change generic outputname to specific one
+                                         outputshppath = outputshppath,         #if not none, create shp in this directory
+                                         outputprocessing = outputprocessing)    #needed for toolbox processing
+                                         
+                                         
+                                         
                                          
         if processtype in [0,1]:
             self.worker.moveToThread(self.thread)

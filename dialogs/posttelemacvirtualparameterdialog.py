@@ -21,19 +21,10 @@
  ***************************************************************************/
 """
 
-#from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, SIGNAL, QObject, QSize
-from PyQt4.QtCore import *
-from PyQt4.QtGui import QAction, QIcon, QPixmap, QTreeWidgetItem, QListWidgetItem, QStandardItem, QStandardItemModel, QDialog
-from qgis.gui import QgsGenericProjectionSelector
-from qgis.core import QgsApplication
+from PyQt4 import uic, QtGui
 import os.path
-import os
-import decimal
-import copy
 import pickle
 
-#from classes_valeurs import ClassesValeursDialog
-from PyQt4 import QtGui, uic
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__),'..', 'ui', 'def_variable.ui'))
@@ -113,9 +104,9 @@ class DefVariablesDialog(QtGui.QDialog, FORM_CLASS):
             
     def fill_list(self, name_list, lst_var):
 
-        model = QStandardItemModel(name_list)
+        model = QtGui.QStandardItemModel(name_list)
         for i, elt in enumerate(lst_var):
-            item = QStandardItem(str(elt))
+            item = QtGui.QStandardItem(str(elt))
             item.setEditable(False)
             model.appendRow(item)
         name_list.setModel(model)
@@ -124,7 +115,7 @@ class DefVariablesDialog(QtGui.QDialog, FORM_CLASS):
     def fill_tab(self, name_list, lst_var):
         itms = []
         for elt in lst_var:
-            itm = QTreeWidgetItem()
+            itm = QtGui.QTreeWidgetItem()
             itm.setText(0, str(elt[0]))
             itm.setText(1, elt[1])
             itms.append(itm)

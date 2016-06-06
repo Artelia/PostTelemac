@@ -1,25 +1,16 @@
 # -*- coding: utf-8 -*-
 
-#import qgis
-from qgis.core import *
-from qgis.gui import *
-from qgis.utils import *
-#import PyQT
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtCore import SIGNAL, Qt
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore
+import qgis.utils
+import qgis.core
 #import numpy
-from numpy import *
 import numpy as np
 #import gdal
 from osgeo import gdal
 from osgeo import osr
 #imports divers
-from time import ctime
-import math
 import sys
-import os.path
+import os
 
 
 
@@ -42,9 +33,9 @@ class rasterize(QtCore.QObject):
     def createRaster(self):
         try:
             if self.selafinlayer.propertiesdialog.comboBox_rasterextent.currentIndex() == 0 :
-                rect = self.selafinlayer.xform.transform(iface.mapCanvas().extent(), QgsCoordinateTransform.ReverseTransform)
+                rect = self.selafinlayer.xform.transform(qgis.utils.iface.mapCanvas().extent(), qgis.core.QgsCoordinateTransform.ReverseTransform)
             elif self.selafinlayer.propertiesdialog.comboBox_rasterextent.currentIndex() == 1 :
-                rect = self.selafinlayer.xform.transform(self.selafinlayer.extent(), QgsCoordinateTransform.ReverseTransform)
+                rect = self.selafinlayer.xform.transform(self.selafinlayer.extent(), qgis.core.QgsCoordinateTransform.ReverseTransform)
             #res 
             res = self.selafinlayer.propertiesdialog.spinBox_rastercellsize.value()
             #grid creation
@@ -75,7 +66,7 @@ class rasterize(QtCore.QObject):
 
             nrows,ncols = np.shape(zi)
             self.status.emit('Raster creation - nrows : ' + str(nrows)+' - ncols : ' + str(ncols))
-            raster_ut = os.path.join(os.path.dirname(self.selafinlayer.hydraufilepath),str(os.path.basename(self.selafinlayer.hydraufilepath).split('.')[0] ) + '_raster_'+str(self.selafinlayer.parametres[paramindex][1]))
+            raster_ut = os.path.join(os.path.dirname(self.selafinlayer.hydraufilepath),str(os.path.basename(self.selafinlayer.hydraufilepath).split('.')[0] ) + '_raster_'+str(self.selafinlayer.hydrauparser.parametres[paramindex][1]))
             
             if True:
                 raster_ut += '.tif'
