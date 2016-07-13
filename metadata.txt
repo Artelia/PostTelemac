@@ -11,7 +11,7 @@ name=PostTelemac
 about= Post treatment of open Telemac-Mascaret results. Requires matplotlib, shapely, numpy, scipy and networkx libraries.
 qgisMinimumVersion=2.10.0
 description=Post Treatment for Telemac
-version=0.1.5
+version=0.1.6
 author=Artelia Eau et Environnement
 email=patrice.verchere@arteliagroup.com
 
