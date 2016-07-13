@@ -2,7 +2,7 @@
 
 #import numpy
 import numpy as np
-#import matplotlib
+import matplotlib
 #import matplotlib
 #import PyQT
 from PyQt4 import QtCore, QtGui
@@ -62,7 +62,7 @@ class PostTelemacAnimation(QtCore.QObject):
             #Init matplotlib things if an image is choosen **************************************************************************
             ax = None
             matplotlibimagepath = None
-            fig = None
+            self.fig = None
             maps = [item for item in composition.items() if item.type() == qgis.core.QgsComposerItem.ComposerMap and item.scene()]
             images = [item for item in composition.items() if item.type() == qgis.core.QgsComposerItem.ComposerPicture and item.scene()]
             legends = [item for item in composition.items() if item.type() == qgis.core.QgsComposerItem.ComposerLegend and item.scene()]
@@ -72,44 +72,77 @@ class PostTelemacAnimation(QtCore.QObject):
                         composeurimage = image
                         rectimage = np.array([composeurimage.rectWithFrame().width(),composeurimage.rectWithFrame().height()])    #size img in mm in composer width
                 if self.pluginlayer.propertiesdialog.comboBox_9.currentIndex() == 0 :
-                    fig = self.pluginlayer.propertiesdialog.figure1
+                    self.fig = self.pluginlayer.propertiesdialog.figure1
                     canvas = self.pluginlayer.propertiesdialog.canvas1
                     ax = self.pluginlayer.propertiesdialog.ax
                 elif self.pluginlayer.propertiesdialog.comboBox_9.currentIndex() == 1 :
-                    fig = self.pluginlayer.propertiesdialog.figure2
+                    self.fig = self.pluginlayer.propertiesdialog.figure2
                     canvas = self.pluginlayer.propertiesdialog.canvas2
                     ax = self.pluginlayer.propertiesdialog.ax2
                 
                 #making the figure the size of the image
-                rectfig = [fig.get_size_inches()[0],fig.get_size_inches()[1]]
+                rectfig = [self.fig.get_size_inches()[0],self.fig.get_size_inches()[1]]
                 facteurconversion = float(composition.printResolution())/80.0
                 rectimage = rectimage/25.4*facteurconversion
-                fig.set_size_inches(float(rectimage[0]),float(rectimage[1]), forward=True)
+                self.fig.set_size_inches(float(rectimage[0]),float(rectimage[1]), forward=True)
 
             
             #Main part : creating the png files ******************************************
+            
+            #search matplotlib supported format
+            tempmplsupportedfile =  self.fig.canvas.get_supported_filetypes()
+            if 'svg' in tempmplsupportedfile:
+                mplformat = 'svg'
+            elif 'jpg' in tempmplsupportedfile:
+                mplformat = 'jpg'
+            elif 'png' in tempmplsupportedfile:
+                mplformat = 'png'
+                
+            
             compt = 0
             for i in range(min1,max1+1):
                 if i%pas==0:
-                    if fig:
-                        #modifying ax to show the time
-                        self.addtimelineonax(ax,self.pluginlayer.hydrauparser.getTimes()[i])
-                        #saving the figure
-                        matplotlibimagepath= os.path.join(self.tempdir,'test'+ "%04d"%compt +'.jpg')
-                        fig.savefig(matplotlibimagepath,format='jpg',dpi = 80 )
-                        composeurimage.setPicturePath(matplotlibimagepath)
+                    if self.fig:
+                        try:
+                            if False:
+                                #modifying ax to show the time
+                                self.addtimelineonax(ax,self.pluginlayer.hydrauparser.getTimes()[i])
+                                #saving the figure
+                                matplotlibimagepath= os.path.join(self.tempdir,'test'+ "%04d"%compt +'.jpg')
+                                #print str(matplotlibimagepath)
+                                self.fig.savefig(matplotlibimagepath,format='jpg',dpi = 80 )
+                                #fig.savefig(matplotlibimagepath )
+                            else:
+                                #modifying ax to show the time
+                                self.addtimelineonax(ax,self.pluginlayer.hydrauparser.getTimes()[i])
+                                #saving the figure
+                                matplotlibimagepath= os.path.join(self.tempdir,'test'+ "%04d"%compt +'.' + mplformat)
+                                #print str(matplotlibimagepath)
+                                #fig.savefig(matplotlibimagepath,format='png',dpi = 80 )
+                                #fig.canvas.print_figure(matplotlibimagepath,format='png',dpi = 80 )
+                                self.fig.canvas.print_figure(matplotlibimagepath,dpi = 80 )
+                                #fig.savefig(matplotlibimagepath )
+                            #print 'ok1_2'
+                            composeurimage.setPicturePath(matplotlibimagepath)
+                        except Exception, e:
+                            #print 'saveimg ' + str(e)
+                            pass
+                    
                     self.pluginlayer.changeTime(i)
                     txt = time.ctime()+ ' - Film - iteration n '+ str(self.pluginlayer.time_displayed)
                     if self.outputtype:self.pluginlayer.propertiesdialog.textBrowser_2.append(txt)
                     else: self.status.emit(txt)
+                    
+                    #print 'ok3'
                     
                     #Update drawing space and composer space
                     self.pluginlayer.triggerRepaint()
                     for map in maps:
                         map.updateItem()
                     
-                    format='jpg'
-                    finlename='img'+"%04d"%compt + '.' + format
+                    #format='jpg'
+                    formatcomposer='png'
+                    finlename='img'+"%04d"%compt + '.' + formatcomposer
                     filename1 = os.path.join(self.tempdir,finlename)
                     
                     if True:
@@ -127,17 +160,19 @@ class PostTelemacAnimation(QtCore.QObject):
                             s = legend.paintAndDetermineSize(imagePainter)
                         
                         
-                    image.save(filename1,format)
+                    #image.save(filename1,format)
+                    image.save(filename1)
 
                     if compt == 0:
-                        image.save(os.path.join(dir,nameslf+'_preview.'+format),format)
-                        txt =time.ctime()+ ' - Film - previsulation du film ici : ' + str(os.path.join(dir,nameslf+'_preview.' + format))
+                        #image.save(os.path.join(dir,nameslf+'_preview.'+format),format)
+                        image.save(os.path.join(dir,nameslf+'_preview.'+formatcomposer))
+                        txt =time.ctime()+ ' - Film - previsulation du film ici : ' + str(os.path.join(dir,nameslf+'_preview.' + formatcomposer))
                         if self.outputtype:self.pluginlayer.propertiesdialog.textBrowser_2.append(txt)
                         else: self.status.emit(txt)
                     
                     compt = compt + 1
             
-            tmp_img_dir = os.path.join(self.tempdir,'img%04d.'+format)
+            tmp_img_dir = os.path.join(self.tempdir,'img%04d.'+formatcomposer)
             
             #Create the video *****************************************
             output_file = nameavi
@@ -159,11 +194,11 @@ class PostTelemacAnimation(QtCore.QObject):
             txt =str(e)
             if self.outputtype : self.pluginlayer.propertiesdialog.textBrowser_2.append('make movie : ' + txt)
             else : self.status.emit('make movie : ' + txt)
-
-        if fig:
+        
+        if self.fig:
             if self.vline:
                 ax.lines.remove(self.vline)
-            fig.set_size_inches(rectfig[0],rectfig[1],forward=True)
+            self.fig.set_size_inches(rectfig[0],rectfig[1],forward=True)
             canvas.draw()
 
         self.finished.emit()

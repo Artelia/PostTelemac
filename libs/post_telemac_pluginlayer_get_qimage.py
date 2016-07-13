@@ -32,6 +32,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import tri
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 #import numpy
 import numpy as np
 
@@ -49,6 +50,7 @@ class Selafin2QImage():
 
     def __init__(self,selafinlayer,int=1):
         self.fig =  plt.figure(int)
+        #self.canvas = FigureCanvasAgg(self.fig)
         self.selafinlayer = selafinlayer
         self.ax = self.fig.add_subplot(111)
         #Reprojected things
@@ -372,10 +374,12 @@ class Selafin2QImage():
             if DEBUG : time1.append("qimage : "+str(round(time.clock()-timestart,3)))
             if DEBUG : selafinlayer.propertiesdialog.textBrowser_2.append("Chargement carte : "+str(time1))
             return (True,image_contour,self.image_mesh)
-
+ 
+        
         except Exception, e :
             selafinlayer.propertiesdialog.textBrowser_2.append('getqimage1 : '+str(e))
             return(False,QtGui.QImage(),QtGui.QImage())
+        
 
         
             
@@ -440,16 +444,33 @@ class Selafin2QImage():
         """
         Return a qimage of the matplotlib figure
         """
-        if True:
-            buf = cStringIO.StringIO()
-            #self.fig.savefig(buf,transparent=True, dpi = dpi2)
-            self.fig.savefig(buf, dpi = dpi2)
-            buf.seek(0)
-            #image = QtGui.QImage.fromData(buf.getvalue(),format1)
-            image = QtGui.QImage.fromData(buf.getvalue())
-            if ratio > 1.0 :
-                image = image.scaled(image.width() * ratio , image.height() * ratio )
-        return image
+        try:
+            if False:
+                buf = cStringIO.StringIO()
+                #self.fig.savefig(buf,transparent=True, dpi = dpi2)
+                self.fig.savefig(buf, dpi = dpi2)
+                buf.seek(0)
+                #image = QtGui.QImage.fromData(buf.getvalue(),format1)
+                image = QtGui.QImage.fromData(buf.getvalue())
+                if ratio > 1.0 :
+                    image = image.scaled(image.width() * ratio , image.height() * ratio )
+            else:
+                buf = cStringIO.StringIO()
+                #canvas = FigureCanvasAgg(self.fig)
+                #self.canvas.draw()
+                #self.canvas.print_figure(buf, dpi = dpi2)
+                #self.fig.canvas.draw()
+                self.fig.canvas.print_figure(buf, dpi = dpi2)
+                
+                buf.seek(0)
+                #image = QtGui.QImage.fromData(buf.getvalue(),format1)
+                image = QtGui.QImage.fromData(buf.getvalue())
+                if ratio > 1.0 :
+                    image = image.scaled(image.width() * ratio , image.height() * ratio )
+            return image
+        except Exception, e :
+            self.selafinlayer.propertiesdialog.textBrowser_2.append('getqimagesave : '+str(e))
+            return None
         
     def getxynuminrenderer(self,selafin,rendererContext):
         """

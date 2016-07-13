@@ -513,14 +513,24 @@ class PostTelemacUtils():
     #************* Tools - max res ***********************************************************
     #****************************************************************************************************
     def calculMaxRes(self):
-        self.initclass=initRunGetMax()
-        self.initclass.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
-        self.initclass.finished1.connect(self.chargerSelafin)
-        self.initclass.start(self.selafinlayer,
-                             self.selafinlayer.propertiesdialog.checkBox_11.isChecked(),
-                             self.selafinlayer.propertiesdialog.checkBox_11.isChecked(),
-                             self.selafinlayer.propertiesdialog.doubleSpinBox_4.value() if self.selafinlayer.propertiesdialog.checkBox_9.isChecked() else -1,
-                             self.selafinlayer.propertiesdialog.doubleSpinBox_5.value() if self.selafinlayer.propertiesdialog.checkBox_10.isChecked() else -1)
+        if True:   #thread way
+            self.initclass=initRunGetMax()
+            self.initclass.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
+            self.initclass.finished1.connect(self.chargerSelafin)
+            self.initclass.start(self.selafinlayer,
+                                 self.selafinlayer.propertiesdialog.checkBox_11.isChecked(),
+                                 self.selafinlayer.propertiesdialog.checkBox_11.isChecked(),
+                                 self.selafinlayer.propertiesdialog.doubleSpinBox_4.value() if self.selafinlayer.propertiesdialog.checkBox_9.isChecked() else -1,
+                                 self.selafinlayer.propertiesdialog.doubleSpinBox_5.value() if self.selafinlayer.propertiesdialog.checkBox_10.isChecked() else -1)
+        else:
+            self.initclass = runGetMax(self.selafinlayer,
+                                 self.selafinlayer.propertiesdialog.checkBox_11.isChecked(),
+                                 self.selafinlayer.propertiesdialog.checkBox_11.isChecked(),
+                                 self.selafinlayer.propertiesdialog.doubleSpinBox_4.value() if self.selafinlayer.propertiesdialog.checkBox_9.isChecked() else -1,
+                                 self.selafinlayer.propertiesdialog.doubleSpinBox_5.value() if self.selafinlayer.propertiesdialog.checkBox_10.isChecked() else -1)
+            self.initclass.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
+            self.initclass.finished.connect(self.chargerSelafin)
+            self.initclass.run()
         
         
         

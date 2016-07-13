@@ -11,7 +11,7 @@ name=PostTelemac
 about= Post treatment of open Telemac-Mascaret results. Requires matplotlib, shapely, numpy, scipy and networkx libraries.
 qgisMinimumVersion=2.10.0
 description=Post Treatment for Telemac
-version=0.1.4
+version=0.1.5
 author=Artelia Eau et Environnement
 email=patrice.verchere@arteliagroup.com
 
@@ -21,6 +21,7 @@ email=patrice.verchere@arteliagroup.com
 
 # Uncomment the following line and add your changelog:
 changelog= 
+    0.1.5 : xy translation - sww reader test
     0.1.4 : Rasterize and automatic water depth recognition
     0.1.3 : bugfix. Code still messy.
     0.1.2 : bugfix, max res improvement. Code still messy.
@@ -44,7 +45,7 @@ repository=https://github.com/ArteliaTelemac/PostTelemac
 category=Plugins
 icon=icons/posttelemac.png
 # experimental flag
-experimental=True
+experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False

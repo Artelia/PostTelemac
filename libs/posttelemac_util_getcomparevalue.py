@@ -80,7 +80,7 @@ class getCompareValue(QtCore.QObject):
         
     def updateSelafinValue(self,onlyparamtimeunchanged = -1):
         temp1 = []
-        lenvarnames = len(self.layer.parametres)
+        lenvarnames = len(self.layer.hydrauparser.parametres)
         meshx1,meshy1 = self.layer.hydrauparser.getMesh()
         ikle1 = self.layer.hydrauparser.getIkle()
         meshx2,meshy2 = self.hydrauparsercompared.getMesh()
@@ -98,8 +98,8 @@ class getCompareValue(QtCore.QObject):
                     self.layer.propertiesdialog.textBrowser_2.append("fichiers identiques ")
                     valuetab = []
                     for i in range(lenvarnames):
-                        if self.layer.parametres[i][3] is not None :
-                            value = self.hydrauparsercompared.getValues(self.layer.time_displayed)[self.layer.parametres[i][3]] - self.layer.getValues(self.layer.time_displayed)[i]
+                        if self.layer.hydrauparser.parametres[i][3] is not None :
+                            value = self.hydrauparsercompared.getValues(self.layer.time_displayed)[self.layer.hydrauparser.parametres[i][3]] - self.layer.getValues(self.layer.time_displayed)[i]
                         else:
                             value = [np.nan]*len(meshx1)
                             value = np.array(value).transpose()
@@ -119,8 +119,8 @@ class getCompareValue(QtCore.QObject):
                     triang = matplotlib.tri.Triangulation(meshx2,meshy2,np.array(ikle2))
                     self.triinterp = []
                     for i in range(lenvarnames):
-                        if self.layer.parametres[i][3] is not None:
-                            self.triinterp.append(matplotlib.tri.LinearTriInterpolator(triang, self.hydrauparsercompared.getValues(self.layer.time_displayed)[self.layer.parametres[i][3]]))
+                        if self.layer.hydrauparser.parametres[i][3] is not None:
+                            self.triinterp.append(matplotlib.tri.LinearTriInterpolator(triang, self.hydrauparsercompared.getValues(self.layer.time_displayed)[self.layer.hydrauparser.parametres[i][3]]))
                         else:
                             self.triinterp.append(None)
                     valuesslf2 = []
@@ -128,13 +128,13 @@ class getCompareValue(QtCore.QObject):
                     #projection for matching parameters
                     tabtemp=[]
                     for  j in range(lenvarnames):
-                        if self.layer.parametres[j][3] is not None:
+                        if self.layer.hydrauparser.parametres[j][3] is not None:
                             tabtemp = self.triinterp[j].__call__(meshx1,meshy1)
                         else:
                             tabtemp = np.array([np.nan]*count)
                             tabtemp = tabtemp.transpose()
                         valuesslf2.append(tabtemp)
-                    temp1 = valuesslf2 - self.layer.getValues(self.layer.time_displayed)
+                    temp1 = valuesslf2 - self.layer.hydrauparser.getValues(self.layer.time_displayed)
                     self.values = np.nan_to_num(temp1)
                     
                     if self.layer.propertiesdialog.comboBox_compare_method.currentIndex() == 1:
