@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+#unicode behaviour
+from __future__ import unicode_literals
+
 import qgis.gui
 #import numpy
 import numpy as np

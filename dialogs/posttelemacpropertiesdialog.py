@@ -20,7 +20,8 @@ Versions :
 
  ***************************************************************************/
 """
-
+#unicode behaviour
+from __future__ import unicode_literals
 #import Qt
 from PyQt4 import uic, QtCore, QtGui
 #import matplotlib

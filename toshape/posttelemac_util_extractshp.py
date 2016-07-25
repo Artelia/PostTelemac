@@ -1,3 +1,6 @@
+#unicode behaviour
+from __future__ import unicode_literals
+
 from qgis.core import *
 from qgis.gui import *
 from qgis.utils import *

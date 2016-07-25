@@ -23,6 +23,7 @@ Versions :
 import numpy as np
 from posttelemac_abstract_parser import PostTelemacAbstractParser
 from ..libs_telemac.parsers.parserSELAFIN import SELAFIN
+import string
 
 class PostTelemacSelafinParser(PostTelemacAbstractParser):
 
@@ -60,7 +61,13 @@ class PostTelemacSelafinParser(PostTelemacAbstractParser):
         
         
     def getVarnames(self):
-        return self.hydraufile.VARNAMES
+        paramnamesfinal = []
+        remove_punctuation_map = dict((ord(char), ord(u'_')) for char in string.punctuation)
+        
+        for name in self.hydraufile.VARNAMES:
+            paramnamesfinal.append(unicode(name).translate(remove_punctuation_map))
+            
+        return paramnamesfinal
     
     def getIkle(self):
         return self.hydraufile.IKLE3

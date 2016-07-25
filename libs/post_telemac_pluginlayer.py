@@ -17,6 +17,8 @@
 
  ***************************************************************************/
 """
+#unicode behaviour
+from __future__ import unicode_literals
 #Standart import
 import qgis.core
 import qgis.utils

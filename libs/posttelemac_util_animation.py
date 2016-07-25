@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+#unicode behaviour
+from __future__ import unicode_literals
 #import numpy
 import numpy as np
 import matplotlib

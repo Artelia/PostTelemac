@@ -20,6 +20,8 @@ Versions :
 
  ***************************************************************************/
 """
+#unicode behaviour
+from __future__ import unicode_literals
 
 import matplotlib.colors
 import os

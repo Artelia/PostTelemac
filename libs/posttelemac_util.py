@@ -20,6 +20,8 @@ Versions :
 
  ***************************************************************************/
 """
+#unicode behaviour
+from __future__ import unicode_literals
 #standart libraries import
 import numpy as np
 #import divers
@@ -35,6 +37,7 @@ from posttelemac_util_flow import *
 from posttelemac_util_get_max import *
 from posttelemac_util_getcomparevalue import *
 from posttelemac_util_rasterize import *
+
 
 
 
@@ -580,8 +583,13 @@ class PostTelemacUtils():
         self.selafinlayer.propertiesdialog.normalMessage(self.tr("2Shape - coutour creation launched - watch progress on log tab"))
         
         if  self.selafinlayer.propertiesdialog.lineEdit_contourname.text() == "":
+            """
             name = (str(self.selafinlayer.hydrauparser.parametres[self.selafinlayer.param_displayed][1]).translate(None, "?,!.;")
                              +"_t_"+str(int(self.selafinlayer.time_displayed)) )
+            """
+            name = ( self.selafinlayer.hydrauparser.parametres[self.selafinlayer.param_displayed][1]
+                             + "_t_" + str(int(self.selafinlayer.time_displayed)) )
+            
         else:
             name = self.selafinlayer.propertiesdialog.lineEdit_contourname.text()
         
@@ -752,6 +760,11 @@ class PostTelemacUtils():
         self.rubberband = QgsRubberBand(self.selafinlayer.canvas, QGis.Line)
         self.rubberband.setWidth(2)
         self.rubberband.setColor(QColor(Qt.red))
+        
+    def translate_non_alphanumerics(self, to_translate, translate_to=u'_'):
+        not_letters_or_digits = u'!"#%\'()*+,-./:;<=>?@[\]^_`{|}~'
+        translate_table = dict((ord(char), translate_to) for char in not_letters_or_digits)
+        return to_translate.translate(translate_table)
         
         
         

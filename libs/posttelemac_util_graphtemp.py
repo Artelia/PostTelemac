@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-
+#unicode behaviour
+from __future__ import unicode_literals
 #import PyQT
 from PyQt4 import QtCore
 #imports divers

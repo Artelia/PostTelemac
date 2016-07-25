@@ -1,5 +1,8 @@
 # -*- coding: utf8 -*-
 
+#unicode behaviour
+from __future__ import unicode_literals
+
 import os
 import numpy as np
 import math
@@ -8,6 +11,8 @@ import time
 from PyQt4 import QtCore, QtGui
 
 from ..libs_telemac.other.Class_Serafin import Serafin
+
+
 
 class runGetMax(QtCore.QObject):
 

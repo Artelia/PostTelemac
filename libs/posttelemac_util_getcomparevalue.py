@@ -29,7 +29,8 @@ Versions :
 
 ##fichier_de_sortie_maillage=output vector 
 
-
+#unicode behaviour
+from __future__ import unicode_literals
 #import qgis
 from processing.core.GeoAlgorithmExecutionException import  GeoAlgorithmExecutionException
 from processing.tools.vector import VectorWriter

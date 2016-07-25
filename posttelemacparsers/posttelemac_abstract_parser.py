@@ -20,6 +20,7 @@ Versions :
 
  ***************************************************************************/
 """
+from __future__ import unicode_literals
 import matplotlib
 from matplotlib import tri
 from numpy import sin, cos, abs, int
@@ -28,6 +29,7 @@ from scipy.spatial import cKDTree
 import time
 import networkx as nx
 import numbers
+import string
 
 
 class PostTelemacAbstractParser(object):

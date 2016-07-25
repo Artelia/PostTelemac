@@ -23,6 +23,8 @@ Versions :
 
 ##fichier_de_sortie_points=output vector 
 
+#unicode behaviour
+from __future__ import unicode_literals
 
 import sys
 from PyQt4.QtCore import *
@@ -181,7 +183,8 @@ class SelafinContour2Pts(QtCore.QObject):
                                          + name.strip() )
                 tabparam.append([i,name.strip()])
                 #donnees_d_entree['champs'].append(QgsField(str(name.strip()).translate(None, "?,!.;"),   QVariant.Double))
-                fields.append(QgsField(str(name.strip()).translate(None, "?,!.;"),   QVariant.Double))
+                #fields.append(QgsField(str(name.strip()).translate(None, "?,!.;"),   QVariant.Double))
+                fields.append(QgsField(str(name.strip()),   QVariant.Double))
                 #if self.donnees_d_entree['Parametre_vitesse_X']   !=  None:
                 """
                 if self.paramvalueX   !=  None:

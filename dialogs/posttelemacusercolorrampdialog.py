@@ -1,31 +1,30 @@
 # -*- coding: utf-8 -*-
+
 """
 /***************************************************************************
- PostTelemac
-                                 A QGIS plugin
- Post Traitment or Telemac
-                              -------------------
-        begin                : 2015-07-07
-        git sha              : $Format:%H$
-        copyright            : (C) 2015 by Artelia
-        email                : patrice.Verchere@arteliagroup.com
- ***************************************************************************/
- 
- ***************************************************************************/
- Implementation of QgsPluginLayer class, used to show selafin res
- 
-Versions :
-Impl
-0.0 : debut
+     PostTelemac
+                                     A QGIS plugin
+     Post Traitment or Telemac
+                                  -------------------
+            begin                : 2015-07-07
+            git sha              : $Format:%H$
+            copyright            : (C) 2015 by Artelia
+            email                : patrice.Verchere@arteliagroup.com
+     ***************************************************************************/
+     
+     ***************************************************************************/
+     Implementation of QgsPluginLayer class, used to show selafin res
+     
+    Versions :
+    Impl
+    0.0 : debut
 
  ***************************************************************************/
 """
-"""
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from qgis.gui import *
-from qgis.core import *
-"""
+
+#unicode behaviour
+from __future__ import unicode_literals
+
 from PyQt4 import uic, QtGui
 import os
 import qgis.gui
