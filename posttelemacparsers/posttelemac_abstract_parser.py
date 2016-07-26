@@ -29,7 +29,7 @@ from scipy.spatial import cKDTree
 import time
 import networkx as nx
 import numbers
-import string
+
 
 
 class PostTelemacAbstractParser(object):
