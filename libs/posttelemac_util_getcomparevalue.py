@@ -100,7 +100,7 @@ class getCompareValue(QtCore.QObject):
                     valuetab = []
                     for i in range(lenvarnames):
                         if self.layer.hydrauparser.parametres[i][3] is not None :
-                            value = self.hydrauparsercompared.getValues(self.layer.time_displayed)[self.layer.hydrauparser.parametres[i][3]] - self.layer.getValues(self.layer.time_displayed)[i]
+                            value = self.hydrauparsercompared.getValues(self.layer.time_displayed)[self.layer.hydrauparser.parametres[i][3]] - self.layer.hydrauparser.getValues(self.layer.time_displayed)[i]
                         else:
                             value = [np.nan]*len(meshx1)
                             value = np.array(value).transpose()
