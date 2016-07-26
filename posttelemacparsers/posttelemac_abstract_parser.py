@@ -317,7 +317,7 @@ class PostTelemacAbstractParser(object):
         if isinstance(ifstat,np.ndarray):
             var2 = np.zeros(ifstat.shape)
             temp1 = np.where(ifstat)
-        elif isinstance(ifstat,str):
+        elif isinstance(ifstat,unicode) or isinstance(ifstat,str):
             val = eval(ifstat,{"__builtins__":None}, self.dico)
             var2 = np.zeros(val.shape)
             temp1 = np.where(val)
