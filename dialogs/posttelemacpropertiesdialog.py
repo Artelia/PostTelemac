@@ -73,6 +73,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.maptooloriginal = self.canvas.mapTool()        #Initial map tool (ie mouse behaviour)
         self.clickTool = QgsMapToolEmitPoint(self.canvas)   #specific map tool (ie mouse behaviour)
         self.crsselector = QgsGenericProjectionSelector()
+        self.stepread = 1
         
         if QtCore.QSettings().value("posttelemac/lastdirectory") != '':
             self.loaddirectory = QtCore.QSettings().value("posttelemac/lastdirectory")       #the directory of "load telemac" button
@@ -110,6 +111,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.horizontalSlider_time.sliderReleased.connect(self.sliderReleased)
         self.comboBox_time.currentIndexChanged.connect(self.change_timetxt)
         self.horizontalSlider_time.valueChanged.connect(self.change_timetxt)
+        self.pushButton_Read.clicked.connect(self.readHydrauFile)
         #Contour box
         #parameters
         self.treeWidget_parameters.itemSelectionChanged.connect(self.change_param)
@@ -414,6 +416,26 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
     def sliderPressed(self):
         """Associated with time slider behaviour"""
         self.layer.draw=False
+        
+    def readHydrauFile(self):
+        if self.pushButton_Read.text() == 'Read':
+            self.pushButton_Read.setText('Stop')
+            self.layer.canvas.mapCanvasRefreshed.connect(self.readHydrauFile2)
+            self.change_timetxt(self.layer.time_displayed)
+            self.layer.canvas.refresh()
+        elif self.pushButton_Read.text() == 'Stop':
+            self.pushButton_Read.setText('Read')
+            self.layer.canvas.mapCanvasRefreshed.disconnect(self.readHydrauFile2)
+        
+    def readHydrauFile2(self):  
+        self.stepread = int(self.spinBox_readtimestep.value())
+        if self.layer.time_displayed < len(self.layer.hydrauparser.getTimes()) - 1 - self.stepread :
+            #print str(self.layer.time_displayed + self.stepread) + ' ' + str(len(self.layer.hydrauparser.getTimes() ))
+            self.horizontalSlider_time.setValue(self.layer.time_displayed + self.stepread)
+            self.layer.canvas.refresh()
+        else:
+            self.pushButton_Read.setText('Read')
+            self.layer.canvas.mapCanvasRefreshed.disconnect(self.readHydrauFile2)
         
     #*********************************************************************************
     #Display tools - contour  ***********************************************
