@@ -19,7 +19,7 @@
   <property name="minimumSize">
    <size>
     <width>554</width>
-    <height>641</height>
+    <height>685</height>
    </size>
   </property>
   <property name="floating">
@@ -313,7 +313,7 @@ translation</string>
            <property name="flat">
             <bool>false</bool>
            </property>
-           <layout class="QGridLayout" name="gridLayout_10">
+           <layout class="QGridLayout" name="gridLayout_10" columnstretch="5,1,0,0">
             <property name="sizeConstraint">
              <enum>QLayout::SetDefaultConstraint</enum>
             </property>
@@ -323,84 +323,109 @@ translation</string>
             <property name="bottomMargin">
              <number>2</number>
             </property>
-            <item row="1" column="3">
-             <widget class="QLabel" name="label_40">
-              <property name="maximumSize">
-               <size>
-                <width>60</width>
-                <height>16777215</height>
-               </size>
+            <item row="2" column="0">
+             <widget class="QGroupBox" name="groupBox_8">
+              <property name="title">
+               <string/>
               </property>
-              <property name="text">
-               <string>time step</string>
-              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_14">
+               <item>
+                <widget class="QComboBox" name="comboBox_time">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_time">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+              <zorder>comboBox_time</zorder>
+              <zorder>comboBox_time</zorder>
+              <zorder>label_time</zorder>
              </widget>
             </item>
-            <item row="1" column="0">
-             <widget class="QComboBox" name="comboBox_time">
-              <property name="enabled">
-               <bool>false</bool>
+            <item row="2" column="1">
+             <widget class="QGroupBox" name="groupBox_9">
+              <property name="title">
+               <string/>
               </property>
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>20</height>
-               </size>
-              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_15">
+               <item>
+                <widget class="QPushButton" name="pushButton_Read">
+                 <property name="maximumSize">
+                  <size>
+                   <width>60</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/plugins/PostTelemac/icons/play/play.png</normaloff>:/plugins/PostTelemac/icons/play/play.png</iconset>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_40">
+                 <property name="maximumSize">
+                  <size>
+                   <width>60</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>time step</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="spinBox_readtimestep">
+                 <property name="maximumSize">
+                  <size>
+                   <width>50</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </widget>
             </item>
-            <item row="1" column="1">
-             <widget class="QLabel" name="label_time">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>...</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="2">
-             <widget class="QPushButton" name="pushButton_Read">
-              <property name="maximumSize">
-               <size>
-                <width>60</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>Read</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="4">
-             <widget class="QSpinBox" name="spinBox_readtimestep">
-              <property name="maximumSize">
-               <size>
-                <width>50</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="minimum">
-               <number>1</number>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0" colspan="5">
+            <item row="0" column="0" colspan="2">
              <widget class="QSlider" name="horizontalSlider_time">
               <property name="enabled">
                <bool>false</bool>
@@ -3099,7 +3124,6 @@ max .res</string>
   <tabstop>doubleSpinBox_2</tabstop>
   <tabstop>tabWidget</tabstop>
   <tabstop>horizontalSlider_time</tabstop>
-  <tabstop>comboBox_time</tabstop>
   <tabstop>horizontalSlider_transp</tabstop>
   <tabstop>lineEdit_levelmin</tabstop>
   <tabstop>lineEdit_levelmax</tabstop>

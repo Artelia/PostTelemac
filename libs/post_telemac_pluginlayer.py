@@ -58,6 +58,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
     CRS = qgis.core.QgsCoordinateReferenceSystem()
     LAYER_TYPE = "selafin_viewer"
     
+    
     def __init__(self,nom1 = None):
         """
         Init method : 

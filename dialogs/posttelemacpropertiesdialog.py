@@ -36,6 +36,7 @@ import os
 import time
 import shutil
 #local import
+#import ..resources_rc
 from ..libs.posttelemac_util import *
 from posttelemacvirtualparameterdialog import *
 from posttelemacusercolorrampdialog import *
@@ -73,7 +74,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.maptooloriginal = self.canvas.mapTool()        #Initial map tool (ie mouse behaviour)
         self.clickTool = QgsMapToolEmitPoint(self.canvas)   #specific map tool (ie mouse behaviour)
         self.crsselector = QgsGenericProjectionSelector()
-        self.stepread = 1
+        self.playstep= None
+        self.playactive = False
         
         if QtCore.QSettings().value("posttelemac/lastdirectory") != '':
             self.loaddirectory = QtCore.QSettings().value("posttelemac/lastdirectory")       #the directory of "load telemac" button
@@ -418,23 +420,30 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.layer.draw=False
         
     def readHydrauFile(self):
-        if self.pushButton_Read.text() == 'Read':
-            self.pushButton_Read.setText('Stop')
+        """Action when play clicked"""
+        iconplay  =QtGui.QIcon(':/plugins/PostTelemac/icons/play/play.png')
+        iconstop  =QtGui.QIcon(':/plugins/PostTelemac/icons/play/stop.png')
+        if not self.playactive :    #action on click when not playing
+            self.pushButton_Read.setIcon(iconstop)
+            self.playactive = True
             self.layer.canvas.mapCanvasRefreshed.connect(self.readHydrauFile2)
             self.change_timetxt(self.layer.time_displayed)
             self.layer.canvas.refresh()
-        elif self.pushButton_Read.text() == 'Stop':
-            self.pushButton_Read.setText('Read')
+        else:    #action on click when  playing
+            self.pushButton_Read.setIcon(iconplay)
+            self.playactive = False
             self.layer.canvas.mapCanvasRefreshed.disconnect(self.readHydrauFile2)
         
     def readHydrauFile2(self):  
-        self.stepread = int(self.spinBox_readtimestep.value())
-        if self.layer.time_displayed < len(self.layer.hydrauparser.getTimes()) - 1 - self.stepread :
-            #print str(self.layer.time_displayed + self.stepread) + ' ' + str(len(self.layer.hydrauparser.getTimes() ))
-            self.horizontalSlider_time.setValue(self.layer.time_displayed + self.stepread)
+        self.playstep = int(self.spinBox_readtimestep.value())
+        if self.layer.time_displayed < len(self.layer.hydrauparser.getTimes()) - self.playstep :
+            #print str(self.layer.time_displayed + self.playstep) + ' ' + str(len(self.layer.hydrauparser.getTimes() ))
+            self.horizontalSlider_time.setValue(self.layer.time_displayed + self.playstep)
             self.layer.canvas.refresh()
-        else:
-            self.pushButton_Read.setText('Read')
+        else:   #end of time reached
+            iconplay  =QtGui.QIcon(':/plugins/PostTelemac/icons/play/play.png')
+            self.pushButton_Read.setIcon(iconplay)
+            self.playactive = False
             self.layer.canvas.mapCanvasRefreshed.disconnect(self.readHydrauFile2)
         
     #*********************************************************************************

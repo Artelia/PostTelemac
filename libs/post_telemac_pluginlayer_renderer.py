@@ -4,15 +4,16 @@
 from __future__ import unicode_literals
 
 import qgis.core
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 
 class PostTelemacPluginLayerRenderer(qgis.core.QgsMapLayerRenderer):
 
     def __init__(self, layer, rendererContext):
-
+        #QtCore.QObject.__init__(self)
         qgis.core.QgsMapLayerRenderer.__init__(self, layer.id())
         self.layer = layer
         self.rendererContext = rendererContext
+        #QtCore.QObject.__init__(self)
 
 
 
@@ -31,5 +32,7 @@ class PostTelemacPluginLayerRenderer(qgis.core.QgsMapLayerRenderer):
         if image2:
             painter.drawImage(0,0,image2)
         painter.restore()
+        #self.renderfinished.emit()
         return bool1
         
+    #renderfinished = QtCore.pyqtSignal()

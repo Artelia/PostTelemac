@@ -27,5 +27,7 @@
         <file>icons/tools/Files_Copy.png</file>
         <file>icons/tools/Wizard_48x48.png</file>
         <file>icons/tools/layer_raster_add.png</file>
+        <file>icons/play/play.png</file>
+        <file>icons/play/stop.png</file>
     </qresource>
 </RCC>
