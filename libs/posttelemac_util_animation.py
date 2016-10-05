@@ -68,6 +68,7 @@ class PostTelemacAnimation(QtCore.QObject):
             maps = [item for item in composition.items() if item.type() == qgis.core.QgsComposerItem.ComposerMap and item.scene()]
             images = [item for item in composition.items() if item.type() == qgis.core.QgsComposerItem.ComposerPicture and item.scene()]
             legends = [item for item in composition.items() if item.type() == qgis.core.QgsComposerItem.ComposerLegend and item.scene()]
+            
             if self.pluginlayer.propertiesdialog.comboBox_8.currentIndex() != 0:
                 for image in images:
                     if image.id() == self.pluginlayer.propertiesdialog.comboBox_8.currentText():
@@ -87,24 +88,26 @@ class PostTelemacAnimation(QtCore.QObject):
                 facteurconversion = float(composition.printResolution())/80.0
                 rectimage = rectimage/25.4*facteurconversion
                 self.fig.set_size_inches(float(rectimage[0]),float(rectimage[1]), forward=True)
+                
+                #search matplotlib supported format
+                tempmplsupportedfile =  self.fig.canvas.get_supported_filetypes()
+                if 'svg' in tempmplsupportedfile:
+                    mplformat = 'svg'
+                elif 'jpg' in tempmplsupportedfile:
+                    mplformat = 'jpg'
+                elif 'png' in tempmplsupportedfile:
+                    mplformat = 'png'
 
             
             #Main part : creating the png files ******************************************
             
-            #search matplotlib supported format
-            tempmplsupportedfile =  self.fig.canvas.get_supported_filetypes()
-            if 'svg' in tempmplsupportedfile:
-                mplformat = 'svg'
-            elif 'jpg' in tempmplsupportedfile:
-                mplformat = 'jpg'
-            elif 'png' in tempmplsupportedfile:
-                mplformat = 'png'
+
                 
             
             compt = 0
             for i in range(min1,max1+1):
                 if i%pas==0:
-                    if self.fig:
+                    if self.fig != None:
                         try:
                             if False:
                                 #modifying ax to show the time

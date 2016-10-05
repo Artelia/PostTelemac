@@ -56,8 +56,12 @@ class getCompareValue(QtCore.QObject):
         #self.slf1 = layer.slf
         #self.slf2 = SELAFIN(layer.propertiesdialog.lineEdit_5.toPlainText())
         #self.slf2 = SELAFIN(layer.propertiesdialog.lineEdit_5.text())
-        self.hydrauparsercompared = PostTelemacSelafinParser()
+        self.hydrauparsercompared = PostTelemacSelafinParser(self.layer)
         self.hydrauparsercompared.loadHydrauFile(layer.propertiesdialog.lineEdit_5.text())
+        self.hydrauparsercompared.setXYTranslation(self.layer.hydrauparser.translatex, self.layer.hydrauparser.translatey)
+        
+        
+        
         #layer.compare = True
         
         #layer.updatevalue.connect(self.updateSelafinValue)
