@@ -21,6 +21,7 @@ email=patrice.verchere@arteliagroup.com
 
 # Uncomment the following line and add your changelog:
 changelog= 
+    0.1.10 : bug fix with movie and compare
     0.1.9 : Play button
     0.1.8 : bug fix (if then else)
     0.1.7 : bug fix (contour)
