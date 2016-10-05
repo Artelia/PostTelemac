@@ -203,9 +203,14 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         """
         self.hydraufilepath = hydraufilepath
         #Update name in symbology
-        nom = os.path.basename(self.hydraufilepath).split('.')[0]
-        self.setLayerName(nom)
-        extension = os.path.basename(self.hydraufilepath).split('.')[1]
+        if False:
+            nom = os.path.basename(self.hydraufilepath).split('.')[0]
+            self.setLayerName(nom)
+            extension = os.path.basename(self.hydraufilepath).split('.')[1]
+        else:
+            filenametemp = os.path.basename(self.hydraufilepath)
+            nom,extension = os.path.splitext(filenametemp)
+            self.setLayerName(nom)
         
         #Set selafin
         if extension == 'sww':

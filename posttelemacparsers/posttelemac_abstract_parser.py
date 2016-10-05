@@ -47,6 +47,7 @@ class PostTelemacAbstractParser(object):
         self.triangulationisvalid = [False,None]
         self.trifind = None
         self.parametres = None
+        self.parametrev = None
         self.parametrevx = None         #specific num for velolity x parameter
         self.parametrevy = None
         self.parametreh = None
@@ -234,6 +235,17 @@ class PostTelemacAbstractParser(object):
                         self.parametres.append([len(self.parametres),"HAUTEUR D'EAU",'V'+str(paramfreesurface)+' - V'+str(parambottom),len(self.parametres)])
                 else:
                     self.parametreh = self.pluginlayer.propertiesdialog.postutils.getParameterName("HAUTEUR")[0]
+            
+            if self.parametrev == None :
+                if self.pluginlayer.propertiesdialog.postutils.getParameterName("VITESSE") == None:
+                    if self.pluginlayer.propertiesdialog.postutils.getParameterName("VITESSEU") != None and self.pluginlayer.propertiesdialog.postutils.getParameterName("VITESSEV") != None:
+                        paramvx = self.pluginlayer.propertiesdialog.postutils.getParameterName("VITESSEU")[0]
+                        paramvy = self.pluginlayer.propertiesdialog.postutils.getParameterName("VITESSEV")[0]
+                        self.parametrev = len(self.parametres)
+                        self.parametres.append([len(self.parametres),"VITESSE",'(V'+str(paramvx)+'**2 + V'+str(paramvy)+'**2)**0.5',len(self.parametres)])
+                else:
+                    self.parametrev = self.pluginlayer.propertiesdialog.postutils.getParameterName("VITESSE")[0]
+            
             
             
 
