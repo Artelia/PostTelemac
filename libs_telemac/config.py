@@ -164,8 +164,8 @@ from os import path, walk, listdir, environ, sep
 from socket import gethostname
 import ConfigParser
 from optparse import OptionParser
-from utils.files import removeDirectories
-from utils.messages import MESSAGES,filterMessage,banner
+from utilstelemac.files import removeDirectories
+from utilstelemac.messages import MESSAGES,filterMessage,banner
 
 # _____                   __________________________________________
 # ____/ Global Variables /_________________________________________/

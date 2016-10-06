@@ -62,8 +62,8 @@ from os import path,walk,remove, environ, sep
 sys.path.append( path.join( path.dirname(sys.argv[0]), '..' ) ) # clever you !
 from config import OptionParser,parseConfigFile, parseConfig_CompileTELEMAC
 # ~~> dependencies towards other pytel/modules
-from utils.files import getTheseFiles,isNewer,addToList,addFileContent,getFileContent,putFileContent,diffTextFiles
-from utils.progressbar import ProgressBar
+from utilstelemac.files import getTheseFiles,isNewer,addToList,addFileContent,getFileContent,putFileContent,diffTextFiles
+from utilstelemac.progressbar import ProgressBar
 
 debug = False
 

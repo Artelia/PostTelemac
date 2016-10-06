@@ -43,8 +43,8 @@ sys.path.append( path.join( path.dirname(sys.argv[0]), '..' ) )
 from config import OptionParser
 # ~~> dependencies towards other pytel/modules
 from parsers.parserSELAFIN import SELAFIN
-from utils.progressbar import ProgressBar
-from utils.geometry import isCCW,getSegmentIntersection,getBarycentricWeights,isInsideTriangle,getDistancePointToLine
+from utilstelemac.progressbar import ProgressBar
+from utilstelemac.geometry import isCCW,getSegmentIntersection,getBarycentricWeights,isInsideTriangle,getDistancePointToLine
 from samplers.polygons import isClockwise,joinSegments
 
 # _____                  ___________________________________________

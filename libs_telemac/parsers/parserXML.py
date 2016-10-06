@@ -80,8 +80,8 @@ from parserFortran import getPrincipalWrapNames,filterPrincipalWrapNames
 from runcode import runCAS,getNCSIZE,compilePRINCI
 # ~~> dependencies towards other pytel/modules
 sys.path.append( path.join( path.dirname(sys.argv[0]), '..' ) ) # clever you !
-from utils.files import getFileContent,putFileContent,addFileContent,createDirectories,copyFile,moveFile, matchSafe,diffTextFiles
-from utils.messages import filterMessage, MESSAGES
+from utilstelemac.files import getFileContent,putFileContent,addFileContent,createDirectories,copyFile,moveFile, matchSafe,diffTextFiles
+from utilstelemac.messages import filterMessage, MESSAGES
 from mtlplots.myplot1d import decoDefault as decoDefault1D
 from mtlplots.myplot2d import decoDefault as decoDefault2D
 from mtlplots.myplot3d import decoDefault as decoDefault3D

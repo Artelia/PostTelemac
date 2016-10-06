@@ -27,7 +27,7 @@ import sys
 from os import path,walk
 from fnmatch import fnmatch
 # ~~> dependencies towards other pytel/modules
-from utils.files import getFileContent
+from utilstelemac.files import getFileContent
 
 # _____                  ___________________________________________
 # ____/ General Toolbox /__________________________________________/

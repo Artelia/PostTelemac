@@ -61,7 +61,7 @@ import sys
 # ~~> dependencies towards the root of pytel
 from config import OptionParser,parseConfigFile, parseConfig_ValidateTELEMAC
 # ~~> dependencies towards other pytel/modules
-from utils.files import getFileContent,putFileContent
+from utilstelemac.files import getFileContent,putFileContent
 
 # _____               ______________________________________________
 # ____/ Instructions /_____________________________________________/

@@ -29,7 +29,7 @@ import sys
 import re
 import numpy as np
 # ~~> dependencies towards other pytel/modules
-from utils.files import getFileContent,putFileContent
+from utilstelemac.files import getFileContent,putFileContent
 
 # _____                   __________________________________________
 # ____/ Global Variables /_________________________________________/

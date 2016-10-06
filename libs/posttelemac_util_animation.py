@@ -217,21 +217,38 @@ class PostTelemacAnimation(QtCore.QObject):
         else:
             bitrate = 10000 if qual == 1 else 2000
             opts = ["-vcodec", "mpeg4", "-b", str(bitrate) + "K"]
-
-        # if images do not start with 1: -start_number 14
-        cmd = [ffmpeg_bin, "-f", "image2", "-framerate", str(fps), "-i", tmp_img_dir]
-        cmd += opts
-        cmd += ["-r", str(fps), "-f", "avi", "-y", output_file]
-        #f = os.mknod(os.path.join(os.path.dirname(tmp_img_dir),"newfile.txt"))
-        f= open (os.path.join(os.path.dirname(tmp_img_dir),"newfile.txt"), 'a')
-        #f.close()
-
-        #f = tempfile.NamedTemporaryFile(prefix="crayfish",suffix=".txt")
         
-        f.write(unicode(cmd).encode('utf8') + "\n\n")
+        if False:
+            # if images do not start with 1: -start_number 14
+            cmd = [ffmpeg_bin, "-f", "image2", "-framerate", str(fps), "-i", tmp_img_dir]
+            cmd += opts
+            cmd += ["-r", str(fps), "-f", "avi", "-y", output_file]
+            #f = os.mknod(os.path.join(os.path.dirname(tmp_img_dir),"newfile.txt"))
+            f= open (os.path.join(os.path.dirname(tmp_img_dir),"newfile.txt"), 'a')
+            #f.close()
 
-        # stdin redirection is necessary in some cases on Windows
-        res = subprocess.call(cmd, shell = True, stdin=subprocess.PIPE, stdout=f, stderr=f)
+            #f = tempfile.NamedTemporaryFile(prefix="crayfish",suffix=".txt")
+            
+            f.write(unicode(cmd).encode('utf8') + "\n\n")
+
+            # stdin redirection is necessary in some cases on Windows
+            res = subprocess.call(cmd, shell = True, stdin=subprocess.PIPE, stdout=f, stderr=f)
+        else:
+            # if images do not start with 1: -start_number 14
+            cmd = [ffmpeg_bin, "-f", "image2", "-framerate", str(fps), "-i", tmp_img_dir]
+            cmd += opts
+            cmd += ["-r", str(fps), "-f", "avi", "-y", output_file]
+            #f = os.mknod(os.path.join(os.path.dirname(tmp_img_dir),"newfile.txt"))
+            f= open (os.path.join(os.path.dirname(tmp_img_dir),"newfile.txt"), 'a')
+            #f.close()
+
+            #f = tempfile.NamedTemporaryFile(prefix="crayfish",suffix=".txt")
+            
+            f.write(unicode(cmd).encode('utf8') + "\n\n")
+
+            # stdin redirection is necessary in some cases on Windows
+            res = subprocess.call(cmd, shell = False, stdin=subprocess.PIPE, stdout=f, stderr=f)
+            
         if res != 0:
             #f.delete = False  # keep the file on error
             f.close()

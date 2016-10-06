@@ -27,8 +27,8 @@ sys.path.append( path.join( path.dirname(sys.argv[0]), '..' ) )
 # ~~> dependencies towards other modules
 from config import OptionParser
 # ~~> dependencies towards other pytel/modules
-from utils.geometry import getConeAngle,isClose,getNorm2
-from utils.progressbar import SubProgressBar
+from utilstelemac.geometry import getConeAngle,isClose,getNorm2
+from utilstelemac.progressbar import SubProgressBar
 from parsers.parserKenue import InS
 
 # _____                   __________________________________________

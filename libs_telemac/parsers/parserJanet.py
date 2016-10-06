@@ -36,7 +36,7 @@ from os import path
 sys.path.append( path.join( path.dirname(sys.argv[0]), '..' ) ) # clever you !
 # ~~> dependencies towards other pytel/modules
 from config import OptionParser
-from utils.files import getFileContent,putFileContent
+from utilstelemac.files import getFileContent,putFileContent
 from parsers.parserKenue import InS
 
 # _____                   __________________________________________

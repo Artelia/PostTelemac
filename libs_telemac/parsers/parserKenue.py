@@ -49,9 +49,9 @@ import re
 import numpy as np
 from os import path
 # ~~> dependencies towards other pytel/modules
-from utils.files import getFileContent,putFileContent
-from utils.progressbar import ProgressBar
-from utils.geometry import isClose
+from utilstelemac.files import getFileContent,putFileContent
+from utilstelemac.progressbar import ProgressBar
+from utilstelemac.geometry import isClose
 
 # _____                   __________________________________________
 # ____/ Global Variables /_________________________________________/

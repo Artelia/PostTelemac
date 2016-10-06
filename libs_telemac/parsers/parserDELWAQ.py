@@ -31,8 +31,8 @@ sys.path.append( path.join( path.dirname(sys.argv[0]), '..' ) ) # clever you !
 from config import OptionParser,parseConfigFile, parseConfig_CompileTELEMAC
 # ~~> dependencies towards other pytel/modules
 from parsers.parserSELAFIN import SELAFIN,CONLIM
-from utils.progressbar import ProgressBar
-from utils.files import getFileContent
+from utilstelemac.progressbar import ProgressBar
+from utilstelemac.files import getFileContent
 
 # _____                   __________________________________________
 # ____/ Global Variables /_________________________________________/
