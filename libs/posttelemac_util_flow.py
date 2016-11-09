@@ -546,3 +546,4 @@ class FlowMapTool(qgis.gui.QgsMapTool):
     def setCursor(self,cursor):
         self.cursor = QtGui.QCursor(cursor)
     
+    

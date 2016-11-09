@@ -44,6 +44,7 @@ Concept : when creating new SelafinPluginLayer, use
 selafininstancecount for pluginlayer-draw, 
 selafininstancecount + 1 for graph temp util,
  selafininstancecount + 2 for flow util
+  selafininstancecount + 3 for volume util
 """
 selafininstancecount = 2
 
@@ -112,13 +113,18 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         self.cmap_mpl_contour = None        #cmap modified to correspond levels values
         self.norm_mpl_contour = None        
         self.color_mpl_contour = None       
-        self.propertiesdialog.color_palette_changed_contour(0)
+        #self.propertiesdialog.color_palette_changed_contour(0)
+        self.propertiesdialog.tabWidget_lvl_vel.setCurrentIndex(0)
+        self.propertiesdialog.color_palette_changed(0)
         #for velocity
         self.cmap_mpl_vel_raw = None
         self.cmap_mpl_vel = None
         self.norm_mpl_vel = None
         self.color_mpl_vel = None
-        self.propertiesdialog.color_palette_changed_vel(0)
+        self.propertiesdialog.tabWidget_lvl_vel.setCurrentIndex(1)
+        #self.propertiesdialog.color_palette_changed_vel(0)
+        self.propertiesdialog.color_palette_changed(0)
+        self.propertiesdialog.tabWidget_lvl_vel.setCurrentIndex(0)
         #levels
         self.levels=[self.propertiesdialog.predeflevels[i][1] for i in range(len(self.propertiesdialog.predeflevels))]
         """
@@ -126,8 +132,9 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
             figure (selafininstancecount) used for get_image, 
             figure(selafininstancecount + 1) for graphtemp, 
             figure(selafininstancecount +2) for graph flow
+            figure(selafininstancecount +3) for graph volume
         """
-        selafininstancecount = selafininstancecount + 3
+        selafininstancecount = selafininstancecount + 4
         
         #Connectors
         self.canvas.destinationCrsChanged.connect(self.changecrs)
@@ -320,7 +327,8 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         self.lvl_vel = tab
         self.change_cm_vel( self.cmap_mpl_vel_raw)
         qgis.utils.iface.legendInterface().refreshLayerSymbology(self)
-        self.propertiesdialog.lineEdit_levelschoosen_2.setText(str(self.lvl_vel))
+        #self.propertiesdialog.lineEdit_levelschoosen_2.setText(str(self.lvl_vel))
+        self.propertiesdialog.lineEdit_levelschoosen.setText(str(self.lvl_vel))
         self.triggerRepaint()
         
     def changeTime(self,nb):
@@ -486,7 +494,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         self.time_displayed = int(element.attribute('time'))
         self.showmesh = int(element.attribute('showmesh'))
         self.propertiesdialog.checkBox_showmesh.setChecked(self.showmesh) 
-        #levelthings
+        #levelthings - old - need to reworked
         self.propertiesdialog.comboBox_genericlevels.setCurrentIndex(int(element.attribute('level_value')))
         lvlstep = [element.attribute('level_step').split(";")[i] for i in range(len(element.attribute('level_step').split(";")))]
         self.propertiesdialog.lineEdit_levelmin.setText(lvlstep[0])
@@ -499,10 +507,12 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
             self.propertiesdialog.change_cmchoosergenericlvl()
         elif int(element.attribute('level_type'))==1:
             self.propertiesdialog.createstepclass()
+        """
         #velocity things
         self.propertiesdialog.comboBox_genericlevels_2.setCurrentIndex(0)
         self.propertiesdialog.comboBox_clrgame_2.setCurrentIndex(0)
         self.propertiesdialog.change_cmchoosergenericlvl_vel()
+        """
         #Virtual param things
         strtemp =  element.attribute('virtual_param').split(';')
         count = int((len(strtemp)-1)/2)
@@ -534,7 +544,8 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         element.setAttribute("alpha", self.alpha_displayed)
         element.setAttribute("time", self.time_displayed)
         element.setAttribute("showmesh", int(self.showmesh))
-        #levelthings
+        #levelthings - old - need to reworked
+        self.propertiesdialog.tabWidget_lvl_vel.setCurrentIndex(0)
         element.setAttribute("level_color", self.propertiesdialog.comboBox_clrgame.currentIndex())
         element.setAttribute("level_type", self.propertiesdialog.comboBox_levelstype.currentIndex())
         element.setAttribute("level_value", self.propertiesdialog.comboBox_genericlevels.currentIndex())
@@ -573,6 +584,11 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
                 plt.close(self.propertiesdialog.figure2) 
             except Exception, e :
                 print 'fig2 ' + str(e)
+            try:
+                self.propertiesdialog.figure3.clf()
+                plt.close(self.propertiesdialog.figure3) 
+            except Exception, e :
+                print 'fig3 ' + str(e)
             try:
                 self.selafinqimage.fig.clf()
                 plt.close(self.selafinqimage.fig)

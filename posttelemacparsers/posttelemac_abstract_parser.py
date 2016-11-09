@@ -51,6 +51,8 @@ class PostTelemacAbstractParser(object):
         self.parametrevx = None         #specific num for velolity x parameter
         self.parametrevy = None
         self.parametreh = None
+        self.paramfreesurface = None
+        self.parambottom = None
         self.networkxgraph = None
         self.translatex = 0
         self.translatey = 0
@@ -210,6 +212,13 @@ class PostTelemacAbstractParser(object):
     def identifyKeysParameters(self):
         #load velocity parameters
         if self.pluginlayer != None :
+            if (self.paramfreesurface == None and self.parambottom == None) :
+                self.paramfreesurface = self.pluginlayer.propertiesdialog.postutils.getParameterName("SURFACELIBRE")[0]
+                self.parambottom = self.pluginlayer.propertiesdialog.postutils.getParameterName("BATHYMETRIE")[0]
+                if (self.paramfreesurface == None or self.parambottom == None):
+                    self.pluginlayer.propertiesdialog.groupBox_volume1.setEnabled(False)
+                    self.pluginlayer.propertiesdialog.groupBox_volume2.setEnabled(False)
+                    
             if (self.parametrevx == None and self.parametrevy == None) :
 
                 if self.pluginlayer.propertiesdialog.postutils.getParameterName("VITESSEU") == None and self.pluginlayer.propertiesdialog.postutils.getParameterName("VITESSEV") == None:

@@ -34,6 +34,7 @@ from ..toshape.posttelemac_util_extractmesh import *
 from ..toshape.posttelemac_util_extractpts import *
 from posttelemac_util_graphtemp import *
 from posttelemac_util_flow import *
+from posttelemac_util_volume import *
 from posttelemac_util_get_max import *
 from posttelemac_util_getcomparevalue import *
 from posttelemac_util_rasterize import *
@@ -59,6 +60,7 @@ class PostTelemacUtils():
         self.composition = None                 #the composer choosen for movie
         self.graphtempdatac = []
         self.graphflowdatac = []
+        self.graphvolumedatac = []
         self.skdtree = None                   #Object that enables nearest point query
         self.compareprocess = None
         self.initclassgraphtemp = InitGraphTemp()
@@ -143,6 +145,71 @@ class PostTelemacUtils():
                         self.launchThread(geomfinal)    
         except Exception , e :
             print str(e)
+            
+            
+    def computeVolume(self):
+        """
+        Activated with volume graph tool
+        """
+        if not self.rubberband:
+            self.createRubberband()
+        self.dblclktemp = None
+        self.textquit0 = "Click for polyline and double click to end (right click to cancel then quit)"
+        self.textquit1 = "Select the polyline in a vector layer (Right click to quit)"
+        self.vectorlayerflowids = None
+        self.graphtodo = 2
+        self.selectionmethod = self.selafinlayer.propertiesdialog.comboBox_4.currentIndex()
+        
+        if self.selectionmethod in [0]:
+            layer = iface.activeLayer()
+            if not self.tool:
+                self.tool = VolumeMapTool(self.selafinlayer.canvas,self.selafinlayer.propertiesdialog.pushButton_volume)
+            #Listeners of mouse
+            self.connectTool()
+            #init the mouse listener comportement and save the classic to restore it on quit
+            self.selafinlayer.canvas.setMapTool(self.tool)
+            #init the temp layer where the polyline is draw
+            self.rubberband.reset(QGis.Line)
+            #init the table where is saved the poyline
+            self.pointstoDraw = []
+            self.pointstoCal = []
+            self.lastClicked = [[-9999999999.9,9999999999.9]]
+            # The last valid line we drew to create a free-hand profile
+            self.lastFreeHandPoints = []
+        elif self.selectionmethod in [1,2]:
+            layer = iface.activeLayer()
+            if not (layer.type() == 0 and layer.geometryType()==2):
+                QMessageBox.warning(iface.mainWindow(), "PostTelemac", self.tr("Select a polygone vector layer"))
+            elif self.selectionmethod==1 and len(layer.selectedFeatures())==0:
+                QMessageBox.warning(iface.mainWindow(), "PostTelemac", self.tr("Select a polygon in a polygon vector layer"))
+            else:
+                self.selafinlayer.propertiesdialog.ax3.cla()
+                grid2 = self.selafinlayer.propertiesdialog.ax3.grid(color='0.5', linestyle='-', linewidth=0.5)
+                self.selafinlayer.propertiesdialog.canvas3.draw()
+                self.initclass1=[]
+                self.selafinlayer.propertiesdialog.checkBox_12.setChecked(True)
+                iter = layer.selectedFeatures()
+                if self.selectionmethod == 2 or len(iter)==0:
+                    iter = layer.getFeatures()
+                geomfinal=[]
+                self.vectorlayerflowids = []
+                xformutil = QgsCoordinateTransform(self.selafinlayer.realCRS, layer.crs() )
+                for i,feature in enumerate(iter):
+                    try:
+                        self.vectorlayerflowids.append(str(feature[0]))
+                    except:
+                        self.vectorlayerflowids.append(str(feature.id()))
+                    geomss=feature.geometry().asPolygon()
+                    
+                    for geoms in geomss:
+                        geoms=[[geom[0],geom[1]] for geom in geoms]
+                        #geoms = geoms+[geoms[-1]]
+                        geomstemp=[]
+                        for geom in geoms:
+                            qgspoint = xformutil.transform(QgsPoint(geom[0],geom[1]),QgsCoordinateTransform.ReverseTransform)
+                            geomstemp.append([qgspoint.x(),qgspoint.y()])
+                        geomfinal.append(geomstemp)
+                self.launchThread(geomfinal)
 
     def computeFlow(self):
         """
@@ -319,6 +386,9 @@ class PostTelemacUtils():
             #self.initclass = self.initclassgraphtemp
         elif self.graphtodo ==1:
             self.initclass=InitComputeFlow()
+        elif self.graphtodo ==2:
+            self.initclass=InitComputeVolume()
+            
         self.initclass.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
         self.initclass.error.connect(self.selafinlayer.propertiesdialog.errorMessage)
         self.initclass.emitpoint.connect(self.addPointRubberband)
@@ -337,10 +407,22 @@ class PostTelemacUtils():
             self.selafinlayer.propertiesdialog.normalMessage('Start computing flow')
             self.initclass.start(self.selafinlayer,geom)
             self.selafinlayer.propertiesdialog.pushButton_flow.setEnabled(False)
+        elif self.graphtodo ==2:
+            """
+            if self.selafinlayer.propertiesdialog.comboBox_flowmethod.currentIndex()==0:
+                self.rubberband.reset(QGis.Line)
+            elif self.selafinlayer.propertiesdialog.comboBox_flowmethod.currentIndex()==1:
+                self.rubberband.reset(QGis.Point)
+            """
+            self.rubberband.reset(QGis.Line)
+            #self.selafinlayer.propertiesdialog.textBrowser_main.append(str(ctime() + ' - Computing flow'))
+            self.selafinlayer.propertiesdialog.normalMessage('Start computing volume')
+            self.initclass.start(self.selafinlayer,geom)
+            self.selafinlayer.propertiesdialog.pushButton_volume.setEnabled(False)
     
     
     def workerFinished(self,list1,list2,list3 = None):
-        
+        #print 'finished ' + str(self.graphtodo)
         #print 'wf ' + str(np.array(list1).shape) +' ' +str(np.array(list2).shape)
         
         if self.graphtodo ==0:
@@ -361,6 +443,16 @@ class PostTelemacUtils():
                         datacu.hide()
                         datacu.disable()
                     self.graphflowdatac = []
+                    
+        elif self.graphtodo ==2:
+            ax = self.selafinlayer.propertiesdialog.ax3
+            if not self.selafinlayer.propertiesdialog.checkBox_12.isChecked():
+                ax.cla()
+                if  len(self.graphvolumedatac)>0:
+                    for datacu in self.graphvolumedatac:
+                        datacu.hide()
+                        datacu.disable()
+                    self.graphvolumedatac = []
 
         maxtemp=None
         mintemp = None
@@ -388,14 +480,22 @@ class PostTelemacUtils():
             self.graphtempactive = False
             if self.selafinlayer.propertiesdialog.comboBox_2.currentIndex() != 0:
                 self.selafinlayer.propertiesdialog.pushButton_limni.setEnabled(True)
-        elif self.graphtodo ==1:
+        elif self.graphtodo == 1 :
             self.graphflowdatac.append(datacursor(test2,formatter="temps:{x:.0f}\ndebit{y:.2f}".format,bbox=dict(fc='white'),arrowprops=dict(arrowstyle='->', fc='white', alpha=0.5)))
             self.selafinlayer.propertiesdialog.label_flow_resultmax.setText('Max : ' + str(maxtemp))
             self.selafinlayer.propertiesdialog.label__flow_resultmin.setText('Min : ' + str(mintemp))
             self.selafinlayer.propertiesdialog.canvas2.draw()
+            self.selafinlayer.propertiesdialog.normalMessage('Computing flow finished')
             if self.selafinlayer.propertiesdialog.comboBox_3.currentIndex() != 0:
-                self.selafinlayer.propertiesdialog.normalMessage('Computing flow finished')
                 self.selafinlayer.propertiesdialog.pushButton_flow.setEnabled(True)
+        elif self.graphtodo == 2 :
+            #self.graphvolumedatac.append(datacursor(test2,formatter="temps:{x:.0f}\ndebit{y:.2f}".format,bbox=dict(fc='white'),arrowprops=dict(arrowstyle='->', fc='white', alpha=0.5)))
+            self.selafinlayer.propertiesdialog.label_volume_resultmax.setText('Max : ' + str(maxtemp))
+            self.selafinlayer.propertiesdialog.label_volume_resultmin.setText('Min : ' + str(mintemp))
+            self.selafinlayer.propertiesdialog.canvas3.draw()
+            self.selafinlayer.propertiesdialog.normalMessage('Computing volume finished')
+            if self.selafinlayer.propertiesdialog.comboBox_4.currentIndex() != 0:
+                self.selafinlayer.propertiesdialog.pushButton_volume.setEnabled(True)
             
     
     def copygraphclipboard(self):
@@ -432,8 +532,23 @@ class PostTelemacUtils():
         iface.mainWindow().statusBar().showMessage( "" )
             
     def addPointRubberband(self,x,y):
-        qgspoint = self.selafinlayer.xform.transform(QgsPoint(x,y))
-        self.rubberband.addPoint(qgspoint)
+        
+        if isinstance(x,list):
+            if False:
+                line=[]
+                for i in range(len(x)):
+                        if i == 0 :
+                            self.rubberband.setWidth(0)
+                            self.rubberband.addPoint(QgsPoint(x[i],y[i]))
+                            self.rubberband.setWidth(1)
+                        else:
+                            self.rubberband.addPoint(QgsPoint(x[i],y[i]))
+            else:
+                self.rubberband.addGeometry(QgsGeometry.fromPolygon([[QgsPoint(x[i],y[i]) for i in range(len(x))]]), None)
+            
+        else:
+            qgspoint = self.selafinlayer.xform.transform(QgsPoint(x,y))
+            self.rubberband.addPoint(qgspoint)
         
         
     #****************************************************************************************************

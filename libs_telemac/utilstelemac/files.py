@@ -55,8 +55,8 @@ from distutils.dep_util import newer
 import urllib2
 # ~~> dependencies towards other modules
 sys.path.append( path.join( path.dirname(sys.argv[0]), '..' ) ) # clever you !
-from utils.progressbar import ProgressBar
-from utils.messages import filterMessage
+from progressbar import ProgressBar
+from messages import filterMessage
 
 # _____                   __________________________________________
 # ____/ Global Variables /_________________________________________/

@@ -62,13 +62,22 @@ class UserColorRampDialog(QtGui.QDialog, FORM_CLASS):
         
         
     def populateDialog(self):
-        self.tableWidget.setRowCount(len(self.selafinlayer.lvl_contour)-1)
-        for i in range(len(self.selafinlayer.lvl_contour)-1):
-            colorwdg = qgis.gui.QgsColorButtonV2()
-            colorwdg.setColor(QtGui.QColor(self.selafinlayer.color_mpl_contour[i][0]*255,self.selafinlayer.color_mpl_contour[i][1]*255,self.selafinlayer.color_mpl_contour[i][2]*255))
-            self.tableWidget.setCellWidget(i,0,colorwdg)
-            self.tableWidget.setItem(i, 1, QtGui.QTableWidgetItem(str(self.selafinlayer.lvl_contour[i])))
-            self.tableWidget.setItem(i, 2, QtGui.QTableWidgetItem(str(self.selafinlayer.lvl_contour[i+1])))
+        if self.selafinlayer.propertiesdialog.tabWidget_lvl_vel.currentIndex() == 0 : #contour
+            self.tableWidget.setRowCount(len(self.selafinlayer.lvl_contour)-1)
+            for i in range(len(self.selafinlayer.lvl_contour)-1):
+                colorwdg = qgis.gui.QgsColorButtonV2()
+                colorwdg.setColor(QtGui.QColor(self.selafinlayer.color_mpl_contour[i][0]*255,self.selafinlayer.color_mpl_contour[i][1]*255,self.selafinlayer.color_mpl_contour[i][2]*255))
+                self.tableWidget.setCellWidget(i,0,colorwdg)
+                self.tableWidget.setItem(i, 1, QtGui.QTableWidgetItem(str(self.selafinlayer.lvl_contour[i])))
+                self.tableWidget.setItem(i, 2, QtGui.QTableWidgetItem(str(self.selafinlayer.lvl_contour[i+1])))
+        elif self.selafinlayer.propertiesdialog.tabWidget_lvl_vel.currentIndex() == 1 : #contour
+            self.tableWidget.setRowCount(len(self.selafinlayer.lvl_vel)-1)
+            for i in range(len(self.selafinlayer.lvl_vel)-1):
+                colorwdg = qgis.gui.QgsColorButtonV2()
+                colorwdg.setColor(QtGui.QColor(self.selafinlayer.color_mpl_vel[i][0]*255,self.selafinlayer.color_mpl_vel[i][1]*255,self.selafinlayer.color_mpl_vel[i][2]*255))
+                self.tableWidget.setCellWidget(i,0,colorwdg)
+                self.tableWidget.setItem(i, 1, QtGui.QTableWidgetItem(str(self.selafinlayer.lvl_vel[i])))
+                self.tableWidget.setItem(i, 2, QtGui.QTableWidgetItem(str(self.selafinlayer.lvl_vel[i+1])))
             
     def addrow(self):
         introw = self.tableWidget.currentRow()

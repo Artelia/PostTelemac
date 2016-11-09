@@ -68,6 +68,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.layer = layer1                             #the associated selafin layer
         self.qfiledlg = QtGui.QFileDialog(self)         #the filedialog for opening res file
         self.predeflevels=[]                            #the levels in classes.txt
+        self.lastscolorparams = None                    #used to save the color ramp state
         #self.threadcompare = None                       #The compare file class
         self.canvas = self.layer.canvas
         self.postutils = PostTelemacUtils(layer1)       #the utils class
@@ -127,13 +128,19 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         #levels and color ramp
         self.populatecombobox_lvl()
         self.populatecombobox_colorpalette()
-        self.comboBox_levelstype.currentIndexChanged.connect(self.colorRampChooserType)
-        self.comboBox_genericlevels.currentIndexChanged.connect(self.change_cmchoosergenericlvl)
         self.InitMapRamp()
-        self.comboBox_clrramp_preset.currentIndexChanged.connect(self.loadMapRamp)
-        self.pushButton_createsteplevel.clicked.connect(self.createstepclass)
-        self.comboBox_clrgame.currentIndexChanged.connect(self.color_palette_changed_contour)
-        self.pushButton_editcolorramp.clicked.connect(self.openColorRampDialog)
+        self.tabWidget_lvl_vel.currentChanged.connect(self.updateColorParams)
+        if False:
+            self.comboBox_levelstype.currentIndexChanged.connect(self.colorRampChooserType)
+            self.comboBox_clrgame.currentIndexChanged.connect(self.color_palette_changed_contour)
+            self.comboBox_genericlevels.currentIndexChanged.connect(self.change_cmchoosergenericlvl)
+            self.comboBox_clrramp_preset.currentIndexChanged.connect(self.loadMapRamp)
+            self.pushButton_createsteplevel.clicked.connect(self.createstepclass)
+            self.pushButton_editcolorramp.clicked.connect(self.openColorRampDialog)
+        else:
+            self.connectColorRampSignals()
+        
+
         #Velocity bpx
         #Velocity
         self.groupBox_schowvel.toggled.connect(self.setVelocityRendererParams)
@@ -144,8 +151,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.comboBox_viewer_arow.currentIndexChanged.connect(self.setVelocityRendererParams)
         self.doubleSpinBox_uniform_vel_arrow.valueChanged.connect(self.setVelocityRendererParams)
         #colorramp
-        self.comboBox_genericlevels_2.currentIndexChanged.connect(self.change_cmchoosergenericlvl_vel)
-        self.comboBox_clrgame_2.currentIndexChanged.connect(self.color_palette_changed_vel)
+        #self.comboBox_genericlevels_2.currentIndexChanged.connect(self.change_cmchoosergenericlvl_vel)
+        #self.comboBox_clrgame_2.currentIndexChanged.connect(self.color_palette_changed_vel)
         #Mesh box
         self.checkBox_showmesh.stateChanged.connect(self.layer.showMesh)
         #transparency box
@@ -180,6 +187,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.pushButton_limni.clicked.connect(self.postutils.computeGraphTemp)
         self.pushButton_graphtemp_pressepapier.clicked.connect(self.postutils.copygraphclipboard)
         
+        
         #Tools tab- flow graph
         self.figure2 = plt.figure(self.layer.instancecount+2)
         self.canvas2 = FigureCanvas(self.figure2)
@@ -196,6 +204,26 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.comboBox_3.currentIndexChanged.connect(self.mapToolChooser)
         self.pushButton_4.clicked.connect(self.postutils.copygraphclipboard)
         self.pushButton_flow.clicked.connect(self.postutils.computeFlow)
+        
+        #Tools tab- volume graph
+        self.figure3 = plt.figure(self.layer.instancecount+3)
+        self.canvas3 = FigureCanvas(self.figure3)
+        self.ax3 = self.figure3.add_subplot(111)
+        layout3 = QtGui.QVBoxLayout()
+        try:
+            self.toolbar3 = NavigationToolbar(self.canvas3, self.frame_7,True)
+            layout3.addWidget(self.toolbar3)
+        except Exception, e:
+            pass
+        layout3.addWidget(self.canvas3)
+        self.canvas3.draw()
+        self.frame_7.setLayout(layout3)
+        self.comboBox_4.currentIndexChanged.connect(self.mapToolChooser)
+        self.pushButton_5.clicked.connect(self.postutils.copygraphclipboard)
+        self.pushButton_volume.clicked.connect(self.postutils.computeVolume)
+        
+        
+        
         
         #Tools tab - compare
         self.pushButton_8.clicked.connect(self.initCompare)
@@ -523,14 +551,98 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             self.setTreeWidgetIndex(self.treeWidget_parameters,0,index-1)
         
     #Display tools - contour - color ramp things ***********************************************
+    
+    def updateColorParams(self,int1):
+        """
+        Remember state of color ramp when changing contour/velocity tabwidget
+        """
+        #save current color ramp state
+        if self.comboBox_levelstype.currentIndex() == 0 :
+            lastscolorparamstemp = [0, self.lineEdit_levelschoosen.text(), self.comboBox_clrgame.currentIndex(), self.comboBox_genericlevels.currentIndex()]
+        elif self.comboBox_levelstype.currentIndex() == 1 :
+            lastscolorparamstemp = [1, self.lineEdit_levelschoosen.text(), self.comboBox_clrgame2.currentIndex(), self.lineEdit_levelmin.text(), self.lineEdit_levelmax.text(),self.lineEdit_levelstep.text()]
+        elif self.comboBox_levelstype.currentIndex() == 2 :
+            lastscolorparamstemp = [2, self.lineEdit_levelschoosen.text(), self.comboBox_clrramp_preset.currentIndex()]
+            
+        
+        if self.lastscolorparams != None:
+            #update color ramp widget
+            self.disconnectColorRampSignals()
+            self.comboBox_levelstype.setCurrentIndex(self.lastscolorparams[0])
+            self.stackedWidget_colorramp.setCurrentIndex(self.lastscolorparams[0])
+            if self.lastscolorparams[0] == 0 :
+                self.lineEdit_levelschoosen.setText(self.lastscolorparams[1])
+                self.comboBox_clrgame.setCurrentIndex(self.lastscolorparams[2])
+                self.comboBox_genericlevels.setCurrentIndex(self.lastscolorparams[3])
+            elif self.lastscolorparams[0] == 1 :
+                self.lineEdit_levelschoosen.setText(self.lastscolorparams[1])
+                self.comboBox_clrgame2.setCurrentIndex(self.lastscolorparams[2])
+                self.lineEdit_levelmin.setText(self.lastscolorparams[3])
+                self.lineEdit_levelmax.setText(self.lastscolorparams[4])
+                self.lineEdit_levelstep.setText(self.lastscolorparams[5])
+            elif self.lastscolorparams[0] == 2 :
+                self.lineEdit_levelschoosen.setText(self.lastscolorparams[1])
+                self.comboBox_clrramp_preset.setCurrentIndex(self.lastscolorparams[2])
+            self.connectColorRampSignals()
+            
+        #update name
+        if int1 == 0 :
+            self.groupBox_colorramp.setTitle("Color ramp - contour")
+        elif int1 == 1 :
+            self.groupBox_colorramp.setTitle("Color ramp - velocity")
+        
+        #update lastscolorparams
+        #self.lastscolorparams = [classes, text,  #1 : color gradient, generic levels, #2 : color gradient, min, max, step, #3 : preset color ramp]
+        self.lastscolorparams = lastscolorparamstemp
+        
+    
+    def connectColorRampSignals(self):
+        self.comboBox_levelstype.currentIndexChanged.connect(self.stackedWidget_colorramp.setCurrentIndex)
+        self.comboBox_levelstype.currentIndexChanged.connect(self.colorRampChooserType)
+        #1
+        #self.comboBox_clrgame.currentIndexChanged.connect(self.color_palette_changed_contour)
+        self.comboBox_clrgame.currentIndexChanged.connect(self.color_palette_changed)
+        self.comboBox_clrgame.currentIndexChanged.connect(self.comboBox_clrgame2.setCurrentIndex)
+        self.comboBox_genericlevels.currentIndexChanged.connect(self.change_cmchoosergenericlvl)
+        #2
+        self.comboBox_clrgame2.currentIndexChanged.connect(self.comboBox_clrgame.setCurrentIndex)
+        self.pushButton_createsteplevel.clicked.connect(self.createstepclass)
+        #3
+        self.comboBox_clrramp_preset.currentIndexChanged.connect(self.loadMapRamp)
+        #all
+        self.pushButton_editcolorramp.clicked.connect(self.openColorRampDialog)
+        
+    def disconnectColorRampSignals(self):
+        self.comboBox_levelstype.currentIndexChanged.disconnect(self.stackedWidget_colorramp.setCurrentIndex)
+        self.comboBox_levelstype.currentIndexChanged.disconnect(self.colorRampChooserType)
+        #1
+        #self.comboBox_clrgame.currentIndexChanged.disconnect(self.color_palette_changed_contour)
+        self.comboBox_clrgame.currentIndexChanged.disconnect(self.color_palette_changed)
+        self.comboBox_clrgame.currentIndexChanged.disconnect(self.comboBox_clrgame2.setCurrentIndex)
+        self.comboBox_genericlevels.currentIndexChanged.disconnect(self.change_cmchoosergenericlvl)
+        #2
+        self.comboBox_clrgame2.currentIndexChanged.disconnect(self.comboBox_clrgame.setCurrentIndex)
+        self.pushButton_createsteplevel.clicked.disconnect(self.createstepclass)
+        #3
+        self.comboBox_clrramp_preset.currentIndexChanged.disconnect(self.loadMapRamp)
+        #all
+        self.pushButton_editcolorramp.clicked.disconnect(self.openColorRampDialog)
 
+        
+        
     def colorRampChooserType(self,item):
         """
         main chooser of color ramp type (predef, step, user defined)
         """
         if item == 0:
-            self.color_palette_changed_contour(0)
-            self.layer.change_lvl_contour(self.predeflevels[self.comboBox_genericlevels.currentIndex()][1])
+            if self.tabWidget_lvl_vel.currentIndex() == 0 :#contour
+                #self.color_palette_changed_contour(0)
+                self.color_palette_changed(0)
+                self.layer.change_lvl_contour(self.predeflevels[self.comboBox_genericlevels.currentIndex()][1])
+            elif self.tabWidget_lvl_vel.currentIndex() == 1 :#velocity
+                #self.color_palette_changed_vel(0)
+                self.color_palette_changed(0)
+                self.layer.change_lvl_vel(self.predeflevels[self.comboBox_genericlevels.currentIndex()][1])
         elif item == 1:
             pass
             #self.stackedWidget_colorramp.setCurrentIndex(1)
@@ -538,12 +650,17 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             self.loadMapRamp(self.comboBox_clrramp_preset.currentText())
         else:
             pass
+
+        
             
     def change_cmchoosergenericlvl(self):
         """
         change levels of selafin layer when generics levels are changed
         """
-        self.layer.change_lvl_contour(self.predeflevels[self.comboBox_genericlevels.currentIndex()][1])
+        if self.tabWidget_lvl_vel.currentIndex() == 0 :#contour
+            self.layer.change_lvl_contour(self.predeflevels[self.comboBox_genericlevels.currentIndex()][1])
+        elif self.tabWidget_lvl_vel.currentIndex() == 1 :#velocity
+            self.layer.change_lvl_vel(self.predeflevels[self.comboBox_genericlevels.currentIndex()][1])
             
             
     def createstepclass(self):
@@ -577,17 +694,38 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         while temp<=zmax1:
             temp=round(temp+pdn,precision)
             levels.append(temp)
-        self.layer.change_lvl_contour(levels)
-        
-    def color_palette_changed_contour(self,int):
+        if self.tabWidget_lvl_vel.currentIndex() == 0 :#contour
+            self.layer.change_lvl_contour(levels)
+        elif self.tabWidget_lvl_vel.currentIndex() == 1 :#velocity
+            self.layer.change_lvl_vel(levels)
+            
+    def color_palette_changed(self,int1 = None):
         """
         change color map of selafin layer (matplotlib's style) when color palette combobox is changed
         """
         temp1 = QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame.currentText())
+        if self.tabWidget_lvl_vel.currentIndex() == 0 :#contour
+            self.layer.cmap_mpl_contour_raw = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
+            self.layer.change_cm_contour(self.layer.cmap_mpl_contour_raw)
+        elif self.tabWidget_lvl_vel.currentIndex() == 1 :#velocity
+            self.layer.cmap_mpl_vel_raw = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
+            #cmap_vel = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
+            self.layer.change_cm_vel(self.layer.cmap_mpl_vel_raw)
+    
+    """
+    def color_palette_changed_contour(self,int):
+        temp1 = QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame.currentText())
         self.layer.cmap_mpl_contour_raw = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
         self.layer.change_cm_contour(self.layer.cmap_mpl_contour_raw)
 
-
+    def color_palette_changed_vel(self,int):
+        #temp1 = QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame_2.currentText())
+        temp1 = QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame.currentText())
+        self.layer.cmap_mpl_vel_raw = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
+        #cmap_vel = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
+        self.layer.change_cm_vel(self.layer.cmap_mpl_vel_raw)
+    """
+    
     def openColorRampDialog(self):
         """
         open dialog for user defined color ramp and update color ramp
@@ -601,8 +739,12 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         
         colors,levels = self.dlg_color.dialogIsFinished()
         if colors and levels:
-            self.layer.cmap_mpl_contour_raw = self.layer.colormanager.arrayStepRGBAToCmap(colors)
-            self.layer.change_lvl_contour(levels)
+            if self.tabWidget_lvl_vel.currentIndex() == 0 :#contour
+                self.layer.cmap_mpl_contour_raw = self.layer.colormanager.arrayStepRGBAToCmap(colors)
+                self.layer.change_lvl_contour(levels)
+            elif self.tabWidget_lvl_vel.currentIndex() == 1 :#velocity
+                self.layer.cmap_mpl_vel_raw = self.layer.colormanager.arrayStepRGBAToCmap(colors)
+                self.layer.change_lvl_vel(levels)
 
     def saveMapRamp(self):
         """
@@ -627,7 +769,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             self.dlg_color.close()
             self.InitMapRamp()
             
-        
+            
+            
     def loadMapRamp(self,name,fullpath = False):
         """
         load clr file and apply it
@@ -642,10 +785,16 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             path = os.path.join(self.posttelemacdir,str(name)+'.clr')
         if name : 
             cmap, levels = self.layer.colormanager.readClrColorRamp(path)
+            
             if cmap and levels:
                 #self.layer.cmap = cmap
-                self.layer.cmap_mpl_contour_raw = cmap
-                self.layer.change_lvl_contour(levels)
+                if self.tabWidget_lvl_vel.currentIndex() == 0 :#contour
+                    self.layer.cmap_mpl_contour_raw = cmap
+                    self.layer.change_lvl_contour(levels)
+                elif self.tabWidget_lvl_vel.currentIndex() == 1 :#veolicty
+                    self.layer.cmap_mpl_vel_raw = cmap
+                    self.layer.change_lvl_vel(levels)
+        
 
             
     def InitMapRamp(self):
@@ -701,21 +850,14 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
                                                 'norm' : -self.doubleSpinBox_uniform_vel_arrow.value()}
         self.layer.showVelocity()
             
-    def color_palette_changed_vel(self,int):
-        """
-        change color map of selafin layer (matplotlib's style) when color palette combobox is changed
-        """
-        temp1 = QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame_2.currentText())
-        self.layer.cmap_mpl_vel_raw = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
-        #cmap_vel = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
-        self.layer.change_cm_vel(self.layer.cmap_mpl_vel_raw)
-        
+
+    """
     def change_cmchoosergenericlvl_vel(self):
-        """
-        change levels of selafin layer when generics levels are changed
-        """
-        self.layer.change_lvl_vel(self.predeflevels[self.comboBox_genericlevels_2.currentIndex()][1])
         
+        change levels of selafin layer when generics levels are changed
+        
+        self.layer.change_lvl_vel(self.predeflevels[self.comboBox_genericlevels_2.currentIndex()][1])
+    """
         
 
     #*********************************************************************************
@@ -781,7 +923,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
                 self.predeflevels.append([line.split("=")[0],tabtemp])
         for i in range(len(self.predeflevels)):
             self.comboBox_genericlevels.addItem(self.predeflevels[i][0])
-            self.comboBox_genericlevels_2.addItem(self.predeflevels[i][0])
+            #self.comboBox_genericlevels_2.addItem(self.predeflevels[i][0])
 
     def populatecombobox_time(self):
         """
@@ -831,7 +973,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             ramp = style.colorRamp(rampName)
             icon = QgsSymbolLayerV2Utils.colorRampPreviewIcon(ramp, rampIconSize)
             self.comboBox_clrgame.addItem(icon, rampName)
-            self.comboBox_clrgame_2.addItem(icon, rampName)
+            #self.comboBox_clrgame_2.addItem(icon, rampName)
             self.comboBox_clrgame2.addItem(icon, rampName)
             
             
@@ -863,14 +1005,15 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.treewidgettoolsindextab = [[[-1,0],1, 'Values'],
                                         [[-1,1],2,'Temporal graph'],
                                         [[-1,2],3,'Spatial graph'],
-                                        [[-1,3],4, 'Flow graph'],
-                                        [[-1,4],5, 'Compare'],
-                                        [[-1,5],6, 'Movie'],
-                                        [[-1,6],7, 'Max res' ] ,
-                                        [[7,0],8,'2shape contour' ],
-                                        [[7,1],9,'2shape mesh' ],
-                                        [[7,2],10,'2shape point' ],
-                                        [[8,0],11,'Raster creation']]
+                                        [[-1,3],4,'Volume graph'],
+                                        [[-1,4],5, 'Flow graph'],
+                                        [[-1,5],6, 'Compare'],
+                                        [[-1,6],7, 'Movie'],
+                                        [[-1,7],8, 'Max res' ] ,
+                                        [[7,0],9,'2shape contour' ],
+                                        [[7,1],10,'2shape mesh' ],
+                                        [[7,2],11,'2shape point' ],
+                                        [[8,0],12,'Raster creation']]
 
     
     def changepannelutils(self):
@@ -925,6 +1068,18 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             self.clickTool.canvasClicked.connect(self.postutils.computeGraphTemp)
             
         elif (len(self.treeWidget_utils.selectedItems())>0 
+                  and itemname == 'Volume graph' 
+                  and self.tabWidget.currentIndex() == 1
+                  and (self.comboBox_4.currentIndex() in [0] )):
+            """Click on flow computation - temporary polyline"""
+            if self.postutils.rubberband:
+                self.postutils.rubberband.reset(QGis.Point)
+            try : self.clickTool.canvasClicked.disconnect()
+            except Exception, e :  pass
+            self.pushButton_volume.setEnabled(False)
+            self.postutils.computeVolume()
+            
+        elif (len(self.treeWidget_utils.selectedItems())>0 
                   and itemname == 'Flow graph' 
                   and self.tabWidget.currentIndex() == 1
                   and (self.comboBox_3.currentIndex() in [0] )):
@@ -939,6 +1094,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             """else..."""
             self.pushButton_limni.setEnabled(True)
             self.pushButton_flow.setEnabled(True)
+            self.pushButton_volume.setEnabled(True)
             try: self.canvas.setMapTool(self.maptooloriginal)
             except Exception, e : pass
 

@@ -75,6 +75,7 @@ from scipy.spatial import cKDTree
 from matplotlib.tri import Triangulation
 # ~~> dependencies towards other modules
 # ~~> dependencies towards other pytel/modules
+sys.path.append( path.join( path.dirname(sys.argv[0]), '..' ) ) # clever you !
 from utilstelemac.progressbar import ProgressBar
 from utilstelemac.files import getFileContent,putFileContent
 
