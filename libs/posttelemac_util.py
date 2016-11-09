@@ -534,18 +534,10 @@ class PostTelemacUtils():
     def addPointRubberband(self,x,y):
         
         if isinstance(x,list):
-            if False:
-                line=[]
-                for i in range(len(x)):
-                        if i == 0 :
-                            self.rubberband.setWidth(0)
-                            self.rubberband.addPoint(QgsPoint(x[i],y[i]))
-                            self.rubberband.setWidth(1)
-                        else:
-                            self.rubberband.addPoint(QgsPoint(x[i],y[i]))
-            else:
-                self.rubberband.addGeometry(QgsGeometry.fromPolygon([[QgsPoint(x[i],y[i]) for i in range(len(x))]]), None)
-            
+            points = []
+            for i in range(len(x)):
+                points.append(self.selafinlayer.xform.transform(QgsPoint(x[i],y[i])))
+            self.rubberband.addGeometry(QgsGeometry.fromPolygon([points]), None)
         else:
             qgspoint = self.selafinlayer.xform.transform(QgsPoint(x,y))
             self.rubberband.addPoint(qgspoint)

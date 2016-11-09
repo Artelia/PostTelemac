@@ -21,6 +21,7 @@ email=patrice.verchere@arteliagroup.com
 
 # Uncomment the following line and add your changelog:
 changelog= 
+    0.1.12 : bug fix + volume computation
     0.1.11 : bug fix (name with no extension, automatic velocity computation )
     0.1.10 : bug fix with movie and compare
     0.1.9 : Play button

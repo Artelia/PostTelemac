@@ -119,6 +119,7 @@ class computeVolume(QtCore.QObject):
         for goodnum in goodnums:
             if QgsGeometry.fromPolygon([[QgsPoint(xMesh[i],yMesh[i]) for i in mesh[goodnum]    ]]).within(self.qgspolygone):
                 goodnums2.append(goodnum)
+                
         
         for goodnum in goodnums2:
             xtoprint = [xMesh[i] for i in mesh[goodnum]  ]
