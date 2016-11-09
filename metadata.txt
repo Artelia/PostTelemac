@@ -11,7 +11,7 @@ name=PostTelemac
 about= Post treatment of open Telemac results (and Anuga as experimental). Requires matplotlib, shapely, numpy, scipy and networkx libraries.
 qgisMinimumVersion=2.10.0
 description=Post Treatment for Telemac ( and Anuga - experimental)
-version=0.1.11
+version=0.1.12
 author=Artelia Eau et Environnement
 email=patrice.verchere@arteliagroup.com
 

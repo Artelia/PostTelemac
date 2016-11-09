@@ -1010,10 +1010,10 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
                                         [[-1,5],6, 'Compare'],
                                         [[-1,6],7, 'Movie'],
                                         [[-1,7],8, 'Max res' ] ,
-                                        [[7,0],9,'2shape contour' ],
-                                        [[7,1],10,'2shape mesh' ],
-                                        [[7,2],11,'2shape point' ],
-                                        [[8,0],12,'Raster creation']]
+                                        [[8,0],9,'2shape contour' ],
+                                        [[8,1],10,'2shape mesh' ],
+                                        [[8,2],11,'2shape point' ],
+                                        [[9,0],12,'Raster creation']]
 
     
     def changepannelutils(self):
