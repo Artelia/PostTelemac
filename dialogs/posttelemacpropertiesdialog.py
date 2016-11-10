@@ -159,6 +159,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.horizontalSlider_transp.valueChanged.connect(self.layer.changeAlpha)
         self.horizontalSlider_transp.sliderPressed.connect(self.sliderPressed)
         self.horizontalSlider_transp.sliderReleased.connect(self.sliderReleased)
+        #progressbar
+        self.progressBar.reset()
         
         #********* ********** ******************************************
         #Tools tab  *****************************************************

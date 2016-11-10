@@ -392,6 +392,7 @@ class PostTelemacUtils():
         self.initclass.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
         self.initclass.error.connect(self.selafinlayer.propertiesdialog.errorMessage)
         self.initclass.emitpoint.connect(self.addPointRubberband)
+        self.initclass.emitprogressbar.connect(self.updateProgressBar)
         self.initclass.finished1.connect(self.workerFinished)
         
         if self.graphtodo ==0:
@@ -496,6 +497,8 @@ class PostTelemacUtils():
             self.selafinlayer.propertiesdialog.normalMessage('Computing volume finished')
             if self.selafinlayer.propertiesdialog.comboBox_4.currentIndex() != 0:
                 self.selafinlayer.propertiesdialog.pushButton_volume.setEnabled(True)
+                
+        self.selafinlayer.propertiesdialog.progressBar.reset()
             
     
     def copygraphclipboard(self):
@@ -541,6 +544,9 @@ class PostTelemacUtils():
         else:
             qgspoint = self.selafinlayer.xform.transform(QgsPoint(x,y))
             self.rubberband.addPoint(qgspoint)
+            
+    def updateProgressBar(self,float1):
+        self.selafinlayer.propertiesdialog.progressBar.setValue(int(float1))
         
         
     #****************************************************************************************************

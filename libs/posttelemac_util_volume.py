@@ -142,8 +142,8 @@ class computeVolume(QtCore.QObject):
         
         
         for i, indextriangle in enumerate(indextriangles):
-            if i%10 == 0 :
-                self.status.emit('computing triangle ' + str(indextriangle) + ' - ' + str(i) + '/' + str(len(indextriangles)))
+            
+            self.emitprogressbar.emit(float(float(i)/float(len(indextriangles))*100.0))
                 
             #surface calculus
             p1 = np.array( [ xMesh[mesh[indextriangle,0]], yMesh[mesh[indextriangle,0]] ] )
@@ -181,7 +181,7 @@ class computeVolume(QtCore.QObject):
     killed = QtCore.pyqtSignal()
     finished = QtCore.pyqtSignal(list,list,list)
     emitpoint = QtCore.pyqtSignal(list,list)
-    
+    emitprogressbar = QtCore.pyqtSignal(float)
 
         
 
@@ -210,6 +210,7 @@ class InitComputeVolume(QtCore.QObject):
         self.worker.status.connect(self.writeOutput)
         self.worker.emitpoint.connect(self.emitPoint)
         self.worker.error.connect(self.raiseError)
+        self.worker.emitprogressbar.connect(self.updateProgressBar)
         self.worker.finished.connect(self.workerFinished)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
@@ -235,12 +236,15 @@ class InitComputeVolume(QtCore.QObject):
 
     def emitPoint(self,x,y):
         self.emitpoint.emit(x,y)
+        
+    def updateProgressBar(self,float1):
+        self.emitprogressbar.emit(float1)
             
     status = QtCore.pyqtSignal(str)
     error = QtCore.pyqtSignal(str)
     finished1 = QtCore.pyqtSignal(list,list,list)
     emitpoint = QtCore.pyqtSignal(list,list)
-    
+    emitprogressbar = QtCore.pyqtSignal(float)
     
 class VolumeMapTool(qgis.gui.QgsMapTool):
 

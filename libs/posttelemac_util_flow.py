@@ -66,12 +66,17 @@ class computeFlow(QtCore.QObject):
                 if isinstance(temp3,shapely.geometry.linestring.LineString):
                     temp3 = [temp3]
                 
-                for line in temp3:
-                    linetemp = np.array([[point[0],point[1]] for point in line.coords ])
-                    resulttemp=[]
+
                     
-                    if METHOD == 0:         #Method0 : shortest path and vector computation
-                        flow = None
+                if METHOD == 0:         #Method0 : shortest path and vector computation
+                
+                    shortests = []       #list of shortests path
+                    
+                    for line in temp3:
+                        linetemp = np.array([[point[0],point[1]] for point in line.coords ])
+                        resulttemp=[]
+                
+                        #find shortests path
                         for points in range(len(linetemp)-1):
                             try:
                                 triangle = self.selafinlayer.hydrauparser.trifind.__call__(linetemp[points][0],linetemp[points][1])
@@ -82,49 +87,62 @@ class computeFlow(QtCore.QObject):
                                     enumpointfin = self.getNearestPointEdge(linetemp[points + 1][0],linetemp[points + 1][1],triangle)
 
                                 #shortest = nx.shortest_path(G, enumpointdebut, enumpointfin)
-                                shortest = self.selafinlayer.hydrauparser.getShortestPath(enumpointdebut, enumpointfin)
+                                shortests.append( self.selafinlayer.hydrauparser.getShortestPath(enumpointdebut, enumpointfin) )
                                 
-                                for i,elem in enumerate(shortest):
-                                    try:
-                                        if i==0:    #init
-                                            try:
-                                                h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.hydrauparser.parametres)[0][0])
-                                            except Exception , e :
-                                                self.status.emit('method 011 : ' + str(e))
-                                            uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.hydrauparser.parametres)[0][0])
-                                            uv2 = np.array([[value,0.0] for value in uv2])
-                                            vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.hydrauparser.parametres)[0][0])
-                                            vv2 = np.array([[0.0,value] for value in vv2])
-                                            v2vect = uv2 + vv2
-                                            #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
-                                            xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
-                                        else:
-                                            h1 = h2
-                                            v1vect = v2vect
-                                            xy1 = xy2
-                                            h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.hydrauparser.parametres)[0][0])
-                                            uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.hydrauparser.parametres)[0][0])
-                                            uv2 = np.array([[value,0.0] for value in uv2])
-                                            vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.hydrauparser.parametres)[0][0])
-                                            vv2 = np.array([[0.0,value] for value in vv2])
-                                            v2vect = uv2 + vv2
-                                            #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
-                                            xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
-                                            if flow != None:
-                                                flow = flow + self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
-                                            else:
-                                                flow = self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
-                                    except Exception , e :
-                                        self.status.emit('method 01 : ' + str(e))
-                                    x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0]
-                                    self.emitpoint.emit(x,y)
                             except Exception , e :
                                 self.status.emit('method 0 : ' + str(e))
-                        result.append([line,flow])
+                        
+                    totalpointsonshortest = len(sum(shortests,[]))
+                    compteur1 = 0
                     
+                    for shortest in shortests:
+                        flow = None
+                        for i,elem in enumerate(shortest):
+                            self.emitprogressbar.emit(float(compteur1 + i)/float(totalpointsonshortest-1)*100.0)
+                            try:
+                                if i==0:    #init
+                                    try:
+                                        h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                    except Exception , e :
+                                        self.status.emit('method 011 : ' + str(e))
+                                    uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                    uv2 = np.array([[value,0.0] for value in uv2])
+                                    vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                    vv2 = np.array([[0.0,value] for value in vv2])
+                                    v2vect = uv2 + vv2
+                                    #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
+                                    xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
+                                else:
+                                    h1 = h2
+                                    v1vect = v2vect
+                                    xy1 = xy2
+                                    h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                    uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                    uv2 = np.array([[value,0.0] for value in uv2])
+                                    vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                    vv2 = np.array([[0.0,value] for value in vv2])
+                                    v2vect = uv2 + vv2
+                                    #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
+                                    xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
+                                    if flow != None:
+                                        flow = flow + self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
+                                    else:
+                                        flow = self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
+                            except Exception , e :
+                                self.status.emit('method 01 : ' + str(e))
+                            x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0]
+                            self.emitpoint.emit(x,y)
+
+                            #result.append([line,flow])
+                        compteur1 += len(shortest)
+                        result.append([None,flow])
                     
 
-                    if METHOD == 1 :
+                if METHOD == 1 :
+                    for line in temp3:
+                        linetemp = np.array([[point[0],point[1]] for point in line.coords ])
+                        resulttemp=[]
+                
                         flow=None
                         temp_edges,temp_point,temp_bary = self.getCalcPointsSlice(line)
                         
@@ -185,7 +203,9 @@ class computeFlow(QtCore.QObject):
                                 flow = result[i][1]
                             else:
                                 flow = flow + result[i][1]
-
+                
+                #self.status.emit(flow.tolist())
+                
                 #list1.append( self.selafinlayer.slf.tags["times"].tolist() )
                 list1.append( self.selafinlayer.hydrauparser.getTimes().tolist() )
                 list2.append( flow.tolist() )
@@ -203,6 +223,7 @@ class computeFlow(QtCore.QObject):
     killed = QtCore.pyqtSignal()
     finished = QtCore.pyqtSignal(list,list,list)
     emitpoint = QtCore.pyqtSignal(float,float)
+    emitprogressbar = QtCore.pyqtSignal(float)
     
     
          
@@ -472,6 +493,7 @@ class InitComputeFlow(QtCore.QObject):
         self.worker.status.connect(self.writeOutput)
         self.worker.emitpoint.connect(self.emitPoint)
         self.worker.error.connect(self.raiseError)
+        self.worker.emitprogressbar.connect(self.updateProgressBar)
         self.worker.finished.connect(self.workerFinished)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
@@ -497,11 +519,15 @@ class InitComputeFlow(QtCore.QObject):
 
     def emitPoint(self,x,y):
         self.emitpoint.emit(x,y)
+        
+    def updateProgressBar(self,float1):
+        self.emitprogressbar.emit(float1)
             
     status = QtCore.pyqtSignal(str)
     error = QtCore.pyqtSignal(str)
     finished1 = QtCore.pyqtSignal(list,list,list)
     emitpoint = QtCore.pyqtSignal(float,float)
+    emitprogressbar = QtCore.pyqtSignal(float)
     
     
 class FlowMapTool(qgis.gui.QgsMapTool):

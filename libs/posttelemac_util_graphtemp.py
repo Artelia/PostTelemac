@@ -75,6 +75,7 @@ class graphTemp(QtCore.QObject):
     killed = QtCore.pyqtSignal()
     finished = QtCore.pyqtSignal(list,list)
     emitpoint = QtCore.pyqtSignal(float,float)
+    emitprogressbar = QtCore.pyqtSignal(float)
 
       
 
@@ -108,6 +109,7 @@ class InitGraphTemp(QtCore.QObject):
         self.worker.status.connect(self.writeOutput)
         self.worker.error.connect(self.raiseError)
         self.worker.emitpoint.connect(self.emitPoint)
+        self.worker.emitprogressbar.connect(self.updateProgressBar)
         self.worker.finished.connect(self.workerFinished)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
@@ -133,6 +135,9 @@ class InitGraphTemp(QtCore.QObject):
         
     def emitPoint(self,x,y):
         self.emitpoint.emit(x,y)
+        
+    def updateProgressBar(self,float1):
+        self.emitprogressbar.emit(float1)
 
         
             
@@ -140,6 +145,6 @@ class InitGraphTemp(QtCore.QObject):
     error = QtCore.pyqtSignal(str)
     finished1 = QtCore.pyqtSignal(list,list)
     emitpoint = QtCore.pyqtSignal(float,float)
-    
+    emitprogressbar = QtCore.pyqtSignal(float)
     
     

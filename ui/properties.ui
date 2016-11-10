@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>589</width>
-    <height>685</height>
+    <width>514</width>
+    <height>689</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,7 +19,13 @@
   <property name="minimumSize">
    <size>
     <width>514</width>
-    <height>685</height>
+    <height>689</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>9999</width>
+    <height>9999</height>
    </size>
   </property>
   <property name="floating">
@@ -41,17 +47,23 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout_4">
+   <property name="maximumSize">
+    <size>
+     <width>9999</width>
+     <height>9999</height>
+    </size>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout_14">
     <item>
      <widget class="QSplitter" name="splitter">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
       </property>
       <property name="orientation">
        <enum>Qt::Vertical</enum>
+      </property>
+      <property name="opaqueResize">
+       <bool>true</bool>
       </property>
       <property name="childrenCollapsible">
        <bool>true</bool>
@@ -118,7 +130,7 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="../resources.qrc">
+           <iconset>
             <normaloff>:/plugins/PostTelemac/icons/Open_48x48.png</normaloff>:/plugins/PostTelemac/icons/Open_48x48.png</iconset>
           </property>
           <property name="iconSize">
@@ -204,7 +216,7 @@ translation</string>
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="../resources.qrc">
+           <iconset>
             <normaloff>:/plugins/PostTelemac/icons/Globe_48x48.png</normaloff>:/plugins/PostTelemac/icons/Globe_48x48.png</iconset>
           </property>
           <property name="iconSize">
@@ -388,7 +400,7 @@ translation</string>
                   <string/>
                  </property>
                  <property name="icon">
-                  <iconset resource="../resources.qrc">
+                  <iconset>
                    <normaloff>:/plugins/PostTelemac/icons/play/play.png</normaloff>:/plugins/PostTelemac/icons/play/play.png</iconset>
                  </property>
                 </widget>
@@ -611,7 +623,7 @@ translation</string>
                          <string/>
                         </property>
                         <property name="icon">
-                         <iconset resource="../resources.qrc">
+                         <iconset>
                           <normaloff>:/plugins/PostTelemac/icons/Add_48x48.png</normaloff>:/plugins/PostTelemac/icons/Add_48x48.png</iconset>
                         </property>
                        </widget>
@@ -625,7 +637,7 @@ translation</string>
                          <string/>
                         </property>
                         <property name="icon">
-                         <iconset resource="../resources.qrc">
+                         <iconset>
                           <normaloff>:/plugins/PostTelemac/icons/Settings_48x48.png</normaloff>:/plugins/PostTelemac/icons/Settings_48x48.png</iconset>
                         </property>
                        </widget>
@@ -639,7 +651,7 @@ translation</string>
                          <string/>
                         </property>
                         <property name="icon">
-                         <iconset resource="../resources.qrc">
+                         <iconset>
                           <normaloff>:/plugins/PostTelemac/icons/Delete_48x48.png</normaloff>:/plugins/PostTelemac/icons/Delete_48x48.png</iconset>
                         </property>
                        </widget>
@@ -1170,7 +1182,7 @@ translation</string>
                   <string/>
                  </property>
                  <property name="icon">
-                  <iconset resource="../resources.qrc">
+                  <iconset>
                    <normaloff>:/plugins/PostTelemac/icons/Settings_48x48.png</normaloff>:/plugins/PostTelemac/icons/Settings_48x48.png</iconset>
                  </property>
                 </widget>
@@ -1466,7 +1478,7 @@ translation</string>
               <string>Values</string>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Information_48x48.png</normaloff>:/plugins/PostTelemac/icons/tools/Information_48x48.png</iconset>
              </property>
              <property name="flags">
@@ -1479,7 +1491,7 @@ translation</string>
 graph</string>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Line_Graph_48x48_time.png</normaloff>:/plugins/PostTelemac/icons/tools/Line_Graph_48x48_time.png</iconset>
              </property>
              <property name="flags">
@@ -1492,7 +1504,7 @@ graph</string>
 graph</string>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Line_Graph_48x48_spatial.png</normaloff>:/plugins/PostTelemac/icons/tools/Line_Graph_48x48_spatial.png</iconset>
              </property>
             </item>
@@ -1501,7 +1513,7 @@ graph</string>
               <string>Volume computation</string>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Line_Graph_48x48.png</normaloff>:/plugins/PostTelemac/icons/tools/Line_Graph_48x48.png</iconset>
              </property>
             </item>
@@ -1511,7 +1523,7 @@ graph</string>
 computation</string>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Line_Graph_48x48_flow.png</normaloff>:/plugins/PostTelemac/icons/tools/Line_Graph_48x48_flow.png</iconset>
              </property>
              <property name="flags">
@@ -1523,7 +1535,7 @@ computation</string>
               <string>Compare</string>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Files_Copy.png</normaloff>:/plugins/PostTelemac/icons/tools/Files_Copy.png</iconset>
              </property>
              <property name="flags">
@@ -1538,7 +1550,7 @@ computation</string>
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Video_48x48.png</normaloff>:/plugins/PostTelemac/icons/tools/Video_48x48.png</iconset>
              </property>
              <property name="flags">
@@ -1551,7 +1563,7 @@ computation</string>
 max .res</string>
              </property>
              <property name="icon">
-              <iconset resource="../resources.qrc">
+              <iconset>
                <normaloff>:/plugins/PostTelemac/icons/tools/Wizard_48x48.png</normaloff>:/plugins/PostTelemac/icons/tools/Wizard_48x48.png</iconset>
              </property>
             </item>
@@ -1567,7 +1579,7 @@ max .res</string>
                <string>Contour</string>
               </property>
               <property name="icon">
-               <iconset resource="../resources.qrc">
+               <iconset>
                 <normaloff>:/plugins/PostTelemac/icons/tools/layer_shaded_relief_add.png</normaloff>:/plugins/PostTelemac/icons/tools/layer_shaded_relief_add.png</iconset>
               </property>
               <property name="flags">
@@ -1579,7 +1591,7 @@ max .res</string>
                <string>Mesh</string>
               </property>
               <property name="icon">
-               <iconset resource="../resources.qrc">
+               <iconset>
                 <normaloff>:/plugins/PostTelemac/icons/tools/layer_add_mesh.bmp</normaloff>:/plugins/PostTelemac/icons/tools/layer_add_mesh.bmp</iconset>
               </property>
               <property name="flags">
@@ -1591,7 +1603,7 @@ max .res</string>
                <string>Points</string>
               </property>
               <property name="icon">
-               <iconset resource="../resources.qrc">
+               <iconset>
                 <normaloff>:/plugins/PostTelemac/icons/tools/layer_add_points.bmp</normaloff>:/plugins/PostTelemac/icons/tools/layer_add_points.bmp</iconset>
               </property>
               <property name="flags">
@@ -1608,7 +1620,7 @@ max .res</string>
                <string>Raster creation</string>
               </property>
               <property name="icon">
-               <iconset resource="../resources.qrc">
+               <iconset>
                 <normaloff>:/plugins/PostTelemac/icons/tools/layer_raster_add.png</normaloff>:/plugins/PostTelemac/icons/tools/layer_raster_add.png</iconset>
               </property>
              </item>
@@ -1899,7 +1911,7 @@ max .res</string>
                     <string>Calcul</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="../resources.qrc">
+                    <iconset>
                      <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                    </property>
                   </widget>
@@ -2030,7 +2042,7 @@ max .res</string>
                     <string>Volume computation</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="../resources.qrc">
+                    <iconset>
                      <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                    </property>
                   </widget>
@@ -2112,6 +2124,49 @@ max .res</string>
                 </layout>
                </widget>
               </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox_23">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="title">
+                 <string/>
+                </property>
+                <layout class="QGridLayout" name="gridLayout_29">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_31">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="text">
+                    <string>Method</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QComboBox" name="comboBox_flowmethod_2">
+                   <item>
+                    <property name="text">
+                     <string>Mesh based</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
              </layout>
             </widget>
             <widget class="QWidget" name="page_flow">
@@ -2181,7 +2236,7 @@ max .res</string>
                     <string>Flow computation</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="../resources.qrc">
+                    <iconset>
                      <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                    </property>
                   </widget>
@@ -2359,7 +2414,7 @@ max .res</string>
                     <string/>
                    </property>
                    <property name="icon">
-                    <iconset resource="../resources.qrc">
+                    <iconset>
                      <normaloff>:/plugins/PostTelemac/icons/Open_48x48.png</normaloff>:/plugins/PostTelemac/icons/Open_48x48.png</iconset>
                    </property>
                    <property name="iconSize">
@@ -2635,7 +2690,7 @@ max .res</string>
                  <string>Do movie (DO NOT MODIFY ANYTHING IN QGIS !)</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../resources.qrc">
+                 <iconset>
                   <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                 </property>
                </widget>
@@ -2696,7 +2751,7 @@ max .res</string>
                  <string>File _max.res creation</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../resources.qrc">
+                 <iconset>
                   <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                 </property>
                </widget>
@@ -2817,7 +2872,7 @@ max .res</string>
                  <string>Generate .shp file</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../resources.qrc">
+                 <iconset>
                   <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                 </property>
                </widget>
@@ -2938,7 +2993,7 @@ max .res</string>
                  <string>Generate mesh</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../resources.qrc">
+                 <iconset>
                   <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                 </property>
                </widget>
@@ -3007,7 +3062,7 @@ max .res</string>
                  <string>Create points</string>
                 </property>
                 <property name="icon">
-                 <iconset resource="../resources.qrc">
+                 <iconset>
                   <normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</normaloff>:/plugins/PostTelemac/icons/Play_48x48.png</iconset>
                 </property>
                </widget>
@@ -3178,49 +3233,71 @@ max .res</string>
         </layout>
        </widget>
       </widget>
-      <widget class="QTextBrowser" name="textBrowser_main">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>16777215</width>
-         <height>16777215</height>
-        </size>
-       </property>
-       <property name="sizeIncrement">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="baseSize">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
-       </property>
+      <widget class="QFrame" name="frame_8">
        <property name="frameShape">
-        <enum>QFrame::Panel</enum>
+        <enum>QFrame::StyledPanel</enum>
        </property>
        <property name="frameShadow">
-        <enum>QFrame::Plain</enum>
+        <enum>QFrame::Raised</enum>
        </property>
-       <property name="verticalScrollBarPolicy">
-        <enum>Qt::ScrollBarAlwaysOn</enum>
-       </property>
-       <property name="tabChangesFocus">
-        <bool>true</bool>
-       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_15">
+        <item>
+         <widget class="QTextBrowser" name="textBrowser_main">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="sizeIncrement">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="baseSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Panel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Plain</enum>
+          </property>
+          <property name="verticalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOn</enum>
+          </property>
+          <property name="tabChangesFocus">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QProgressBar" name="progressBar">
+          <property name="value">
+           <number>0</number>
+          </property>
+          <property name="invertedAppearance">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
@@ -3255,8 +3332,7 @@ max .res</string>
   <tabstop>textBrowser_2</tabstop>
   <tabstop>doubleSpinBox_2</tabstop>
  </tabstops>
- <resources>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>comboBox_vel_method</sender>
