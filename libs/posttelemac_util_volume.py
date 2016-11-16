@@ -19,6 +19,9 @@ import shapely
 #from shapely.geometry import *
 import os
 from ..libs_telemac.samplers.meshes import *
+import scipy
+import processing
+import shapely
     
 debug = False
 
@@ -33,14 +36,11 @@ class computeVolume(QtCore.QObject):
 
     def __init__(self,                
                 selafin,line):
-                
-        
-        
+
         QtCore.QObject.__init__(self)
         self.selafinlayer = selafin
         self.polygons = line
-        
-        #self.fig = plt.figure(0)
+        self.qgspolygone =  None
         
     def computeVolumeMain(self):
         """
@@ -48,33 +48,291 @@ class computeVolume(QtCore.QObject):
         
         """
         
+        METHOD = self.selafinlayer.propertiesdialog.comboBox_volumemethod.currentIndex()
         
-        
-        list1 = []
-        list2 = []
-        list3 = []
-        
-        try:
-            for i, polygon in enumerate(self.polygons):
-                self.status.emit('volume')
-                indextriangles = self.getTrianglesWithinPolygon(polygon)
-                self.status.emit('indexs triangle : ' + str(indextriangles))
-                if len(indextriangles)==0:
-                    continue
-                    #self.finished.emit([],[],[])
-                else:
-                    volume = self.computeVolume(indextriangles)
-                    if i == 0:
-                        list1.append( self.selafinlayer.hydrauparser.getTimes().tolist() )
-                        list2.append(volume)
-                    else:
-                        list2[0] += volume
-            self.finished.emit(list1,list2,list3)
+        if METHOD in [0,2] :
+            list1 = []
+            list2 = []
+            list3 = []
             
-        except Exception, e :
-            self.error.emit('volume calculation error : ' + str(e))
+            try:
+                for i, polygon in enumerate(self.polygons):
+                    listpoly = [QgsPoint(polygon[i][0], polygon[i][1]) for i in range(len(polygon)) ]
+                    self.qgspolygone =  QgsGeometry.fromPolygon([listpoly])
+                    indextriangles = self.getTrianglesWithinPolygon(polygon)
+                    
+                    if len(indextriangles)==0:
+                        continue
+                    else:
+                        volume = self.computeVolumeMesh(METHOD, indextriangles)
+                        if len(list2) ==  0:
+                            list1.append( self.selafinlayer.hydrauparser.getTimes().tolist() )
+                            list2.append(volume)
+                        else:
+                            list2[0] += volume
+                self.finished.emit(list1,list2,list3)
+                
+            except Exception, e :
+                self.error.emit('volume calculation error : ' + str(e))
+                self.finished.emit([],[],[])
+                
+        elif METHOD in [1,3] :
+            list1 = []
+            list2 = []
+            list3 = []
+            
+            try:
+                for i, polygon in enumerate(self.polygons):
+                    listpoly = [QgsPoint(polygon[i][0], polygon[i][1]) for i in range(len(polygon)) ]
+                    self.qgspolygone =  QgsGeometry.fromPolygon([listpoly])
+                    #self.qgspolygone =  QgsGeometry.fromMultiPolygon([listpoly])
+                    indexpoints,points = self.getPointsinPolygon(polygon)
+                    indexpoints,points = self.getPointsOutsidePolygon(polygon,indexpoints,points)
+                    
+                    
+                    for point in points.tolist() :
+                        self.emitpoint.emit( [point[0]], [point[1]])
+                    
+                    if len(indexpoints)==0:
+                        continue
+                    else:
+                        volume = self.computeVolumeVoronoiQGis(METHOD, points, indexpoints)
+                        if len(list2) ==  0:
+                            list1.append( self.selafinlayer.hydrauparser.getTimes().tolist() )
+                            list2.append(volume)
+                        else:
+                            list2[0] += volume
+                self.finished.emit(list1,list2,list3)
+                
+            except Exception, e :
+                self.error.emit('volume calculation error : ' + str(e))
+                self.finished.emit([],[],[])
+                
+        else:
             self.finished.emit([],[],[])
+            
+            
+    def computeVolumeVoronoiScipy(self, METHOD , points, indexpoints):
+        """
+        Voronoi with scipy  method - not fully working
+        """
+        #getvoronoi table
+        voronoi = scipy.spatial.Voronoi(points, furthest_site = False)
+        vertices = voronoi.vertices
+        regions = voronoi.regions
+        #regions = [region for region in regions if (-1 not in region and len(region) > 0)]
         
+        tempforresult = []  #contain point index and voronoi area
+        for i, region in enumerate(regions):
+            if (-1 not in region and len(region) > 0) :
+                listpoly = [ QgsPoint(vertices[reg,0], vertices[reg,1]) for reg in region ]
+                qgspolygonvoronoi =  QgsGeometry.fromPolygon([listpoly])
+                if qgspolygonvoronoi.within(self.qgspolygone):
+                    #draw reg
+                    x = [vertices[reg,0] for reg in region]
+                    y = [vertices[reg,1] for reg in region]
+                    self.emitpoint.emit( x, y)
+                    
+                    area = qgspolygonvoronoi.area()
+                    linkedpoint = indexpoints[voronoi.point_region.tolist().index(i)]
+                    self.status.emit('Region : ' + str(region) + ' - Point lie : ' + str(linkedpoint) + ' - surface : ' +str(area))
+                    tempforresult.append([linkedpoint, area])
+        
+        
+        volume = None
+        paramfreesurface = self.selafinlayer.hydrauparser.paramfreesurface
+        parambottom = self.selafinlayer.hydrauparser.parambottom
+        
+        for i, result in enumerate(tempforresult):
+            self.emitprogressbar.emit(float(float(i)/float(len(tempforresult))*100.0))
+            if METHOD == 1:
+                h =  np.array(self.selafinlayer.hydrauparser.getTimeSerie([result[0] +1 ],[parambottom, paramfreesurface]))
+                if volume == None :
+                    volume = result[1]*(h[1,0]-h[0,0])
+                else:
+                    volume += result[1]*(h[1,0]-h[0,0])
+            elif METHOD == 3 :
+                h =  np.array(self.selafinlayer.hydrauparser.getTimeSerie([result[0] +1 ],[self.selafinlayer.propertiesdialog.comboBox_volumeparam.currentIndex()]))
+                if volume == None :
+                    volume = result[1]*(h[0,0])
+                else:
+                    volume += result[1]*(h[0,0])
+        return volume
+            
+            
+
+            
+            
+    def computeVolumeVoronoiQGis(self, METHOD , points, indexpoints):
+        """
+        Voronoi with qgis method
+        """
+        self.status.emit('***** Nouveau calcul *****************')
+        
+        pointsdico = [shapely.geometry.Point(point[0], point[1]) for point in points ]
+        c = processing.algs.qgis.voronoi.Context()
+        sl = processing.algs.qgis.voronoi.SiteList(pointsdico)
+        voropv = processing.algs.qgis.voronoi.voronoi(sl, c)
+        self.status.emit(str(voropv))
+        
+        if False:
+            self.status.emit(str('context *********'))
+            self.status.emit(str(points))
+            self.status.emit(str(c.vertices))
+            self.status.emit(str(c.edges))
+            self.status.emit(str(c.polygons))
+            self.status.emit(str(' *********'))
+            
+        verticess = c.vertices
+        voronoipolyg = []
+        
+        for (site, edges) in list(c.polygons.items()):
+            #edges or not in he good order - order it
+            edgesonly = [[edge[1], edge[2]]   for edge in edges]
+            npedges = np.array(edgesonly)
+            if -1 in npedges:       #edges with -1 are infinite line in polygon
+                continue
+            
+            #fill goodph with first line
+            goodpath = []
+            goodpath.append(edges[0][1])
+            goodpath.append(edges[0][2])
+            
+            #then add point in path
+            i=3
+            for i in range(len(edges) -2  ):
+                temps = np.argwhere(npedges == goodpath[-1])
+                for temp in temps:
+                    if temp[1] == 0 :
+                        if npedges[temp[0], 1 ] == goodpath[-2] :
+                            continue
+                        else:
+                            goodpath.append(npedges[temp[0], 1 ])
+                            break
+                    elif temp[1] == 1 :
+                        if npedges[temp[0], 0 ] == goodpath[-2] :
+                            continue
+                        else:
+                            goodpath.append(npedges[temp[0], 0 ])
+                            break
+
+            listpoly = [QgsPoint(verticess[path][0], verticess[path][1]) for path in goodpath ]
+            qgsvoropolygone =  QgsGeometry.fromPolygon([listpoly])
+            
+            
+            #keep voronoi strictly within entry polygon
+            if not qgsvoropolygone.within(self.qgspolygone):
+                intersectedpolyg = QgsGeometry.fromPolygon( qgsvoropolygone.intersection(self.qgspolygone).asPolygon() )
+            else:
+                intersectedpolyg = QgsGeometry.fromPolygon( qgsvoropolygone.asPolygon() )
+                
+            voronoipolyg.append([indexpoints[site],intersectedpolyg])
+            intersectedpolygtab = intersectedpolyg.asPolygon()
+            if len(intersectedpolygtab)>0:
+                x = [point[0] for point in intersectedpolygtab[0]]
+                y = [point[1] for point in intersectedpolygtab[0]]
+                self.emitpoint.emit( x, y)
+
+        #volume compuation
+        volume = None
+        paramfreesurface = self.selafinlayer.hydrauparser.paramfreesurface
+        parambottom = self.selafinlayer.hydrauparser.parambottom
+        
+        for i, result in enumerate( voronoipolyg ):
+            self.emitprogressbar.emit(float(float(i)/float(len(voronoipolyg))*100.0))
+            if METHOD == 1:
+                h =  np.array(self.selafinlayer.hydrauparser.getTimeSerie([result[0] +1 ],[parambottom, paramfreesurface]))
+                
+                if volume == None :
+                    volume = result[1].area()*(h[1,0]-h[0,0])
+                else:
+                    volume += result[1].area()*(h[1,0]-h[0,0])
+                    
+            elif METHOD == 3 :
+                h =  np.array(self.selafinlayer.hydrauparser.getTimeSerie([result[0] +1 ],[self.selafinlayer.propertiesdialog.comboBox_volumeparam.currentIndex()]))
+                
+                if volume == None :
+                    volume = result[1].area()*(h[0,0])
+                else:
+                    volume += result[1].area()*(h[0,0])
+            
+        
+        
+        return volume
+            
+            
+            
+    def getPointsinPolygon(self,polygon):
+    
+        #first get triangles in linebounding box ************************************************************
+        recttemp = self.qgspolygone.boundingBox()
+        rect = [float(recttemp.xMinimum()), float(recttemp.xMaximum()), float(recttemp.yMinimum()), float(recttemp.yMaximum())] 
+
+        xMesh, yMesh = self.selafinlayer.hydrauparser.getMesh()
+
+        valtabx = np.where(np.logical_and(xMesh>rect[0], xMesh< rect[1]))
+        valtaby = np.where(np.logical_and(yMesh>rect[2], yMesh< rect[3]))
+        
+        goodnums = np.intersect1d(valtabx[0],valtaby[0])
+        
+        #second get triangles inside line  ************************************************************
+        goodnums2=[]
+        for goodnum in goodnums:
+            if QgsGeometry.fromPoint(QgsPoint(xMesh[goodnum],yMesh[goodnum])).within(self.qgspolygone):
+                goodnums2.append(goodnum)
+                
+        points = np.array([[xMesh[i], yMesh[i]] for i in goodnums2 ])
+        
+        
+        return goodnums2,points
+        
+    def getPointsOutsidePolygon(self,polygon,indexpoints, points):
+        """
+        return a new triangulation based on triangles visbles in the canvas. 
+        return index of selafin points correspondind to the new triangulation
+        """
+        
+        #first get triangles in linebounding box ************************************************************
+        
+        mesh = np.array(self.selafinlayer.hydrauparser.getIkle())
+        recttemp = self.qgspolygone.boundingBox()
+        rect = [float(recttemp.xMinimum()), float(recttemp.xMaximum()), float(recttemp.yMinimum()), float(recttemp.yMaximum())] 
+        
+        xMesh, yMesh = self.selafinlayer.hydrauparser.getMesh()
+
+        trianx = np.array( [ xMesh[mesh[:,0]], xMesh[mesh[:,1]], xMesh[mesh[:,2]]] )
+        trianx = np.transpose(trianx)
+        triany = [yMesh[mesh[:,0]], yMesh[mesh[:,1]], yMesh[mesh[:,2]]]
+        triany = np.transpose(triany)
+        
+        valtabx = np.where(np.logical_and(trianx>rect[0], trianx< rect[1]))
+        valtaby = np.where(np.logical_and(triany>rect[2], triany< rect[3]))
+        #index of triangles in canvas
+        goodnums = np.intersect1d(valtabx[0],valtaby[0])
+        #goodikle = mesh[goodnums]
+        #goodpointindex = np.unique(goodikle)
+        
+        #second get triangles intersecting contour of polygon  ************************************************************
+        goodnums2=[]
+        qgspolygontoline = self.qgspolygone.convertToType(1)
+        for goodnum in goodnums:
+            if QgsGeometry.fromPolygon([[QgsPoint(xMesh[i],yMesh[i]) for i in mesh[goodnum]    ]]).intersects(qgspolygontoline):
+                goodnums2.append(goodnum)
+        
+        pointstemp = points.tolist()
+        
+        for goodnum in goodnums2:
+            for indexpoint in mesh[goodnum]:
+                if not indexpoint in indexpoints:
+                    indexpoints.append(indexpoint)
+                    pointstemp.append([xMesh[indexpoint], yMesh[indexpoint]])
+        
+        
+        return indexpoints,np.array(pointstemp)
+            
+    
+    
+    
         
     def getTrianglesWithinPolygon(self,polygon):
         """
@@ -83,22 +341,10 @@ class computeVolume(QtCore.QObject):
         """
         
         #first get triangles in linebounding box ************************************************************
-        listpoly = [QgsPoint(polygon[i][0], polygon[i][1]) for i in range(len(polygon)) ]
-        #self.status.emit(str(listpoly))
-        self.qgspolygone =  QgsGeometry.fromPolygon([listpoly])
+        
         mesh = np.array(self.selafinlayer.hydrauparser.getIkle())
         recttemp = self.qgspolygone.boundingBox()
         rect = [float(recttemp.xMinimum()), float(recttemp.xMaximum()), float(recttemp.yMinimum()), float(recttemp.yMaximum())] 
-        """
-        xMesh, yMesh = selafin.hydrauparser.getMesh()
-        xMesh, yMesh = self.getTransformedCoords(xMesh, yMesh)
-        """
-        
-        """
-        xMesh = self.meshxreprojected
-        yMesh = self.meshyreprojected
-        
-        """
         
         xMesh, yMesh = self.selafinlayer.hydrauparser.getMesh()
 
@@ -129,7 +375,7 @@ class computeVolume(QtCore.QObject):
             
         return goodnums2
         
-    def computeVolume(self,indextriangles):
+    def computeVolumeMesh(self,METHOD,indextriangles):
         #self.status.emit('surf calc ')
         xMesh, yMesh = self.selafinlayer.hydrauparser.getMesh()
         mesh = np.array(self.selafinlayer.hydrauparser.getIkle())
@@ -152,26 +398,34 @@ class computeVolume(QtCore.QObject):
 
             
             surface = float(np.linalg.norm(np.cross((p2-p1),(p3-p1))))/2.0
-            #self.status.emit('surf : ' + str(surface))
-            if False:
-                h1 =np.array(self.selafinlayer.hydrauparser.getTimeSerie([mesh[indextriangle,0] + 1],[paramfreesurface])[0][0]) - np.array(self.selafinlayer.hydrauparser.getTimeSerie([mesh[indextriangle,0] + 1],[parambottom])[0][0])
-                h2 =np.array(self.selafinlayer.hydrauparser.getTimeSerie([mesh[indextriangle,1] + 1],[paramfreesurface])[0][0]) - np.array(self.selafinlayer.hydrauparser.getTimeSerie([mesh[indextriangle,1] + 1],[parambottom])[0][0])
-                h3 =np.array(self.selafinlayer.hydrauparser.getTimeSerie([mesh[indextriangle,2] + 1],[paramfreesurface])[0][0]) - np.array(self.selafinlayer.hydrauparser.getTimeSerie([mesh[indextriangle,2] + 1],[parambottom])[0][0])
-            #else:
-            h = np.array(self.selafinlayer.hydrauparser.getTimeSerie([mesh[indextriangle,0] + 1,mesh[indextriangle,1] + 1,mesh[indextriangle,2] + 1],[paramfreesurface])) - np.array(self.selafinlayer.hydrauparser.getTimeSerie([mesh[indextriangle,0] + 1,mesh[indextriangle,1] + 1,mesh[indextriangle,2] + 1],[parambottom]))
-            if False and i == 0 :
-                self.status.emit('interm')
-                self.status.emit(str(h.shape))
-                self.status.emit(str(h))
-                self.status.emit(str(h1.shape))
-                self.status.emit(str(h1))
+            
+            
+            if METHOD == 0 :
+                h = np.array(self.selafinlayer.hydrauparser.getTimeSerie([mesh[indextriangle,0] + 1,mesh[indextriangle,1] + 1,mesh[indextriangle,2] + 1],[parambottom, paramfreesurface]))
                 
-            if volume == None :
-                #volume = surface*(h1+h2+h3)/3
-                volume = surface*(h[0,0]+h[0,1]+h[0,2])/3
-            else:
-                #volume += surface*(h1+h2+h3)/3
-                volume += surface*(h[0,0]+h[0,1]+h[0,2])/3
+                if False and i == 0 :
+                    self.status.emit('interm')
+                    self.status.emit(str(h.shape))
+                    self.status.emit(str(h))
+                    self.status.emit(str(h1.shape))
+                    self.status.emit(str(h1))
+                    
+                if volume == None :
+                    #volume = surface*(h1+h2+h3)/3
+                    volume = surface*((h[1,0] - h[0,0])+(h[1,1] - h[0,1] )+(h[1,2] - h[0,2]))/3
+                else:
+                    #volume += surface*(h1+h2+h3)/3
+                    volume += surface*((h[1,0] - h[0,0])+(h[1,1] - h[0,1] )+(h[1,2] - h[0,2]))/3
+                    
+            elif METHOD == 2 :
+                h = np.array(self.selafinlayer.hydrauparser.getTimeSerie([mesh[indextriangle,0] + 1,mesh[indextriangle,1] + 1,mesh[indextriangle,2] + 1],[self.selafinlayer.propertiesdialog.comboBox_volumeparam.currentIndex()]))
+                
+                if volume == None :
+                    #volume = surface*(h1+h2+h3)/3
+                    volume = surface*((h[0,0])+( h[0,1] )+( h[0,2]))/3
+                else:
+                    #volume += surface*(h1+h2+h3)/3
+                    volume += surface*((h[0,0])+( h[0,1] )+(h[0,2]))/3
         
         return volume
 

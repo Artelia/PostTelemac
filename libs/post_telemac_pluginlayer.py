@@ -40,6 +40,8 @@ from post_telemac_pluginlayer_renderer import PostTelemacPluginLayerRenderer
 
 """
 Global variable for making new graphs (matplotlib)  with maplotlib 
+fig 0 : ??
+fig 1 : ??
 Concept : when creating new SelafinPluginLayer, use 
 selafininstancecount for pluginlayer-draw, 
 selafininstancecount + 1 for graph temp util,
@@ -128,7 +130,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         #levels
         self.levels=[self.propertiesdialog.predeflevels[i][1] for i in range(len(self.propertiesdialog.predeflevels))]
         """
-        #Add 3 to global variable : 
+        #Add 4 to global variable : 
             figure (selafininstancecount) used for get_image, 
             figure(selafininstancecount + 1) for graphtemp, 
             figure(selafininstancecount +2) for graph flow
@@ -488,44 +490,48 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         element = node.toElement()
         prj = qgis.core.QgsProject.instance()
         hydraufilepath=prj.readPath( element.attribute('meshfile') )
-        self.setRealCrs(qgis.core.QgsCoordinateReferenceSystem( prj.readPath( element.attribute('crs') ) ) )
-        self.param_displayed = int(element.attribute('parametre'))
-        self.alpha_displayed = int(element.attribute('alpha'))
-        self.time_displayed = int(element.attribute('time'))
-        self.showmesh = int(element.attribute('showmesh'))
-        self.propertiesdialog.checkBox_showmesh.setChecked(self.showmesh) 
-        #levelthings - old - need to reworked
-        self.propertiesdialog.comboBox_genericlevels.setCurrentIndex(int(element.attribute('level_value')))
-        lvlstep = [element.attribute('level_step').split(";")[i] for i in range(len(element.attribute('level_step').split(";")))]
-        self.propertiesdialog.lineEdit_levelmin.setText(lvlstep[0])
-        self.propertiesdialog.lineEdit_levelmax.setText(lvlstep[1])
-        self.propertiesdialog.lineEdit_levelstep.setText(lvlstep[2])
-        self.propertiesdialog.comboBox_clrgame.setCurrentIndex(int(element.attribute('level_color')))
-
-        self.propertiesdialog.comboBox_levelstype.setCurrentIndex(int(element.attribute('level_type')))
-        if int(element.attribute('level_type'))==0:
-            self.propertiesdialog.change_cmchoosergenericlvl()
-        elif int(element.attribute('level_type'))==1:
-            self.propertiesdialog.createstepclass()
-        """
-        #velocity things
-        self.propertiesdialog.comboBox_genericlevels_2.setCurrentIndex(0)
-        self.propertiesdialog.comboBox_clrgame_2.setCurrentIndex(0)
-        self.propertiesdialog.change_cmchoosergenericlvl_vel()
-        """
-        #Virtual param things
-        strtemp =  element.attribute('virtual_param').split(';')
-        count = int((len(strtemp)-1)/2)
-        for i in range(count):
-            self.parametrestoload['virtual_parameters'].append([i,strtemp[2*i],strtemp[2*i+1]])
-        try:
-            self.parametrestoload['xtranslation'] = float(element.attribute('xtranslation'))
-            self.parametrestoload['ytranslation'] = float(element.attribute('ytranslation'))
-        except Exception, e:
-            pass
         
-        self.load_selafin(hydraufilepath)
-        return True
+        if os.path.isfile(hydraufilepath) :
+            self.setRealCrs(qgis.core.QgsCoordinateReferenceSystem( prj.readPath( element.attribute('crs') ) ) )
+            self.param_displayed = int(element.attribute('parametre'))
+            self.alpha_displayed = int(element.attribute('alpha'))
+            self.time_displayed = int(element.attribute('time'))
+            self.showmesh = int(element.attribute('showmesh'))
+            self.propertiesdialog.checkBox_showmesh.setChecked(self.showmesh) 
+            #levelthings - old - need to reworked
+            self.propertiesdialog.comboBox_genericlevels.setCurrentIndex(int(element.attribute('level_value')))
+            lvlstep = [element.attribute('level_step').split(";")[i] for i in range(len(element.attribute('level_step').split(";")))]
+            self.propertiesdialog.lineEdit_levelmin.setText(lvlstep[0])
+            self.propertiesdialog.lineEdit_levelmax.setText(lvlstep[1])
+            self.propertiesdialog.lineEdit_levelstep.setText(lvlstep[2])
+            self.propertiesdialog.comboBox_clrgame.setCurrentIndex(int(element.attribute('level_color')))
+
+            self.propertiesdialog.comboBox_levelstype.setCurrentIndex(int(element.attribute('level_type')))
+            if int(element.attribute('level_type'))==0:
+                self.propertiesdialog.change_cmchoosergenericlvl()
+            elif int(element.attribute('level_type'))==1:
+                self.propertiesdialog.createstepclass()
+            """
+            #velocity things
+            self.propertiesdialog.comboBox_genericlevels_2.setCurrentIndex(0)
+            self.propertiesdialog.comboBox_clrgame_2.setCurrentIndex(0)
+            self.propertiesdialog.change_cmchoosergenericlvl_vel()
+            """
+            #Virtual param things
+            strtemp =  element.attribute('virtual_param').split(';')
+            count = int((len(strtemp)-1)/2)
+            for i in range(count):
+                self.parametrestoload['virtual_parameters'].append([i,strtemp[2*i],strtemp[2*i+1]])
+            try:
+                self.parametrestoload['xtranslation'] = float(element.attribute('xtranslation'))
+                self.parametrestoload['ytranslation'] = float(element.attribute('ytranslation'))
+            except Exception, e:
+                pass
+            
+            self.load_selafin(hydraufilepath)
+            return True
+        else:
+            return False
         
         
         
@@ -595,6 +601,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
             except Exception, e :
                 print 'fig ' + str(e)
             self.propertiesdialog.postutils.rubberband.reset()
+            self.propertiesdialog.postutils.rubberbandpoint.reset()
             #closing properties dialog
             self.propertiesdialog.close()
             del self.propertiesdialog

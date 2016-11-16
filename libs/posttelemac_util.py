@@ -51,6 +51,9 @@ class PostTelemacUtils():
         self.rubberband = QgsRubberBand(self.selafinlayer.canvas, QGis.Line)
         self.rubberband.setWidth(2)
         self.rubberband.setColor(QColor(Qt.red))
+        self.rubberbandpoint = QgsRubberBand(self.selafinlayer.canvas, QGis.Point)
+        #self.rubberbandpoint.setWidth(2)
+        self.rubberbandpoint.setColor(QColor(Qt.red))
         self.clickTool = QgsMapToolEmitPoint(self.selafinlayer.canvas)
         self.tool = None                        #the activated map tool
         self.layerindex = None                  #for selection mode
@@ -338,6 +341,7 @@ class PostTelemacUtils():
             else :
                 if len(self.pointstoDraw) == 0:
                     self.rubberband.reset(QGis.Line)
+                    self.rubberbandpoint.reset(QGis.Point)
                 self.pointstoDraw += newPoints
         """
         if self.selectionmethod == 1:
@@ -380,6 +384,7 @@ class PostTelemacUtils():
 
     def launchThread(self,geom):
         if self.graphtodo ==0:
+            self.rubberbandpoint.reset(QGis.Point)
             if not self.selafinlayer.propertiesdialog.checkBox.isChecked() and self.rubberband :
                 self.rubberband.reset(QGis.Point)
             self.initclass=InitGraphTemp()
@@ -400,6 +405,7 @@ class PostTelemacUtils():
             self.graphtempactive = True
             self.selafinlayer.propertiesdialog.pushButton_limni.setEnabled(False)
         elif self.graphtodo ==1:
+            self.rubberbandpoint.reset(QGis.Point)
             if self.selafinlayer.propertiesdialog.comboBox_flowmethod.currentIndex()==0:
                 self.rubberband.reset(QGis.Line)
             elif self.selafinlayer.propertiesdialog.comboBox_flowmethod.currentIndex()==1:
@@ -415,6 +421,7 @@ class PostTelemacUtils():
             elif self.selafinlayer.propertiesdialog.comboBox_flowmethod.currentIndex()==1:
                 self.rubberband.reset(QGis.Point)
             """
+            self.rubberbandpoint.reset(QGis.Point)
             self.rubberband.reset(QGis.Line)
             #self.selafinlayer.propertiesdialog.textBrowser_main.append(str(ctime() + ' - Computing flow'))
             self.selafinlayer.propertiesdialog.normalMessage('Start computing volume')
@@ -473,8 +480,8 @@ class PostTelemacUtils():
                     mintemp = min(np.array(list2[i]))
         if self.graphtodo ==0:
             self.graphtempdatac.append(datacursor(test2,formatter="temps:{x:.0f}\nparametre:{y:.2f}".format,bbox=dict(fc='white'),arrowprops=dict(arrowstyle='->', fc='white', alpha=0.5)))
-            self.selafinlayer.propertiesdialog.label_21.setText('Max : ' + str(maxtemp))
-            self.selafinlayer.propertiesdialog.label_20.setText('Min : ' + str(mintemp))
+            self.selafinlayer.propertiesdialog.label_21.setText('Max : ' + str('{:,}'.format(maxtemp).replace(',', ' ') ))
+            self.selafinlayer.propertiesdialog.label_20.setText('Min : ' + str('{:,}'.format(mintemp).replace(',', ' ') ))
             self.selafinlayer.propertiesdialog.canvas1.draw()
             if self.selectionmethod == 1 :
                 self.selafinlayer.propertiesdialog.checkBox.setChecked(False)
@@ -483,16 +490,16 @@ class PostTelemacUtils():
                 self.selafinlayer.propertiesdialog.pushButton_limni.setEnabled(True)
         elif self.graphtodo == 1 :
             self.graphflowdatac.append(datacursor(test2,formatter="temps:{x:.0f}\ndebit{y:.2f}".format,bbox=dict(fc='white'),arrowprops=dict(arrowstyle='->', fc='white', alpha=0.5)))
-            self.selafinlayer.propertiesdialog.label_flow_resultmax.setText('Max : ' + str(maxtemp))
-            self.selafinlayer.propertiesdialog.label__flow_resultmin.setText('Min : ' + str(mintemp))
+            self.selafinlayer.propertiesdialog.label_flow_resultmax.setText('Max : ' + str('{:,}'.format(maxtemp).replace(',', ' ') ))
+            self.selafinlayer.propertiesdialog.label__flow_resultmin.setText('Min : ' + str('{:,}'.format(mintemp).replace(',', ' ') ))
             self.selafinlayer.propertiesdialog.canvas2.draw()
             self.selafinlayer.propertiesdialog.normalMessage('Computing flow finished')
             if self.selafinlayer.propertiesdialog.comboBox_3.currentIndex() != 0:
                 self.selafinlayer.propertiesdialog.pushButton_flow.setEnabled(True)
         elif self.graphtodo == 2 :
             #self.graphvolumedatac.append(datacursor(test2,formatter="temps:{x:.0f}\ndebit{y:.2f}".format,bbox=dict(fc='white'),arrowprops=dict(arrowstyle='->', fc='white', alpha=0.5)))
-            self.selafinlayer.propertiesdialog.label_volume_resultmax.setText('Max : ' + str(maxtemp))
-            self.selafinlayer.propertiesdialog.label_volume_resultmin.setText('Min : ' + str(mintemp))
+            self.selafinlayer.propertiesdialog.label_volume_resultmax.setText('Max : '  + str('{:,}'.format(maxtemp).replace(',', ' ') ))
+            self.selafinlayer.propertiesdialog.label_volume_resultmin.setText('Min : ' + str('{:,}'.format(mintemp).replace(',', ' ') ))
             self.selafinlayer.propertiesdialog.canvas3.draw()
             self.selafinlayer.propertiesdialog.normalMessage('Computing volume finished')
             if self.selafinlayer.propertiesdialog.comboBox_4.currentIndex() != 0:
@@ -538,9 +545,14 @@ class PostTelemacUtils():
         
         if isinstance(x,list):
             points = []
-            for i in range(len(x)):
-                points.append(self.selafinlayer.xform.transform(QgsPoint(x[i],y[i])))
-            self.rubberband.addGeometry(QgsGeometry.fromPolygon([points]), None)
+            if len(x)>1:
+                for i in range(len(x)):
+                    points.append(self.selafinlayer.xform.transform(QgsPoint(x[i],y[i])))
+                self.rubberband.addGeometry(QgsGeometry.fromPolygon([points]), None)
+            else:
+                qgspoint = self.selafinlayer.xform.transform(QgsPoint(x[0],y[0]))
+                #self.rubberband.addPoint(qgspoint)
+                self.rubberbandpoint.addPoint(qgspoint)
         else:
             qgspoint = self.selafinlayer.xform.transform(QgsPoint(x,y))
             self.rubberband.addPoint(qgspoint)

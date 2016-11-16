@@ -213,8 +213,10 @@ class PostTelemacAbstractParser(object):
         #load velocity parameters
         if self.pluginlayer != None :
             if (self.paramfreesurface == None and self.parambottom == None) :
-                self.paramfreesurface = self.pluginlayer.propertiesdialog.postutils.getParameterName("SURFACELIBRE")[0]
-                self.parambottom = self.pluginlayer.propertiesdialog.postutils.getParameterName("BATHYMETRIE")[0]
+                if self.pluginlayer.propertiesdialog.postutils.getParameterName("SURFACELIBRE") != None:
+                    self.paramfreesurface = self.pluginlayer.propertiesdialog.postutils.getParameterName("SURFACELIBRE")[0]
+                if self.pluginlayer.propertiesdialog.postutils.getParameterName("BATHYMETRIE") != None:
+                    self.parambottom = self.pluginlayer.propertiesdialog.postutils.getParameterName("BATHYMETRIE")[0]
                 if (self.paramfreesurface == None or self.parambottom == None):
                     self.pluginlayer.propertiesdialog.groupBox_volume1.setEnabled(False)
                     self.pluginlayer.propertiesdialog.groupBox_volume2.setEnabled(False)

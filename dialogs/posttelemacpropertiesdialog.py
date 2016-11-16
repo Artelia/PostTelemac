@@ -188,6 +188,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.comboBox_2.currentIndexChanged.connect(self.mapToolChooser)
         self.pushButton_limni.clicked.connect(self.postutils.computeGraphTemp)
         self.pushButton_graphtemp_pressepapier.clicked.connect(self.postutils.copygraphclipboard)
+        #Tools tab- volume graph
+        self.comboBox_volumemethod.currentIndexChanged.connect(self.volumemethodchanged)
         
         
         #Tools tab- flow graph
@@ -939,13 +941,15 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         """
         Populate parameters comboboxes on dialog update
         """
-        self.comboBox_parametreschooser.clear()
-        self.comboBox_parametreschooser_2.clear()
+        #comboboxes
+        paramcomboboxes = [self.comboBox_parametreschooser, self.comboBox_parametreschooser_2, self.comboBox_volumeparam]
+        for combo in paramcomboboxes:
+            combo.clear()
         for i in range(len(self.layer.hydrauparser.parametres)):
             temp1 = [str(self.layer.hydrauparser.parametres[i][0])+" : "+str(self.layer.hydrauparser.parametres[i][1])]
-            self.comboBox_parametreschooser.addItems(temp1)
-            self.comboBox_parametreschooser_2.addItems(temp1)
-        
+            for combo in paramcomboboxes:
+                combo.addItems(temp1)
+        #tree widget
         self.treeWidget_parameters.clear()
         itms = []
         for i in range(len(self.layer.hydrauparser.parametres)):
@@ -1063,6 +1067,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             """Click on temopral graph + temporary point selection method"""
             if self.postutils.rubberband:
                 self.postutils.rubberband.reset(QGis.Point)
+            if self.postutils.rubberbandpoint:
+                self.postutils.rubberbandpoint.reset(QGis.Point)
             try : self.clickTool.canvasClicked.disconnect()
             except Exception, e : pass
             self.pushButton_limni.setEnabled(False)
@@ -1076,6 +1082,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             """Click on flow computation - temporary polyline"""
             if self.postutils.rubberband:
                 self.postutils.rubberband.reset(QGis.Point)
+            if self.postutils.rubberbandpoint:
+                self.postutils.rubberbandpoint.reset(QGis.Point)
             try : self.clickTool.canvasClicked.disconnect()
             except Exception, e :  pass
             self.pushButton_volume.setEnabled(False)
@@ -1088,6 +1096,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             """Click on flow computation - temporary polyline"""
             if self.postutils.rubberband:
                 self.postutils.rubberband.reset(QGis.Point)
+            if self.postutils.rubberbandpoint:
+                self.postutils.rubberbandpoint.reset(QGis.Point)
             try : self.clickTool.canvasClicked.disconnect()
             except Exception, e :  pass
             self.pushButton_flow.setEnabled(False)
@@ -1103,8 +1113,9 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         #All the time : rubberband reset when the treewidget item changes
         try:
             source = self.sender()
-            if source == self.treeWidget_utils and self.postutils.rubberband:
+            if source == self.treeWidget_utils and self.postutils.rubberband and self.postutils.rubberbandpoint:
                 self.postutils.rubberband.reset(QGis.Line)
+                self.postutils.rubberbandpoint.reset(QGis.Point)
         except Exception, e :
             self.textBrowser_2.append(str(e))
 
@@ -1112,6 +1123,13 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
     #*********************************************************************************
     #Tools activation  *****************************************************
     #*********************************************************************************
+    
+    
+    def volumemethodchanged(self, int1):
+        if int1 in [0,1]:
+            self.comboBox_volumeparam.setEnabled(False)
+        else:
+            self.comboBox_volumeparam.setEnabled(True)
     
     #*********************************************************************************
     #*******************************2shape **************************************
