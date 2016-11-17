@@ -742,6 +742,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         r = self.dlg_color.exec_()
         
         colors,levels = self.dlg_color.dialogIsFinished()
+        
         if colors and levels:
             if self.tabWidget_lvl_vel.currentIndex() == 0 :#contour
                 self.layer.cmap_mpl_contour_raw = self.layer.colormanager.arrayStepRGBAToCmap(colors)

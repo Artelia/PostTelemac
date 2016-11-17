@@ -95,39 +95,71 @@ class computeFlow(QtCore.QObject):
                     totalpointsonshortest = len(sum(shortests,[]))
                     compteur1 = 0
                     
+                    
+                    
                     for shortest in shortests:
                         flow = None
+                        if False:
+                            results = np.array(self.selafinlayer.hydrauparser.getTimeSerie((np.array(shortest) +1).tolist(),[parameterh,parameteruv,parametervv],self.selafinlayer.hydrauparser.parametres) )
                         for i,elem in enumerate(shortest):
                             self.emitprogressbar.emit(float(compteur1 + i)/float(totalpointsonshortest-1)*100.0)
                             try:
-                                if i==0:    #init
-                                    try:
+                                if True:
+                                    if i==0:    #init
+                                        try:
+                                            h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                        except Exception , e :
+                                            self.status.emit('method 011 : ' + str(e))
+                                        uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                        uv2 = np.array([[value,0.0] for value in uv2])
+                                        vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                        vv2 = np.array([[0.0,value] for value in vv2])
+                                        v2vect = uv2 + vv2
+                                        #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
+                                        xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
+                                    else:
+                                        h1 = h2
+                                        v1vect = v2vect
+                                        xy1 = xy2
                                         h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                        uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                        uv2 = np.array([[value,0.0] for value in uv2])
+                                        vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                        vv2 = np.array([[0.0,value] for value in vv2])
+                                        v2vect = uv2 + vv2
+                                        #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
+                                        xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
+                                        if flow != None:
+                                            flow = flow + self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
+                                        else:
+                                            flow = self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
+                                else:
+                                    try:
+                                        if i==0:    #init
+                                            h2 = results[0,i]
+                                            uv2 = np.array([[value,0.0] for value in results[1,i]])
+                                            vv2 = np.array([[0.0,value] for value in results[2,i]])
+                                            v2vect = uv2 + vv2
+                                            xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
+                                        else:
+                                            h1 = h2
+                                            v1vect = v2vect
+                                            xy1 = xy2
+                                            h2 = results[0,i]
+                                            uv2 = np.array([[value,0.0] for value in results[1,i]])
+                                            vv2 = np.array([[0.0,value] for value in results[2,i]])
+                                            v2vect = uv2 + vv2
+                                            xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
+                                            if flow != None:
+                                                flow = flow + self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
+                                            else:
+                                                flow = self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
                                     except Exception , e :
                                         self.status.emit('method 011 : ' + str(e))
-                                    uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.hydrauparser.parametres)[0][0])
-                                    uv2 = np.array([[value,0.0] for value in uv2])
-                                    vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.hydrauparser.parametres)[0][0])
-                                    vv2 = np.array([[0.0,value] for value in vv2])
-                                    v2vect = uv2 + vv2
-                                    #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
-                                    xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
-                                else:
-                                    h1 = h2
-                                    v1vect = v2vect
-                                    xy1 = xy2
-                                    h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.hydrauparser.parametres)[0][0])
-                                    uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.hydrauparser.parametres)[0][0])
-                                    uv2 = np.array([[value,0.0] for value in uv2])
-                                    vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.hydrauparser.parametres)[0][0])
-                                    vv2 = np.array([[0.0,value] for value in vv2])
-                                    v2vect = uv2 + vv2
-                                    #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
-                                    xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
-                                    if flow != None:
-                                        flow = flow + self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
-                                    else:
-                                        flow = self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
+                                    
+                                    
+                                    
+                                    
                             except Exception , e :
                                 self.status.emit('method 01 : ' + str(e))
                             x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0]

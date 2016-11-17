@@ -156,7 +156,7 @@ class Selafin2QImage():
                                                        selafinlayer.lvl_contour, 
                                                        cmap=  selafinlayer.cmap_mpl_contour,
                                                        norm=selafinlayer.norm_mpl_contour ,
-                                                       alpha = selafinlayer.alpha_displayed/100.0,
+                                                       #alpha = selafinlayer.alpha_displayed/100.0,
                                                        nchunk = 10
                                                        #rasterized=True
                                                        )
@@ -248,7 +248,7 @@ class Selafin2QImage():
                                                    selafinlayer.lvl_contour, 
                                                    cmap=  selafinlayer.cmap_mpl_contour,
                                                    norm=selafinlayer.norm_mpl_contour ,
-                                                   alpha = selafinlayer.alpha_displayed/100.0,
+                                                   #alpha = selafinlayer.alpha_displayed/100.0,
                                                    nchunk = 10
                                                    #extent = tuple(rect),
                                                    #mask = self.mask ,
@@ -323,7 +323,7 @@ class Selafin2QImage():
                                                     selafinlayer.value,selafinlayer.lvl_contour, 
                                                     cmap=  selafinlayer.cmap_mpl_contour,
                                                     norm=selafinlayer.norm_mpl_contour ,
-                                                    alpha = selafinlayer.alpha_displayed/100.0,
+                                                    #alpha = selafinlayer.alpha_displayed/100.0,
                                                     #extent = tuple(rect),
                                                     extend = 'neither'
                                                     #rasterized=True

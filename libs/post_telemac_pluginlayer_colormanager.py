@@ -89,6 +89,7 @@ class PostTelemacColorManager():
                         dict[identcolors[col]].append((float(otherscol[i][0]),float(otherscol[i][col+1])/255.0,float(otherscol[i][col+1])/255.0))
                 dict[identcolors[col]].append((1,float(otherscol[lendict-1][col+1])/255.0,float(otherscol[lendict-1][col+1])/255.0))
                 dict[identcolors[col]] = tuple(dict[identcolors[col]])
+                
             cmap = matplotlib.colors.LinearSegmentedColormap('temp', dict)
             return cmap
         else:
@@ -102,7 +103,7 @@ class PostTelemacColorManager():
             for i in range(len(self.selafinlayer.lvl_contour)-1):
                 pix = QtGui.QPixmap(iconSize)
                 r,g,b,a = self.selafinlayer.color_mpl_contour[i][0]*255,self.selafinlayer.color_mpl_contour[i][1]*255,self.selafinlayer.color_mpl_contour[i][2]*255,self.selafinlayer.color_mpl_contour[i][3]*255
-                pix.fill(QtGui.QColor(r,g,b))
+                pix.fill(QtGui.QColor(r,g,b,a))
                 lst.append( (str(self.selafinlayer.lvl_contour[i])+"/"+str(self.selafinlayer.lvl_contour[i+1]), pix))
             
             if self.selafinlayer.propertiesdialog.groupBox_schowvel.isChecked() :
@@ -110,7 +111,7 @@ class PostTelemacColorManager():
                 for i in range(len(self.selafinlayer.lvl_vel)-1):
                     pix = QtGui.QPixmap(iconSize)
                     r,g,b,a = self.selafinlayer.color_mpl_vel[i][0]*255,self.selafinlayer.color_mpl_vel[i][1]*255,self.selafinlayer.color_mpl_vel[i][2]*255,self.selafinlayer.color_mpl_vel[i][3]*255
-                    pix.fill(QtGui.QColor(r,g,b))
+                    pix.fill(QtGui.QColor(r,g,b,a))
                     lst.append( (str(self.selafinlayer.lvl_vel[i])+"/"+str(self.selafinlayer.lvl_vel[i+1]), pix))
             return lst
         else:

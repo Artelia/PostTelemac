@@ -66,7 +66,8 @@ class UserColorRampDialog(QtGui.QDialog, FORM_CLASS):
             self.tableWidget.setRowCount(len(self.selafinlayer.lvl_contour)-1)
             for i in range(len(self.selafinlayer.lvl_contour)-1):
                 colorwdg = qgis.gui.QgsColorButtonV2()
-                colorwdg.setColor(QtGui.QColor(self.selafinlayer.color_mpl_contour[i][0]*255,self.selafinlayer.color_mpl_contour[i][1]*255,self.selafinlayer.color_mpl_contour[i][2]*255))
+                colorwdg.setAllowAlpha(True)
+                colorwdg.setColor(QtGui.QColor(self.selafinlayer.color_mpl_contour[i][0]*255,self.selafinlayer.color_mpl_contour[i][1]*255,self.selafinlayer.color_mpl_contour[i][2]*255,self.selafinlayer.color_mpl_contour[i][3]*255))
                 self.tableWidget.setCellWidget(i,0,colorwdg)
                 self.tableWidget.setItem(i, 1, QtGui.QTableWidgetItem(str(self.selafinlayer.lvl_contour[i])))
                 self.tableWidget.setItem(i, 2, QtGui.QTableWidgetItem(str(self.selafinlayer.lvl_contour[i+1])))
@@ -74,7 +75,8 @@ class UserColorRampDialog(QtGui.QDialog, FORM_CLASS):
             self.tableWidget.setRowCount(len(self.selafinlayer.lvl_vel)-1)
             for i in range(len(self.selafinlayer.lvl_vel)-1):
                 colorwdg = qgis.gui.QgsColorButtonV2()
-                colorwdg.setColor(QtGui.QColor(self.selafinlayer.color_mpl_vel[i][0]*255,self.selafinlayer.color_mpl_vel[i][1]*255,self.selafinlayer.color_mpl_vel[i][2]*255))
+                colorwdg.setAllowAlpha(True)
+                colorwdg.setColor(QtGui.QColor(self.selafinlayer.color_mpl_vel[i][0]*255,self.selafinlayer.color_mpl_vel[i][1]*255,self.selafinlayer.color_mpl_vel[i][2]*255,self.selafinlayer.color_mpl_contour[i][3]*255))
                 self.tableWidget.setCellWidget(i,0,colorwdg)
                 self.tableWidget.setItem(i, 1, QtGui.QTableWidgetItem(str(self.selafinlayer.lvl_vel[i])))
                 self.tableWidget.setItem(i, 2, QtGui.QTableWidgetItem(str(self.selafinlayer.lvl_vel[i+1])))
@@ -113,7 +115,7 @@ class UserColorRampDialog(QtGui.QDialog, FORM_CLASS):
     def dialogIsFinished(self):
         """
         return level list
-        return color array like this : [stop in 0 < stop > 1 ,r,g,b]
+        return color array like this : [stop in 0 < stop > 1 ,r,g,b,alpha]
         """
         if (self.result() == 1):
             colors, levels = self.returnColorsLevels()

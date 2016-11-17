@@ -343,7 +343,24 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
             
     def changeAlpha(self,nb):
         """When changing alpha value for display"""
+        
         self.alpha_displayed = float(nb)
+        #change the color_mpl_contour temporary
+        if self.color_mpl_contour != None:
+            colortemp = np.array(self.color_mpl_contour.tolist())
+            for i in range(len(colortemp)):
+                colortemp[i][3] = min(colortemp[i][3],self.alpha_displayed/100.0)
+            #redefine cmap_mpl_contour and norm_mpl_contour :
+            self.cmap_mpl_contour, self.norm_mpl_contour = matplotlib.colors.from_levels_and_colors(self.lvl_contour,colortemp)
+        #change the color_mpl_vel temporary
+        if self.color_mpl_vel != None:
+            colortemp = np.array(self.color_mpl_vel.tolist())
+            for i in range(len(colortemp)):
+                colortemp[i][3] = min(colortemp[i][3],self.alpha_displayed/100.0)
+            #redefine cmap_mpl_contour and norm_mpl_contour :
+            self.cmap_mpl_vel,self.norm_mpl_vel = matplotlib.colors.from_levels_and_colors(self.lvl_vel,colortemp)
+        
+        #finally draw
         if self.draw:
             self.triggerRepaint()
             
