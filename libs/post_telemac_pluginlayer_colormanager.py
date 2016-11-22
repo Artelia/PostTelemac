@@ -36,7 +36,42 @@ class PostTelemacColorManager():
     #*********************** color ramp transformation ******************************************************
         
     def qgsvectorgradientcolorrampv2ToCmap(self,temp1):
+    
+    
         if str(temp1.__class__.__name__) == 'QgsVectorGradientColorRampV2':
+        
+            firstcol = temp1.properties()['color1']
+            lastcol=temp1.properties()['color2']
+            
+            otherscol = [[0, 
+                         int(firstcol.split(',')[0]),
+                         int(firstcol.split(',')[1]),
+                         int(firstcol.split(',')[2]),
+                         int(firstcol.split(',')[3])]]
+            
+            try:
+                otherscoltemp=temp1.properties()['stops'].split(":")
+                bool_stops = True
+            except Exception, e :
+                bool_stops = False
+                
+            if bool_stops:
+                for col in otherscoltemp:
+                    otherscol.append([float(col.split(';')[0]),
+                                      int(col.split(';')[1].split(',')[0]) ,
+                                      int(col.split(';')[1].split(',')[1])  ,
+                                      int(col.split(';')[1].split(',')[2]),
+                                      int(col.split(';')[1].split(',')[3])])
+            otherscol.append([1, 
+                             int(lastcol.split(',')[0]) ,
+                             int(lastcol.split(',')[1]),
+                             int(lastcol.split(',')[2]),
+                             int(lastcol.split(',')[3])])
+                             
+            return self.arrayStepRGBAToCmap(otherscol)
+        
+        elif str(temp1.__class__.__name__) == 'QgsCptCityColorRampV2':
+            temp1 = temp1.cloneGradientRamp()
             firstcol = temp1.properties()['color1']
             lastcol=temp1.properties()['color2']
             

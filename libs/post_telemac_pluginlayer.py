@@ -302,7 +302,16 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         """
         self.cmap_mpl_contour, self.norm_mpl_contour, self.color_mpl_contour = self.colormanager.changeColorMap(cm,self.lvl_contour)
         qgis.utils.iface.legendInterface().refreshLayerSymbology(self)
-        self.triggerRepaint()
+        #transparency - alpha changed
+        if self.color_mpl_contour != None:
+            colortemp = np.array(self.color_mpl_contour.tolist())
+            for i in range(len(colortemp)):
+                colortemp[i][3] = min(colortemp[i][3],self.alpha_displayed/100.0)
+            #redefine cmap_mpl_contour and norm_mpl_contour :
+            self.cmap_mpl_contour, self.norm_mpl_contour = matplotlib.colors.from_levels_and_colors(self.lvl_contour,colortemp)
+        #repaint
+        if self.draw:
+            self.triggerRepaint()
         
     def change_cm_vel(self,cm):
         """
@@ -310,7 +319,16 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         """
         self.cmap_mpl_vel,self.norm_mpl_vel , self.color_mpl_vel = self.colormanager.changeColorMap(cm,self.lvl_vel)
         qgis.utils.iface.legendInterface().refreshLayerSymbology(self)
-        self.triggerRepaint()
+        #transparency - alpha changed
+        if self.color_mpl_vel != None:
+            colortemp = np.array(self.color_mpl_vel.tolist())
+            for i in range(len(colortemp)):
+                colortemp[i][3] = min(colortemp[i][3],self.alpha_displayed/100.0)
+            #redefine cmap_mpl_contour and norm_mpl_contour :
+            self.cmap_mpl_vel,self.norm_mpl_vel = matplotlib.colors.from_levels_and_colors(self.lvl_vel,colortemp)
+        #repaint
+        if self.draw:
+            self.triggerRepaint()
         
     def change_lvl_contour(self,tab):
         """
@@ -343,26 +361,10 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
             
     def changeAlpha(self,nb):
         """When changing alpha value for display"""
-        
         self.alpha_displayed = float(nb)
-        #change the color_mpl_contour temporary
-        if self.color_mpl_contour != None:
-            colortemp = np.array(self.color_mpl_contour.tolist())
-            for i in range(len(colortemp)):
-                colortemp[i][3] = min(colortemp[i][3],self.alpha_displayed/100.0)
-            #redefine cmap_mpl_contour and norm_mpl_contour :
-            self.cmap_mpl_contour, self.norm_mpl_contour = matplotlib.colors.from_levels_and_colors(self.lvl_contour,colortemp)
-        #change the color_mpl_vel temporary
-        if self.color_mpl_vel != None:
-            colortemp = np.array(self.color_mpl_vel.tolist())
-            for i in range(len(colortemp)):
-                colortemp[i][3] = min(colortemp[i][3],self.alpha_displayed/100.0)
-            #redefine cmap_mpl_contour and norm_mpl_contour :
-            self.cmap_mpl_vel,self.norm_mpl_vel = matplotlib.colors.from_levels_and_colors(self.lvl_vel,colortemp)
+        self.change_cm_contour(self.cmap_mpl_contour_raw)
+        self.change_cm_vel( self.cmap_mpl_vel_raw)
         
-        #finally draw
-        if self.draw:
-            self.triggerRepaint()
             
     def changeParam(self,int1):
         """When changing parameter value for display"""

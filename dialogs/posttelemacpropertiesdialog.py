@@ -708,6 +708,7 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         change color map of selafin layer (matplotlib's style) when color palette combobox is changed
         """
         temp1 = QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame.currentText())
+        
         if self.tabWidget_lvl_vel.currentIndex() == 0 :#contour
             self.layer.cmap_mpl_contour_raw = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
             self.layer.change_cm_contour(self.layer.cmap_mpl_contour_raw)
