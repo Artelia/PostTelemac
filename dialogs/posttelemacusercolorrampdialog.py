@@ -130,7 +130,8 @@ class UserColorRampDialog(QtGui.QDialog, FORM_CLASS):
         for i in range(rowcount):
             levels.append(float(self.tableWidget.item(i,1).text()))
             wdg = self.tableWidget.cellWidget(i,0)
-            colors.append([float(float(i)/(rowcount-1)),wdg.color().red(),wdg.color().green(),wdg.color().blue(),wdg.color().alpha()])
+            #colors.append([float(float(i)/(rowcount-1)),wdg.color().red(),wdg.color().green(),wdg.color().blue(),wdg.color().alpha()])
+            colors.append([float(float(i)/(rowcount)),wdg.color().red(),wdg.color().green(),wdg.color().blue(),wdg.color().alpha()])
 
         levels.append(float(self.tableWidget.item(rowcount-1,2).text()))
         return (colors,levels)
