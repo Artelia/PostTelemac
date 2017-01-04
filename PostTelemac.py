@@ -21,12 +21,12 @@ import os.path
 import time
 import sys
 import subprocess
-sys.path.append(os.path.join(os.path.dirname(__file__),'libs_telemac'))
+#sys.path.append(os.path.join(os.path.dirname(__file__),'libs_telemac'))
 #Posttelemac library import
 import resources_rc
-from libs.post_telemac_pluginlayer import SelafinPluginLayer
-from libs.post_telemac_pluginlayer_type import SelafinPluginLayerType
-from dialogs.posttelemac_about import aboutDialog
+from meshlayer.post_telemac_pluginlayer import SelafinPluginLayer
+from meshlayer.post_telemac_pluginlayer_type import SelafinPluginLayerType
+from meshlayerdialogs.posttelemac_about import aboutDialog
 
 #Processing
 DOPROCESSING = False #set to false to make the plugin reloader work
