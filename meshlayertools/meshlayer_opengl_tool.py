@@ -175,9 +175,9 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         self.viewport_matrix_   = []
         self.projection_matrix_ = []
         self.near_   = 0.01
-        self.far_    = 10000000000.0
+        self.far_    = 100000.0
         self.fovy_   = 45.0
-        self.radius_ = 5.0
+        self.radius_ = 0.0
         self.last_point_2D_ = QtCore.QPoint()
         self.last_point_ok_ = False
         self.last_point_3D_ = [1.0, 0.0, 0.0]
@@ -189,6 +189,9 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         self.pointtodraw=[]
         
         self.ratioxy = 1000.0
+        self.precision = GL_FLOAT
+        #self.precision = GL_DOUBLE
+        
         
         if meshlayer != None:
         
@@ -198,7 +201,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
             sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
             from meshlayerparsers.posttelemac_selafin_parser import PostTelemacSelafinParser
             self.parser = PostTelemacSelafinParser()
-            self.parser.loadHydrauFile(os.path.join(os.path.dirname(__file__),'exemples','SMEAG_REF_Q100_MAX.res'))
+            self.parser.loadHydrauFile(os.path.join(os.path.dirname(__file__),'exemples','Test1.res'))
         self.loadVertexes()
         self.changeFreeSurfaceVertex(0)
         
@@ -229,6 +232,8 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                 glPixelStorei(GL_UNPACK_ALIGNMENT,1)
                 
                 glTexImage2D( GL_TEXTURE_2D, 0, 3, self.ix, self.iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image )
+                #glTexImage2D( GL_TEXTURE_2D, 0, 3, 100.0/self.ratioxy , 100*self.iy/self.ix/self.ratioxy , 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image )
+                
                 glBindTexture(GL_TEXTURE_2D, ID)
                 
                     
@@ -328,6 +333,8 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         norm[ self.parser.getIkle()[:,2] ] += n
         self.normalize_v3(norm)
         self.norm = norm
+        
+        self.radius_ = math.atan(self.fovy_/180*math.pi) * max( ( max(self.vtxtodraw[:,0]) - min(self.vtxtodraw[:,0]) )  ,( max(self.vtxtodraw[:,1]) - min(self.vtxtodraw[:,1]) )  )
             
         
     def changeFreeSurfaceVertex(self,time):
@@ -415,6 +422,11 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         
 
         if True:
+            
+            #********************************************************************
+            #*****************  MESH *************************
+            #********************************************************************
+            
             if self.dialog.checkBox_showmesh.isChecked():
                 if True :   #working
                     glUseProgram(0)
@@ -430,11 +442,17 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                     glColor4f(1.0,1.0,1.0,1.0)
                     
                     glVertexPointerf(self.vtxtodraw)
+                    #glVertexPointer(3, self.precision, 0, self.vtxtodraw)
                     #glTexCoordPointer(1, GL_FLOAT, 0, val)
                     glDrawElementsui(GL_TRIANGLES, self.parser.getIkle())
                     
                     glPolygonMode(GL_FRONT, GL_FILL)
                     glPolygonMode(GL_BACK, GL_FILL)
+                    
+                    
+            #********************************************************************
+            #*****************  CENTER POINT      *************************
+            #********************************************************************
                     
             glUseProgram(0)
             for point in self.pointtodraw:
@@ -447,11 +465,16 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                 glEnd()
         
         
+            #********************************************************************
+            #*****************  TErrain  *************************
+            #********************************************************************
+        
+        
             if True:   
                 #glUseProgram(0)
                 
 
-
+                #*****************  Light  *************************************
                 
                 glEnableClientState(GL_VERTEX_ARRAY)
                 glEnableClientState( GL_NORMAL_ARRAY )
@@ -484,6 +507,10 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                 #glShadeModel(self.surface)
                 glShadeModel(GL_SMOOTH)
                 
+                
+                
+                #*****************  Terrain   *************************************
+                
                 if True:
                     if self.texture:
                         if True:
@@ -492,6 +519,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                             glPixelStorei(GL_UNPACK_ALIGNMENT,1)
                             
                             glTexImage2D( GL_TEXTURE_2D, 0, 3, self.ix, self.iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image )
+                            #glTexImage2D( GL_TEXTURE_2D, 0, 3, 100.0/self.ratioxy , 100*self.iy/self.ix/self.ratioxy , 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image )
                             
                         if True:
                             
@@ -508,6 +536,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                             #glBindTexture(GL_TEXTURE_2D, ID)
                             glEnableClientState(GL_TEXTURE_COORD_ARRAY)
                             glTexCoordPointerf(self.vtxtodraw)
+                            #glTexCoordPointer(3, self.precision, 0, self.vtxtodraw)
                 
                 #shader = shaders.compileProgram(vertex_shader_vel)
                 #glUseProgram(shader)
@@ -518,16 +547,22 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                     glMaterialfv(GL_FRONT, GL_DIFFUSE, [0., .8, .8, 1.] )
                     
                     glVertexPointerf(self.vtxtodraw)
+                    #glVertexPointer(3, self.precision, 0, self.vtxtodraw)
+                    
                     
                     if True :
                         no = self.norm[ self.parser.getIkle() ] 
                         #glNormalPointerf(no)
                         glNormalPointerf(self.norm )
+                        #glNormalPointer(self.precision, 0, self.norm)
                         #glNormalPointerf(self.nomrtemp)
                     #glTexCoordPointer(1, GL_FLOAT, 0, val)
                     glDrawElementsui(GL_TRIANGLES, self.parser.getIkle())   
                     
-                    
+                
+                
+                #*****************  water   *************************************
+                
                 if True :
                     if self.texture:
                         if True:
@@ -564,6 +599,10 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                         #glNormalPointerf(self.nomrtemp)
                     #glTexCoordPointer(1, GL_FLOAT, 0, val)
                     glDrawElementsui(GL_TRIANGLES, self.iklewater) 
+                    
+                
+                
+                #*****************  ray    *************************************
                     
                     
                 if False:
@@ -610,6 +649,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         self.center_ = _cog
         self.view_all()
 
+    """
     def set_radius(self, _radius):
         self.radius_ = _radius
         self.set_projection(_radius / 100.0, _radius * 100.0, self.fovy_)
@@ -617,6 +657,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         self.translate([0, 0, -_radius * 2.0])
         self.view_all()
         self.updateGL()
+    """
 
     def reset_view(self):
         # scene pos and size
@@ -648,6 +689,9 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         self.modelview_matrix_ = glGetDoublev(GL_MODELVIEW_MATRIX)
         
         
+        self.dialog.textEdit_modelview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )  )  )     )
+        self.dialog.textEdit_projectionview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_PROJECTION_MATRIX) )  )  )     )
+        
         #print self.modelview_matrix_
         
         if False:
@@ -668,14 +712,29 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         glTranslatef(-t[0], -t[1], -t[2])
         glMultMatrixd(self.modelview_matrix_)
         self.modelview_matrix_ = glGetDoublev(GL_MODELVIEW_MATRIX)
+        
+        self.dialog.textEdit_modelview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )  )  )     )
+        self.dialog.textEdit_projectionview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_PROJECTION_MATRIX) )  )  )     )
             
         self.signalGLMatrixChanged.emit()
 
     def view_all(self):
     
         t =  -np.dot(np.transpose(  np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )  )   , np.array([ self.center_[0], self.center_[1], self.center_[2],1.0    ] ) )
-        t[3] = t[3] - 10.0
-        self.translate(  t )
+        
+        if False:
+            print max( ( max(self.vtxtodraw[:,0]) - min(self.vtxtodraw[:,0]) ) / 2 ,( max(self.vtxtodraw[:,1]) - min(self.vtxtodraw[:,1]) ) / 2 )
+            print math.atan(self.fovy_/180*math.pi)
+            print self.radius_
+            
+            eye,ray_eye = self.getRay(0,0)
+            meshpoint =  self.getNearestPointFromRay(eye,ray_eye)
+            
+            print eye
+        
+        t[2] = t[2] - self.radius_ 
+        #print t
+        self.translate(t)
 
     def map_to_sphere(self, _v2D):
         _v3D = [0.0, 0.0, 0.0]
@@ -703,6 +762,8 @@ class PyGLWidget(QtOpenGL.QGLWidget):
 
     def wheelEvent(self, _event):
         # Use the mouse wheel to zoom in/out
+
+        
         newPoint2D = _event.pos()
         eye,ray_eye = self.getRay(newPoint2D.x(),newPoint2D.y())
         meshpoint =  self.getNearestPointFromRay(eye,ray_eye)
@@ -719,8 +780,14 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         
         #self.translate([0.0, 0.0, d])
         self.translate([-vect2[0],-vect2[1], d])
+        
+        
             
         self.updateGL()
+        
+        self.dialog.textEdit_modelview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )  )  )     )
+        self.dialog.textEdit_projectionview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_PROJECTION_MATRIX) )  )  )     )
+        
         _event.accept()
 
     def mousePressEvent(self, _event):
@@ -748,29 +815,63 @@ class PyGLWidget(QtOpenGL.QGLWidget):
     def getRay(self,mousex = None, mousey=None):
     
         #get Ray
-        if mousex != None and mousey != None:
-            if False:
-                x = (2.0 * newPoint2D.x()) / self.width() - 1.0
-                y = 1.0 - (2.0 * newPoint2D.y()) / self.height()
-                z = 1.0
-            if True:
-                x = (2.0 * mousex) / self.width() - 1.0
-                y = 1.0 - (2.0 * mousey) / self.height()
-                z = 1.0
-            ray_nds = np.array( [ x, y, -1,1 ] )
-            ray_eye = np.dot(numpy.linalg.inv ( np.transpose( np.array(glGetDoublev( GL_PROJECTION_MATRIX) )  ) ) , ray_nds )
-            ray_eye = np.array( [ ray_eye[0], ray_eye[1], -1.0, 0.0 ] )
-            #in world coords
-            ray_eye = np.dot(numpy.linalg.inv ( np.transpose(  np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )  )  ) , ray_eye )
-        else:
-            ray_eye = None
-            
-        #get eye
-        eyetemp = np.array( [ 0, 0, 0,1 ] )
-        eye = np.dot(numpy.linalg.inv ( np.transpose( np.array(glGetDoublev( GL_MODELVIEW_MATRIX) )  ) ) , eyetemp )[0:3]
+        try:
+            if mousex != None and mousey != None:
+                if False:
+                    x = (2.0 * newPoint2D.x()) / self.width() - 1.0
+                    y = 1.0 - (2.0 * newPoint2D.y()) / self.height()
+                    z = 1.0
+                if True:
+                    x = (2.0 * mousex) / self.width() - 1.0
+                    y = 1.0 - (2.0 * mousey) / self.height()
+                    z = 1.0
+                    
+                #self.printDialog( str(x) + ' ' +str(y) )
+                
+                
+                    
+                ray_nds = np.array( [ x, y, -1,1 ] )
+                ray_eye = np.dot(numpy.linalg.inv ( np.transpose( np.array(glGetDoublev( GL_PROJECTION_MATRIX) )  ) ) , ray_nds )
+                ray_eye = np.array( [ ray_eye[0], ray_eye[1], -1.0, 0.0 ] )
+                #in world coords
+                ray_eye = np.dot(numpy.linalg.inv ( np.transpose(  np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )  )  ) , ray_eye )
+                
+                
+                if False:
+                    try:
+                        matrix1 =  np.array(glGetDoublev( GL_PROJECTION_MATRIX) )[0:3]
+                        self.printDialog('matrix1' + str(matrix1))
+                        matrix11 = matrix1[:,0:3]
+                        self.printDialog('matrix11' + str(matrix11))
+                        matrix2 = numpy.linalg.inv (np.transpose(  matrix11) )
+                        self.printDialog('matrix2' + str(matrix2))
+                        
+                        
+                        ray_nds = np.array( [ x, y, -1 ] )
+                        ray_eye = np.dot(matrix2 , ray_nds )
+                        
+                        self.printDialog('ray_eye' + str(ray_eye))
+                        
+                        
+                        #ray_eye = np.dot(numpy.linalg.inv ( np.transpose( np.array(glGetDoublev( GL_PROJECTION_MATRIX) )  ) ) , ray_nds )
+                    except Exception, e:
+                        self.printDialog('ray eye 2 ' + str(e))
+                        ray_eye = ray_nds
+                        
+                        ray_eye = np.array( [ ray_eye[0], ray_eye[1], -1.0, 0.0 ] )
 
-        
-        return (eye,ray_eye )
+            else:
+                ray_eye = None
+                
+            #get eye
+            eyetemp = np.array( [ 0, 0, 0,1 ] )
+            eye = np.dot(numpy.linalg.inv ( np.transpose( np.array(glGetDoublev( GL_MODELVIEW_MATRIX) )  ) ) , eyetemp )[0:3]
+
+            #self.printDialog('ray_eye final \n' + str(eye)+'\n'+str(ray_eye))
+            return (eye,ray_eye )
+        except Exception, e:
+            self.printDialog('ray eye ' + str(e))
+            return (self.centermesh, np.array( [ 0, 0, -1 ,1 ] ) )
         
         
         
@@ -781,10 +882,15 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         return self.vtxtodraw[temp1][0]
         
         
+    def printDialog(self,temp):
+        self.dialog.textEdit_log.append(str(temp))
         
 
     def mouseMoveEvent(self, _event):
         newPoint2D = _event.pos()
+        
+
+        
         
         if False:
             #newPoint2D = _event.pos()
