@@ -117,7 +117,8 @@ class OpenGLDialog(QtGui.QDialog,FORM_CLASS2):
         self.playing = False
         
         #self.pushButton_play.clicked.connect(self.playFlood)
-        self.pushButton_play.clicked.connect(self.resetview)
+        self.pushButton_resetview.clicked.connect(self.resetview)
+        self.pushButton_play.clicked.connect(self.playFlood)
         
         self.horizontalSlider_time.setMaximum(self.openglwidget.parser.itertimecount)
         self.horizontalSlider_time.setPageStep(min(10,int(self.openglwidget.parser.itertimecount/20)))
@@ -208,7 +209,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         
         if self.texture:
             if True:
-                self.im = PIL.Image.open(os.path.join(os.path.dirname(__file__) ,'textures','grass.png') )
+                self.im = PIL.Image.open(os.path.join(os.path.dirname(__file__) ,'textures','grassbis.png') )
                 #self.im = PIL.Image.open(os.path.join(os.path.dirname(__file__) ,'textures','grass2.jpg') )
                 #print self.im.mode
                 try: #older version of pil
@@ -690,7 +691,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         
         
         self.dialog.textEdit_modelview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )  )  )     )
-        self.dialog.textEdit_projectionview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_PROJECTION_MATRIX) )  )  )     )
+        #self.dialog.textEdit_projectionview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_PROJECTION_MATRIX) )  )  )     )
         
         #print self.modelview_matrix_
         
@@ -714,7 +715,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         self.modelview_matrix_ = glGetDoublev(GL_MODELVIEW_MATRIX)
         
         self.dialog.textEdit_modelview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )  )  )     )
-        self.dialog.textEdit_projectionview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_PROJECTION_MATRIX) )  )  )     )
+        #self.dialog.textEdit_projectionview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_PROJECTION_MATRIX) )  )  )     )
             
         self.signalGLMatrixChanged.emit()
 
@@ -786,7 +787,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         self.updateGL()
         
         self.dialog.textEdit_modelview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )  )  )     )
-        self.dialog.textEdit_projectionview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_PROJECTION_MATRIX) )  )  )     )
+        #self.dialog.textEdit_projectionview.setText(  str( np.transpose(  np.array(glGetDoublev(GL_PROJECTION_MATRIX) )  )  )     )
         
         _event.accept()
 
@@ -1024,16 +1025,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
             
             
 
-            
-            
-        
-if __name__ == '__main__':
 
-    app = QtGui.QApplication(sys.argv)
-    #window = Window()
-    window = OpenGLDialog()
-    window.show()
-    sys.exit(app.exec_())
     
     
     

@@ -62,6 +62,8 @@ class ToShapeTool(AbstractMeshLayerTool,FORM_CLASS):
         #self.pushButton_9.clicked.connect(self.set_utilcrs)
         self.pushButton_2.clicked.connect(self.create_shp_points)
         
+        self.crsselector = qgis.gui.QgsGenericProjectionSelector()
+        
 
         
     def onActivation(self):
