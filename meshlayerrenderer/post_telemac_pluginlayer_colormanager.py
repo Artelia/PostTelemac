@@ -37,20 +37,25 @@ class PostTelemacColorManager():
         
     #*********************** color ramp transformation ******************************************************
         
-    def qgsvectorgradientcolorrampv2ToColumncolor(self,temp1):
+    def qgsvectorgradientcolorrampv2ToColumncolor(self,temp1,inverse):
     
     
         if str(temp1.__class__.__name__) == 'QgsVectorGradientColorRampV2':
         
             firstcol = temp1.properties()['color1']
             lastcol=temp1.properties()['color2']
-            
-            otherscol = [[0, 
+            if inverse:
+                firstv = 1
+                lastv = 0
+            else:
+                firstv = 0
+                lastv = 1
+            otherscol = [[firstv, 
                          int(firstcol.split(',')[0]),
                          int(firstcol.split(',')[1]),
                          int(firstcol.split(',')[2]),
                          int(firstcol.split(',')[3])]]
-            
+
             try:
                 otherscoltemp=temp1.properties()['stops'].split(":")
                 bool_stops = True
@@ -59,17 +64,21 @@ class PostTelemacColorManager():
                 
             if bool_stops:
                 for col in otherscoltemp:
-                    otherscol.append([float(col.split(';')[0]),
+                    if inverse:
+                        intv = 1.0-float(col.split(';')[0])
+                    else:
+                        intv = float(col.split(';')[0])
+                    otherscol.append([intv,
                                       int(col.split(';')[1].split(',')[0]) ,
                                       int(col.split(';')[1].split(',')[1])  ,
                                       int(col.split(';')[1].split(',')[2]),
                                       int(col.split(';')[1].split(',')[3])])
-            otherscol.append([1, 
+            otherscol.append([lastv, 
                              int(lastcol.split(',')[0]) ,
                              int(lastcol.split(',')[1]),
                              int(lastcol.split(',')[2]),
                              int(lastcol.split(',')[3])])
-                             
+            if inverse: otherscol.sort()
             #return self.arrayStepRGBAToCmap(otherscol)
             return otherscol
         
@@ -77,8 +86,13 @@ class PostTelemacColorManager():
             temp1 = temp1.cloneGradientRamp()
             firstcol = temp1.properties()['color1']
             lastcol=temp1.properties()['color2']
-            
-            otherscol = [[0, 
+            if inverse:
+                firstv = 1
+                lastv = 0
+            else:
+                firstv = 0
+                lastv = 1
+            otherscol = [[firstv, 
                          int(firstcol.split(',')[0]),
                          int(firstcol.split(',')[1]),
                          int(firstcol.split(',')[2]),
@@ -92,17 +106,21 @@ class PostTelemacColorManager():
                 
             if bool_stops:
                 for col in otherscoltemp:
-                    otherscol.append([float(col.split(';')[0]),
+                    if inverse:
+                        intv = 1.0-float(col.split(';')[0])
+                    else:
+                        intv = float(col.split(';')[0])
+                    otherscol.append([intv,
                                       int(col.split(';')[1].split(',')[0]) ,
                                       int(col.split(';')[1].split(',')[1])  ,
                                       int(col.split(';')[1].split(',')[2]),
                                       int(col.split(';')[1].split(',')[3])])
-            otherscol.append([1, 
+            otherscol.append([lastv, 
                              int(lastcol.split(',')[0]) ,
                              int(lastcol.split(',')[1]),
                              int(lastcol.split(',')[2]),
                              int(lastcol.split(',')[3])])
-                             
+            if inverse: otherscol.sort()                 
             #return self.arrayStepRGBAToCmap(otherscol)
             return otherscol
             

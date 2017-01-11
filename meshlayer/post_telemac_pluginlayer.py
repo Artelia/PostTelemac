@@ -55,6 +55,69 @@ selafininstancecount = 2
 debug = False
 DEBUGTIME = False
 
+"""
+class MeshLayerLegendNode(qgis.core.QgsLayerTreeModelLegendNode):
+    def __init__(self, nodeLayer, parent, legend):
+        QgsLayerTreeModelLegendNode.__init__(self, nodeLayer, parent)
+        self.text = ""
+        self.__legend = legend
+
+    def data(self, role):
+        if role == Qt.DisplayRole or role == Qt.EditRole:
+            return self.text
+        elif role  == Qt.DecorationRole:
+            return self.__legend.image()
+        else:
+            return None
+
+    def draw(self, settings, ctx):
+        symbolLabelFont = settings.style(QgsComposerLegendStyle.SymbolLabel).font()
+        textHeight = settings.fontHeightCharacterMM(symbolLabelFont, '0');
+
+        im = QgsLayerTreeModelLegendNode.ItemMetrics()
+        context = QgsRenderContext()
+        context.setScaleFactor( settings.dpi() / 25.4 )
+        context.setRendererScale( settings.mapScale() )
+        context.setMapToPixel( QgsMapToPixel( 1 / ( settings.mmPerMapUnit() * context.scaleFactor() ) ) )
+
+        sz = self.__legend.sceneRect().size()
+        aspect = sz.width() / sz.height()
+        h = textHeight*16
+        w = aspect*h
+        im.symbolSize = QSizeF(w, h)
+        im.labeSize =  QSizeF(0, 0)
+        if ctx:
+            currentXPosition = ctx.point.x()
+            currentYCoord = ctx.point.y() #\
+                    #+ settings.symbolSize().height()/2;
+            ctx.painter.save()
+            ctx.painter.translate(currentXPosition, currentYCoord)
+            rect = QRectF()
+            rect.setSize(QSizeF(im.symbolSize))
+            self.__legend.render(ctx.painter, rect)
+            #ctx.painter.drawImage(0, 0, self.image)
+            ctx.painter.restore()
+        return im
+
+"""
+
+"""
+        
+class MeshLayerLegend(qgis.core.QgsDefaultPluginLayerLegend):
+    def __init__(self, layer, legend):
+        QgsDefaultPluginLayerLegend.__init__(self, layer)
+        self.nodes = []
+        self.__legend = legend
+
+    def createLayerTreeModelLegendNodes(self, nodeLayer):
+        node = MeshLayerLegendNode(nodeLayer, self, self.__legend)
+        self.nodes = [node]
+        return self.nodes
+
+
+"""
+
+
 class SelafinPluginLayer(qgis.core.QgsPluginLayer):
     """
     QgsPluginLayer implmentation for drawing selafin file results
@@ -163,6 +226,12 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
             figure(selafininstancecount +4) for flow computation
         """
         selafininstancecount = selafininstancecount + 5
+        
+        #legend
+        if False:
+            self.__legend = None
+            self.__layerLegend = MeshLayerLegend(self, self.__legend)
+            self.setLegend(self.__layerLegend)
         
         #Connectors
         self.canvas.destinationCrsChanged.connect(self.changecrs)
@@ -680,4 +749,8 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
     def tr(self, message):  
         """Used for translation"""
         return QtCore.QCoreApplication.translate('SelafinPluginLayer', message, None, QtGui.QApplication.UnicodeUTF8)
+        
+        
+        
+        
     

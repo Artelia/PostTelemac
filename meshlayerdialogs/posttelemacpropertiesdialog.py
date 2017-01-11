@@ -150,6 +150,8 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         self.populatecombobox_lvl()
         self.populatecombobox_colorpalette()
         self.InitMapRamp()
+        self.checkBox_inverse_clr.setCheckState(0)
+        self.checkBox_inverse_clr2.setCheckState(0)
         self.tabWidget_lvl_vel.currentChanged.connect(self.updateColorParams)
         if False:
             self.comboBox_levelstype.currentIndexChanged.connect(self.colorRampChooserType)
@@ -550,9 +552,13 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         #self.comboBox_clrgame.currentIndexChanged.connect(self.color_palette_changed_contour)
         self.comboBox_clrgame.currentIndexChanged.connect(self.color_palette_changed)
         self.comboBox_clrgame.currentIndexChanged.connect(self.comboBox_clrgame2.setCurrentIndex)
+        self.checkBox_inverse_clr.stateChanged.connect(self.color_palette_changed)
+        self.checkBox_inverse_clr.stateChanged.connect(self.checkBox_inverse_clr2.setCheckState)
         self.comboBox_genericlevels.currentIndexChanged.connect(self.change_cmchoosergenericlvl)
         #2
         self.comboBox_clrgame2.currentIndexChanged.connect(self.comboBox_clrgame.setCurrentIndex)
+        self.checkBox_inverse_clr2.stateChanged.connect(self.color_palette_changed)
+        self.checkBox_inverse_clr2.stateChanged.connect(self.checkBox_inverse_clr.setCheckState)
         self.pushButton_createsteplevel.clicked.connect(self.createstepclass)
         #3
         self.comboBox_clrramp_preset.currentIndexChanged.connect(self.loadMapRamp)
@@ -566,9 +572,13 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
         #self.comboBox_clrgame.currentIndexChanged.disconnect(self.color_palette_changed_contour)
         self.comboBox_clrgame.currentIndexChanged.disconnect(self.color_palette_changed)
         self.comboBox_clrgame.currentIndexChanged.disconnect(self.comboBox_clrgame2.setCurrentIndex)
+        self.checkBox_inverse_clr.stateChanged.disconnect(self.color_palette_changed)
+        self.checkBox_inverse_clr2.setCheckState(self.checkBox_inverse_clr.checkState())
         self.comboBox_genericlevels.currentIndexChanged.disconnect(self.change_cmchoosergenericlvl)
         #2
         self.comboBox_clrgame2.currentIndexChanged.disconnect(self.comboBox_clrgame.setCurrentIndex)
+        self.checkBox_inverse_clr2.stateChanged.disconnect(self.color_palette_changed)
+        self.checkBox_inverse_clr.setCheckState(self.checkBox_inverse_clr2.checkState())
         self.pushButton_createsteplevel.clicked.disconnect(self.createstepclass)
         #3
         self.comboBox_clrramp_preset.currentIndexChanged.disconnect(self.loadMapRamp)
@@ -666,32 +676,33 @@ class PostTelemacPropertiesDialog(QtGui.QDockWidget, FORM_CLASS):
             #cmap_vel = self.meshlayer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
             self.meshlayer.meshrenderer.change_cm_vel(self.meshlayer.meshrenderer.cmap_mpl_vel_raw)
         """
+        temp1 = qgis.core.QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame.currentText())
+        inverse = self.checkBox_inverse_clr.isChecked()
         if self.meshlayer.meshrenderer != None :
             if type == None:
-                temp1 = qgis.core.QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame.currentText())
-                
+                #temp1 = qgis.core.QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame.currentText())
                 if self.tabWidget_lvl_vel.currentIndex() == 0 :#contour
-                    self.meshlayer.meshrenderer.color_palette_changed_contour(temp1)
+                    self.meshlayer.meshrenderer.color_palette_changed_contour(temp1,inverse)
                 elif self.tabWidget_lvl_vel.currentIndex() == 1 :#velocity
-                    self.meshlayer.meshrenderer.color_palette_changed_vel(temp1)
+                    self.meshlayer.meshrenderer.color_palette_changed_vel(temp1,inverse)
             else:
                 if type == 'contour':
-                    temp1 = qgis.core.QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame.currentText())
-                    self.meshlayer.meshrenderer.color_palette_changed_contour(temp1)
+                    #temp1 = qgis.core.QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame.currentText())
+                    self.meshlayer.meshrenderer.color_palette_changed_contour(temp1,inverse)
                 elif type == 'velocity':
-                    temp1 = qgis.core.QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame.currentText())
-                    self.meshlayer.meshrenderer.color_palette_changed_vel(temp1)
+                    #temp1 = qgis.core.QgsStyleV2.defaultStyle().colorRamp(self.comboBox_clrgame.currentText())
+                    self.meshlayer.meshrenderer.color_palette_changed_vel(temp1,inverse)
         if False:
             if type == None:
                 if self.tabWidget_lvl_vel.currentIndex() == 0 :#contour
-                    self.meshlayer.color_palette_changed_contour(temp1)
+                    self.meshlayer.color_palette_changed_contour(temp1,inverse)
                 elif self.tabWidget_lvl_vel.currentIndex() == 1 :#velocity
-                    self.meshlayer.color_palette_changed_vel(temp1)
+                    self.meshlayer.color_palette_changed_vel(temp1,inverse)
             else:
                 if type == 'contour':
-                    self.meshlayer.color_palette_changed_contour(temp1)
+                    self.meshlayer.color_palette_changed_contour(temp1,inverse)
                 elif type == 'velocity':
-                    self.meshlayer.color_palette_changed_vel(temp1)
+                    self.meshlayer.color_palette_changed_vel(temp1,inverse)
                 
     
     def changeAlpha(self,nb):

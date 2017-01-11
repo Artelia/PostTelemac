@@ -132,16 +132,16 @@ class AbstractMeshRenderer(QtCore.QObject):
         return xcoordsfinal,ycoordsfinal
         
 
-    def color_palette_changed_contour(self,colorramp):
+    def color_palette_changed_contour(self,colorramp,inverse):
         #temp = self.colormanager.qgsvectorgradientcolorrampv2ToColumncolor(colorramp)
         #self.cmap_mpl_contour_raw = self.colormanager.columncolorToCmap(temp)
-        self.cmap_contour_raw = self.colormanager.qgsvectorgradientcolorrampv2ToColumncolor(colorramp)
+        self.cmap_contour_raw = self.colormanager.qgsvectorgradientcolorrampv2ToColumncolor(colorramp,inverse)
         self.change_cm_contour(self.cmap_contour_raw)
             
-    def color_palette_changed_vel(self,colorramp):
+    def color_palette_changed_vel(self,colorramp,inverse):
         
         #temp = self.colormanager.qgsvectorgradientcolorrampv2ToColumncolor(colorramp)
-        self.cmap_vel_raw = self.colormanager.qgsvectorgradientcolorrampv2ToColumncolor(colorramp)
+        self.cmap_vel_raw = self.colormanager.qgsvectorgradientcolorrampv2ToColumncolor(colorramp,inverse)
         #cmap_vel = self.layer.colormanager.qgsvectorgradientcolorrampv2ToCmap(temp1)
         self.change_cm_vel(self.cmap_vel_raw)
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>492</width>
-    <height>711</height>
+    <width>667</width>
+    <height>880</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -73,8 +73,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>455</width>
-         <height>677</height>
+         <width>647</width>
+         <height>838</height>
         </rect>
        </property>
        <property name="sizePolicy">
@@ -506,7 +506,7 @@ translation</string>
                <property name="frameShadow">
                 <enum>QFrame::Raised</enum>
                </property>
-               <layout class="QHBoxLayout" name="horizontalLayout_16" stretch="5,1">
+               <layout class="QHBoxLayout" name="horizontalLayout_16" stretch="5,0">
                 <item>
                  <widget class="QTabWidget" name="tabWidget_lvl_vel">
                   <property name="sizePolicy">
@@ -955,12 +955,15 @@ translation</string>
                   <property name="title">
                    <string>Color ramp</string>
                   </property>
-                  <layout class="QVBoxLayout" name="verticalLayout_11" stretch="1,1,1,1,10">
+                  <layout class="QVBoxLayout" name="verticalLayout_11" stretch="0,1,1,0,10">
                    <property name="bottomMargin">
                     <number>0</number>
                    </property>
                    <item>
                     <widget class="QFrame" name="frame_5">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
                      <property name="minimumSize">
                       <size>
                        <width>0</width>
@@ -1024,21 +1027,14 @@ translation</string>
                       </size>
                      </property>
                      <property name="currentIndex">
-                      <number>0</number>
+                      <number>1</number>
                      </property>
                      <widget class="QWidget" name="page_4">
                       <layout class="QGridLayout" name="gridLayout_8">
-                       <item row="1" column="0" colspan="2">
+                       <item row="2" column="0" colspan="2">
                         <widget class="QComboBox" name="comboBox_genericlevels">
                          <property name="toolTip">
                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Customizables classes by editing the file :&lt;/p&gt;&lt;p&gt;C:\Users\&amp;quot;your name&amp;quot;\.qgis2\python\plugins\PostTelemac\classes.txt&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="1">
-                        <widget class="QComboBox" name="comboBox_clrgame">
-                         <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Color gradient configurable by adding color gradient in&lt;/p&gt;&lt;p&gt;Settings\Style manager\Color ramp&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                         </widget>
                        </item>
@@ -1055,7 +1051,7 @@ translation</string>
                          </property>
                         </widget>
                        </item>
-                       <item row="2" column="0">
+                       <item row="3" column="0">
                         <spacer name="verticalSpacer_10">
                          <property name="orientation">
                           <enum>Qt::Vertical</enum>
@@ -1068,52 +1064,25 @@ translation</string>
                          </property>
                         </spacer>
                        </item>
+                       <item row="0" column="1">
+                        <widget class="QComboBox" name="comboBox_clrgame">
+                         <property name="toolTip">
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Color gradient configurable by adding color gradient in&lt;/p&gt;&lt;p&gt;Settings\Style manager\Color ramp&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="1" column="0">
+                        <widget class="QCheckBox" name="checkBox_inverse_clr">
+                         <property name="text">
+                          <string>Invert</string>
+                         </property>
+                        </widget>
+                       </item>
                       </layout>
                      </widget>
                      <widget class="QWidget" name="page_5">
                       <layout class="QGridLayout" name="gridLayout_3">
-                       <item row="1" column="0">
-                        <widget class="QLabel" name="label_4">
-                         <property name="text">
-                          <string>Min</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="1">
-                        <widget class="QLineEdit" name="lineEdit_levelmin">
-                         <property name="sizePolicy">
-                          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                           <horstretch>0</horstretch>
-                           <verstretch>0</verstretch>
-                          </sizepolicy>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="2">
-                        <widget class="QLabel" name="label_9">
-                         <property name="text">
-                          <string>Max</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="3">
-                        <widget class="QLineEdit" name="lineEdit_levelmax">
-                         <property name="sizePolicy">
-                          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                           <horstretch>0</horstretch>
-                           <verstretch>0</verstretch>
-                          </sizepolicy>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="4">
-                        <widget class="QLabel" name="label_6">
-                         <property name="text">
-                          <string>Step</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="5">
+                       <item row="4" column="5">
                         <widget class="QLineEdit" name="lineEdit_levelstep">
                          <property name="sizePolicy">
                           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -1126,7 +1095,31 @@ translation</string>
                          </property>
                         </widget>
                        </item>
-                       <item row="2" column="0" colspan="6">
+                       <item row="4" column="4">
+                        <widget class="QLabel" name="label_6">
+                         <property name="text">
+                          <string>Step</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="4" column="2">
+                        <widget class="QLabel" name="label_9">
+                         <property name="text">
+                          <string>Max</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="4" column="3">
+                        <widget class="QLineEdit" name="lineEdit_levelmax">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                           <horstretch>0</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="5" column="0" colspan="6">
                         <widget class="QPushButton" name="pushButton_createsteplevel">
                          <property name="sizePolicy">
                           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -1139,13 +1132,37 @@ translation</string>
                          </property>
                         </widget>
                        </item>
-                       <item row="0" column="3" colspan="3">
-                        <widget class="QComboBox" name="comboBox_clrgame2"/>
-                       </item>
                        <item row="0" column="0" colspan="3">
                         <widget class="QLabel" name="label_17">
                          <property name="text">
                           <string>Color gradient</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="4" column="0">
+                        <widget class="QLabel" name="label_4">
+                         <property name="text">
+                          <string>Min</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="4" column="1">
+                        <widget class="QLineEdit" name="lineEdit_levelmin">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                           <horstretch>0</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="0" column="3" colspan="3">
+                        <widget class="QComboBox" name="comboBox_clrgame2"/>
+                       </item>
+                       <item row="1" column="0" colspan="3">
+                        <widget class="QCheckBox" name="checkBox_inverse_clr2">
+                         <property name="text">
+                          <string>Invert</string>
                          </property>
                         </widget>
                        </item>
@@ -1677,12 +1694,12 @@ translation</string>
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>128</x>
-     <y>468</y>
+     <x>172</x>
+     <y>305</y>
     </hint>
     <hint type="destinationlabel">
-     <x>128</x>
-     <y>503</y>
+     <x>172</x>
+     <y>349</y>
     </hint>
    </hints>
   </connection>
@@ -1693,8 +1710,8 @@ translation</string>
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>240</x>
-     <y>626</y>
+     <x>242</x>
+     <y>600</y>
     </hint>
     <hint type="destinationlabel">
      <x>240</x>
@@ -1709,12 +1726,12 @@ translation</string>
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>181</x>
-     <y>311</y>
+     <x>225</x>
+     <y>375</y>
     </hint>
     <hint type="destinationlabel">
-     <x>181</x>
-     <y>354</y>
+     <x>225</x>
+     <y>432</y>
     </hint>
    </hints>
   </connection>
