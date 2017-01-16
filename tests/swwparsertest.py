@@ -69,8 +69,12 @@ from meshlayerparsers.posttelemac_anuga_parser import PostTelemacSWWParser
 def doThings():
     try:
         print 'DEBUT'
+        path = os.path.normpath('C://00_Bureau//00_QGIs//PostTelemac_test_file//test2.sww')
         parser = PostTelemacSWWParser()
-        parser.loadHydrauFile(os.path.join(os.path.dirname(__file__),'..','meshlayertools','exemples','test2.sww'))
+        parser.loadHydrauFile(path)
+        
+        
+        
         print 'END'
     except Exception, e:
         print str(e)

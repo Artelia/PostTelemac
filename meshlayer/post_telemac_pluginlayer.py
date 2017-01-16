@@ -306,7 +306,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
             self.setLayerName(nom)
         
         #Set selafin
-        if extension == 'sww':
+        if extension == '.sww':
             self.hydrauparser = PostTelemacSWWParser(self.parametrestoload)
             self.hydrauparser.loadHydrauFile(self.hydraufilepath)
         else:

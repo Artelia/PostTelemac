@@ -390,7 +390,10 @@ class MeshRenderer(AbstractMeshRenderer):
                     if self.goodpointindex != None:
                         list1 = list1[self.goodpointindex]
             else:
-                list1 = np.stack((self.meshlayer.value, self.meshlayer.values[self.meshlayer.hydrauparser.parametrevx], self.meshlayer.values[self.meshlayer.hydrauparser.parametrevy]), axis=-1)
+                if self.meshlayer.hydrauparser.parametrevx!= None and self.meshlayer.hydrauparser.parametrevy != None:
+                    list1 = np.stack((self.meshlayer.value, self.meshlayer.values[self.meshlayer.hydrauparser.parametrevx], self.meshlayer.values[self.meshlayer.hydrauparser.parametrevy]), axis=-1)
+                else:
+                    list1 = np.stack((self.meshlayer.value, np.array([0] * self.meshlayer.hydrauparser.pointcount), np.array([0] * self.meshlayer.hydrauparser.pointcount)), axis=-1)
             
                 if True :
                     if self.goodpointindex != None:

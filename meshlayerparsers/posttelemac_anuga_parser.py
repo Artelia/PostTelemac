@@ -33,6 +33,8 @@ IKLE = 'volumes'
 TIME = 'time'
 BATHY = 'elevation'
 
+TYPENDVAR = 1 #0 for 1d array 1 for ReadAsArray
+
 
 class PostTelemacSWWParser(PostTelemacAbstractParser):
 
@@ -64,7 +66,13 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
             if var[1] == 1 :
                 result.append( self.get1DVar(var[0]) )
             elif var[1] == 2 :
-                result.append(np.array( var[2].ReadAsArray() )[::-1,:][time1])
+                if TYPENDVAR:
+                    result.append(np.array( var[2].ReadAsArray() )[::-1,:][time1])
+                else:
+                    result.append(  np.array(self.getNDVar(var[0])).reshape((-1,self.pointcount))[time1]       )
+                    
+                    
+                    
         return np.array(result)
         
         
@@ -98,6 +106,8 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
         """
         return [...[varname, dimension],...]
         """
+        #self.hydraufile = gdal.Open('NETCDF:"'+self.path+'"')
+        
         if self.varnames == None:
             dump = self.getNcDumpVar()[2]
             varnames=[]
@@ -109,7 +119,12 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
                 
                 elif len(str1[2]) == 2:
                     if str1[1] != IKLE:
-                        if len( self.getNDVar(str1[1])[0] ) == self.pointcount:
+                        if TYPENDVAR :
+                            temp = self.getNDVar(str1[1])[0]
+                        else:
+                            temp = np.array(self.getNDVar(str1[1])).reshape((self.pointcount,-1))
+                        
+                        if len( temp ) == self.pointcount:
                             varnames.append([str1[1],2])
                             if True:
                                 u = self.hydraufile.GetSubDatasets()
@@ -120,15 +135,19 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
                                         file1 = gdal.Open(arr[0])
                                         break
                                 varnames[-1].append(file1)
-                            
+        
             self.varnames = varnames
         
+        #self.hydraufile = None
         return [var[0] for var in self.varnames]
     
     def getIkle(self):
         if self.ikle == None:
-            self.ikle = self.getNDVar(IKLE)
-        
+            if  TYPENDVAR :
+                self.ikle = self.getNDVar(IKLE)
+            else:
+                temp = np.array(self.getNDVar(IKLE))
+                self.ikle = np.reshape(temp,(-1,3)).astype(int)
         return self.ikle
         
     def getTimes(self):
@@ -190,23 +209,23 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
         return result
         
     def get1DVar(self,varname):
-    
+        #print 'get1DVar'
         if varname not in self.onedvar.keys() or self.onedvar[varname] == None:
                 str1 = "ncdump -v "+varname+' ' +self.path
                 p = subprocess.Popen(str1, shell = True, stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
                 temp = p.stdout.readlines()
                 
                 temp1 = [str2.replace("\r\n", "") for str2 in temp]
-                
                 int2 = temp1.index('data:')
                 temp3 = temp1[int2+2:]
                 temp4=[]
+                i = 0
                 for test in temp3 :
                     temp5 = test.split(',')
                     temp5 = [a.split('=')[-1] for a in temp5]
                     temp5 = [a.split(';')[0] for a in temp5]
                     temp4+=temp5
-
+                    i += 1
                 temp5=[]
                 for test in temp4:
                     try:
@@ -221,8 +240,13 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
         
     
     def getNDVar(self,varname):
-        str2 = 'NETCDF:"'+self.path+'":'+varname
-        v = gdal.Open(str2)
-        temp1 = np.array( v.ReadAsArray() )
-        return temp1[::-1,:]
+        if TYPENDVAR :
+            str2 = 'NETCDF:"'+self.path+'":'+varname
+            v = gdal.Open(str2)
+            temp1 = np.array( v.ReadAsArray() )
+            v = None
+            return temp1[::-1,:]
+        else:
+            temp = self.get1DVar(varname)
+            return temp
         
