@@ -7,8 +7,8 @@ from qgis.utils import *
 try:
     from processing.core.GeoAlgorithmExecutionException import  GeoAlgorithmExecutionException
     from processing.tools.vector import VectorWriter
-except Exception, e :
-    print str(e)
+except Exception as e :
+    print( str(e) )
 #import numpy
 import numpy as np
 #import matplotlib
@@ -16,10 +16,16 @@ from matplotlib.path import Path
 import matplotlib.pyplot as plt
 from matplotlib import tri
 #import PyQT
+"""
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4.QtCore import SIGNAL, Qt
 from PyQt4 import QtCore, QtGui
+"""
+
+from qgis.PyQt import QtCore, QtGui
+from qgis.PyQt.QtCore import *
+from qgis.PyQt.QtGui import *
 
 #imports divers
 import threading
@@ -27,9 +33,12 @@ from time import ctime
 import math
 from os import path
 #shapely
-from shapely import *
-from shapely.geometry import Polygon
-from shapely.wkb import loads
+try:
+    from shapely import *
+    from shapely.geometry import Polygon
+    from shapely.wkb import loads
+except Exception as e:
+    print(e)
 import sys
 import os.path
 """
@@ -136,11 +145,13 @@ class SelafinContour2Shp(QtCore.QObject):
         self.slf_y = slf.MESHY
         self.slf_mesh = np.array(slf.IKLE3)
         """
-        self.slf_x, self.slf_y  = self.parserhydrau.getMesh()
+        #self.slf_x, self.slf_y  = self.parserhydrau.getMesh()
+        self.slf_x, self.slf_y  = self.parserhydrau.getFacesNodes()
         self.slf_x = self.slf_x + translatex
         self.slf_y = self.slf_y + translatey
         
-        self.slf_mesh  = np.array( self.parserhydrau.getIkle() )
+        #self.slf_mesh  = np.array( self.parserhydrau.getIkle() )
+        self.slf_mesh  = np.array( self.parserhydrau.getElemFaces() )
 
         if self.processtype==0:
             #self.slf_param = [0,parameter]
@@ -148,7 +159,7 @@ class SelafinContour2Shp(QtCore.QObject):
             self.slf_param = [parameter,parameter]
         else:
             #self.slf_param = [parameter,slf.VARNAMES[parameter].strip()]
-            self.slf_param = [parameter,self.parserhydrau.getVarnames()[parameter].strip()]
+            self.slf_param = [parameter,self.parserhydrau.getVarNames()[parameter].strip()]
         
         
             
@@ -213,7 +224,7 @@ class SelafinContour2Shp(QtCore.QObject):
                                                             QGis.WKBMultiPolygon, 
                                                             QgsCoordinateReferenceSystem(str(self.slf_shpcrs ) ), 
                                                             "ESRI Shapefile")
-        except Exception, e:
+        except Exception as e:
             pass
         
 
@@ -310,7 +321,7 @@ class SelafinContour2Shp(QtCore.QObject):
     def writeOutput(self,str1):
         if self.processtype in [0,1,2,3]: 
             self.status.emit(str(str1))
-        elif self.processtype ==4 : print str1
+        elif self.processtype ==4 : print(str1)
         
     def raiseError(self,str1):
         self.error.emit(str(str1))
@@ -413,7 +424,7 @@ class SelafinContour2Shp(QtCore.QObject):
                             tt1 = f1geom.addRing(ring)
                             if tt1==5 and f1geom.intersects(tab[k][1]):
                                 f1geom=f1geom.difference(tab[k][1])
-                    except Exception, e:
+                    except Exception as e:
                         strtxt = (str(ctime()) + " - "+str(self.slf_param[1] )
                                                +" - Thread - Traitement du niveau " + str(lvltemp1)
                                                +" - geometry n "+str(f1.id())+"/"+str(counttotal ) 
@@ -433,7 +444,7 @@ class SelafinContour2Shp(QtCore.QObject):
             fet.setGeometry(f1geom)  
             fet.setAttributes([lvltemp1[0],lvltemp1[1]])
             return fet
-        except Exception, e:
+        except Exception as e:
             self.writeOutput(str(ctime())  + ' - Erreur creation ring : ' + str(e))
             return f1
      
@@ -544,7 +555,7 @@ class InitSelafinContour2Shp(QtCore.QObject):
             parserhydrau = PostTelemacSelafinParser()
             parserhydrau.loadHydrauFile(os.path.normpath(selafinfilepath))
             slf = parserhydrau.hydraufile
-        except Exception, e :
+        except Exception as e :
             self.raiseError('fichier selafin n existe pas ' + str(e))
             
         #times = slf.tags["times"]
@@ -560,7 +571,7 @@ class InitSelafinContour2Shp(QtCore.QObject):
         
            
         #parameters=[str(slf.VARNAMES[i]).strip() for i in range(len(slf.VARNAMES))]
-        parameters=[str(parserhydrau.getVarnames()[i]).strip() for i in range(len(parserhydrau.getVarnames()))]
+        parameters=[str(parserhydrau.getVarNames()[i]).strip() for i in range(len(parserhydrau.getVarNames()))]
         if not parameter.isdigit():
             if parameter in parameters:
                 #self.slf_param = [parameters.index(parameter), parameter ]
@@ -609,7 +620,7 @@ class InitSelafinContour2Shp(QtCore.QObject):
         elif self.processtype in [1,2,3]:
             raise GeoAlgorithmExecutionException(str)
         elif self.processtype == 4:
-            print str
+            print(str)
             sys.exit(0)
             
     def writeOutput(self,str1):
@@ -631,7 +642,7 @@ if __name__ == '__main__':
     app = QgsApplication([], True)
     QgsApplication.setPrefixPath(qgishome, True)
     QgsApplication.initQgis() 
-    print len(sys.argv[1:])
+    print(len(sys.argv[1:]) )
     
     initclass=InitSelafinContour2Shp()
     

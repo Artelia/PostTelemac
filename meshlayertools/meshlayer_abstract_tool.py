@@ -24,7 +24,12 @@ Versions :
 """
 
 from __future__ import unicode_literals
-from PyQt4 import uic, QtCore, QtGui
+#from PyQt4 import uic, QtCore, QtGui
+from qgis.PyQt import uic, QtCore, QtGui
+try:
+    from qgis.PyQt.QtGui import QWidget, QTreeWidgetItem
+except:
+    from qgis.PyQt.QtWidgets import QWidget, QTreeWidgetItem
 import os
 
 #FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ValueTool.ui'))
@@ -32,7 +37,7 @@ import os
 
 
 #class AbstractMeshLayerTool(QtGui.QWidget, FORM_CLASS):
-class AbstractMeshLayerTool(QtGui.QWidget):
+class AbstractMeshLayerTool(QWidget):
 
     def __init__(self, meshlayer,dialog, parent=None):
         super(AbstractMeshLayerTool, self).__init__(parent)
@@ -63,7 +68,7 @@ class AbstractMeshLayerTool(QtGui.QWidget):
     def loadWidget(self):
         name = self.objectName()
         arb = name.split('_')
-        self.qtreewidgetitem = QtGui.QTreeWidgetItem()
+        self.qtreewidgetitem = QTreeWidgetItem()
         self.qtreewidgetitem.setText(0,arb[-1])  
         if self.iconpath != None:
             self.qtreewidgetitem.setIcon(0,QtGui.QIcon(self.iconpath))
@@ -80,7 +85,7 @@ class AbstractMeshLayerTool(QtGui.QWidget):
         """
         Mangage the activation of tool when tool's icon is clicked
         """
-        if isinstance(param1, QtGui.QTreeWidgetItem):    #signal from treeWidget_utils
+        if isinstance(param1, QTreeWidgetItem):    #signal from treeWidget_utils
             if param1 == self.qtreewidgetitem:
                 self.propertiesdialog.stackedWidget.setCurrentWidget(self)
                 self.onActivation()

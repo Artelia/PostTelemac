@@ -27,8 +27,14 @@ Versions :
 from __future__ import unicode_literals
 
 import sys
+"""
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+"""
+from qgis.PyQt.QtCore import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt import QtCore, QtGui
+
 from qgis.core import *
 from qgis.gui import *
 from os import path
@@ -40,8 +46,10 @@ import matplotlib.pyplot as plt
 from matplotlib import tri
 
 from qgis.utils import *
+"""
 from PyQt4.QtCore import SIGNAL, Qt
 from PyQt4 import QtCore, QtGui
+"""
 
 """
 from ..libs_telemac.utils.files import getFileContent
@@ -143,10 +151,12 @@ class SelafinContour2Pts(QtCore.QObject):
         self.slf_y = slf.MESHY
         self.mesh = np.array(slf.IKLE3)
         """
-        self.x, self.y  = self.parserhydrau.getMesh()
+        #self.x, self.y  = self.parserhydrau.getMesh()
+        self.x, self.y  = self.parserhydrau.getFacesNodes()
         self.x = self.x + translatex
         self.y = self.y + translatey
-        self.mesh  = np.array( self.parserhydrau.getIkle() )
+        #self.mesh  = np.array( self.parserhydrau.getIkle() )
+        self.mesh  = np.array( self.parserhydrau.getElemFaces() )
         
         self.time = time
         self.pasespace = spacestep
@@ -178,7 +188,9 @@ class SelafinContour2Pts(QtCore.QObject):
         #donnees_d_entree['champs'] = QgsFields()
         fields = QgsFields()
         #for i,name in enumerate(slf.VARNAMES):
-        for i,name in enumerate(self.parserhydrau.getVarnames()):
+        paramsname = [param[0] for param in self.parserhydrau.getVarNames()]
+        #for i,name in enumerate(self.parserhydrau.getVarNames()):
+        for i,name in enumerate(paramsname):
                 self.writeOutput(str(ctime()) +" - Initialisation - Variable dans le fichier res : " 
                                          + name.strip() )
                 tabparam.append([i,name.strip()])
@@ -383,7 +395,7 @@ class SelafinContour2Pts(QtCore.QObject):
                                     self.writerw2.addFeature(  fet ) 
                         
                     #del self.writerw
-            except Exception, e:
+            except Exception as e:
                 strtxt = (str(ctime()) + " ************ PROBLEME CALCUL DES VITESSES : " + str(e))
                 """
                 if self.traitementarriereplan  == 0 : self.status.emit(strtxt) 
@@ -414,7 +426,7 @@ class SelafinContour2Pts(QtCore.QObject):
     def writeOutput(self,str1):
         if self.traitementarriereplan in [0,1,2,3]: 
             self.status.emit(str(str1))
-        elif self.traitementarriereplan ==4 : print str1
+        elif self.traitementarriereplan ==4 : print(str1)
         
     def raiseError(self,str1):
         self.error.emit(str(str1))
@@ -542,7 +554,7 @@ class InitSelafinMesh2Pts(QtCore.QObject):
         elif self.processtype in [1,2,3]:
             raise GeoAlgorithmExecutionException(str)
         elif self.processtype == 4:
-            print str
+            print(str)
             sys.exit(0)
             
     def writeOutput(self,str1):

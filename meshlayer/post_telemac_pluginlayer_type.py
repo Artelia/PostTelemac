@@ -1,12 +1,10 @@
-
-#import qgis
 import qgis.core
 import qgis.utils
 
 #import PyQT
-from PyQt4 import QtCore
+from qgis.PyQt import QtCore
 #import posttelemac
-from post_telemac_pluginlayer import SelafinPluginLayer
+from .post_telemac_pluginlayer import SelafinPluginLayer
 
 class SelafinPluginLayerType(qgis.core.QgsPluginLayerType):
 

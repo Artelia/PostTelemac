@@ -26,7 +26,8 @@ Versions :
 #import qgis
 import qgis.core 
 #import PyQT
-from PyQt4 import QtGui
+#from PyQt4 import QtGui
+from qgis.PyQt import QtGui
 #import matplotlib
 import matplotlib
 matplotlib.use('Agg')
@@ -36,15 +37,18 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 #import numpy
 import numpy as np
 
-from post_telemac_pluginlayer_colormanager import *
+from .post_telemac_pluginlayer_colormanager import *
 
 #other imports
 from time import ctime
-import cStringIO
+try:
+    import cStringIO    #python 2
+except:
+    from io import BytesIO  as cStringIO    #python 3
 import gc
 import time
 
-from post_telemac_abstract_get_qimage import *
+from .post_telemac_abstract_get_qimage import *
 
 DEBUG = False
 PRECISION = 0.01
@@ -89,7 +93,11 @@ class MeshRenderer(AbstractMeshRenderer):
         """
         cm = self.colormanager.arrayStepRGBAToCmap(cm_raw)
         self.cmap_mpl_contour, self.norm_mpl_contour, self.cmap_contour_leveled = self.colormanager.changeColorMap(cm,self.lvl_contour)
-        qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+        #qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+        try:    #qgis2
+            qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+        except: #qgis3
+            qgis.utils.iface.layerTreeView().refreshLayerSymbology(self.meshlayer.id())
         #transparency - alpha changed
         if self.cmap_contour_leveled != None:
             colortemp = np.array(self.cmap_contour_leveled)
@@ -109,7 +117,11 @@ class MeshRenderer(AbstractMeshRenderer):
         """
         cm = self.colormanager.arrayStepRGBAToCmap(cm_raw)
         self.cmap_mpl_vel,self.norm_mpl_vel , self.cmap_vel_leveled = self.colormanager.changeColorMap(cm,self.lvl_vel)
-        qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+        #qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+        try:    #qgis2
+            qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+        except: #qgis3
+            qgis.utils.iface.layerTreeView().refreshLayerSymbology(self.meshlayer.id())
         #transparency - alpha changed
         if self.cmap_vel_leveled != None:
             colortemp = np.array(self.cmap_vel_leveled.tolist())
@@ -122,7 +134,10 @@ class MeshRenderer(AbstractMeshRenderer):
             self.meshlayer.triggerRepaint()
             
     def CrsChanged(self):
-        ikle = self.meshlayer.hydrauparser.getIkle()
+        #ikle = self.meshlayer.hydrauparser.getIkle()
+        self.changeTriangulationCRS()
+        ikle = self.meshlayer.hydrauparser.getElemFaces()
+        self.meshxreprojected, self.meshyreprojected = self.facenodereprojected
         self.triangulation = matplotlib.tri.Triangulation(self.meshxreprojected,self.meshyreprojected,np.array(ikle))
     
     #************************************************************************************
@@ -166,7 +181,7 @@ class MeshRenderer(AbstractMeshRenderer):
             
                 try:
                     self.quiverplot.remove()
-                except Exception, e:
+                except Exception as e:
                     pass
                 
                 tabx,taby,tabvx,tabvy = self.getVelocity(self.meshlayer,self.rendererContext)
@@ -451,7 +466,7 @@ class MeshRenderer(AbstractMeshRenderer):
                 if ratio > 1.0 :
                     image = image.scaled(image.width() * ratio , image.height() * ratio )
             return image
-        except Exception, e :
+        except Exception as e :
             self.meshlayer.propertiesdialog.textBrowser_2.append('getqimagesave : '+str(e))
             return None
         

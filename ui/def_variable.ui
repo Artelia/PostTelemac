@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>378</height>
+    <height>502</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -52,10 +52,63 @@
       <string>Parameter setup</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="1" column="1">
+      <item row="5" column="0" colspan="3">
+       <widget class="QTextEdit" name="txt_formule"/>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Formula editor</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Operators</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2" rowspan="3">
        <widget class="QListView" name="lst_fonctions"/>
       </item>
-      <item row="1" column="0">
+      <item row="3" column="0">
+       <widget class="QTreeWidget" name="tab_variables_2">
+        <property name="indentation">
+         <number>0</number>
+        </property>
+        <property name="rootIsDecorated">
+         <bool>false</bool>
+        </property>
+        <property name="uniformRowHeights">
+         <bool>true</bool>
+        </property>
+        <property name="itemsExpandable">
+         <bool>false</bool>
+        </property>
+        <property name="columnCount">
+         <number>2</number>
+        </property>
+        <column>
+         <property name="text">
+          <string>1</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>2</string>
+         </property>
+        </column>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Raw Elem parameters</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
        <widget class="QTreeWidget" name="tab_variables">
         <property name="indentation">
          <number>0</number>
@@ -84,27 +137,10 @@
         </column>
        </widget>
       </item>
-      <item row="3" column="0" colspan="2">
-       <widget class="QTextEdit" name="txt_formule"/>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLabel" name="label_2">
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_4">
         <property name="text">
-         <string>Operators</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Raw parameters</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0" colspan="2">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>Formula editor</string>
+         <string>Raw Face parameters</string>
         </property>
        </widget>
       </item>

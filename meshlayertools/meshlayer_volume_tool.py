@@ -24,32 +24,30 @@ Versions :
 """
 
 
-from PyQt4 import uic, QtCore, QtGui
-from meshlayer_abstract_tool import *
-import qgis
-
-import scipy
-import processing
-import shapely
-"""
-from matplotlib import *
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+#Qt
+from qgis.PyQt import uic, QtCore, QtGui
 try:
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-except :
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-"""
-
-import matplotlib
+    from qgis.PyQt.QtGui import QVBoxLayout, QApplication
+except:
+    from qgis.PyQt.QtWidgets import QVBoxLayout, QApplication
+import qgis
+import processing
 import numpy as np
+#local import
+from .meshlayer_abstract_tool import *
+from ..meshlayerlibs import pyqtgraph as pg
+pg.setConfigOption('background', 'w')
 
-from ..meshlayerlibs.mpldatacursor import datacursor
+
+
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'VolumeTool.ui'))
 
 
 
 class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
+
+    NAME = 'VOLUMETOOL'
 
     def __init__(self, meshlayer,dialog):
         AbstractMeshLayerTool.__init__(self,meshlayer,dialog)
@@ -62,41 +60,27 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
         self.setupUi(self)
         self.iconpath = os.path.join(os.path.dirname(__file__),'..','icons','tools','Line_Graph_48x48.png' )
         
-        #self.clickTool = qgis.gui.QgsMapToolEmitPoint(self.propertiesdialog.canvas)
-        self.rubberband = None
         self.graphtempactive = False
         self.graphtempdatac = []
         self.vectorlayerflowids = None
         self.maptool = None
         self.pointstoDraw = []
         
+        self.plotitem = []
         
-        self.rubberbandpoint = qgis.gui.QgsRubberBand(self.meshlayer.canvas, qgis.core.QGis.Point)
-        #self.rubberbandpoint.setWidth(2)
-        self.rubberbandpoint.setColor(QtGui.QColor(QtCore.Qt.red))
+        
+        self.meshlayer.rubberband.createRubberbandFace()
+        self.meshlayer.rubberband.createRubberbandFaceNode()
         
         
         #Tools tab - temporal graph
-        self.figure1 = matplotlib.pyplot.figure(self.meshlayer.instancecount + 3)
-        font = {'family' : 'arial', 'weight' : 'normal', 'size'   : 12}
-        matplotlib.rc('font', **font)
-        self.canvas1 = matplotlib.backends.backend_qt4agg.FigureCanvasQTAgg(self.figure1)
-        self.ax = self.figure1.add_subplot(111)
-        layout = QtGui.QVBoxLayout()
-        try:
-            self.toolbar = matplotlib.backends.backend_qt4agg.NavigationToolbar2QTAgg(self.canvas1, self.frame,True)
-            layout.addWidget(self.toolbar)
-        except Exception, e:
-            pass
-        layout.addWidget(self.canvas1)
-        self.canvas1.draw()
+        self.pyqtgraphwdg = pg.PlotWidget()
+        layout = QVBoxLayout()
+        layout.addWidget(self.pyqtgraphwdg)
+        self.vb = self.pyqtgraphwdg.getViewBox()
         self.frame.setLayout(layout)
+        
         #Signals connection
-        """
-        self.comboBox_2.currentIndexChanged.connect(self.activateMapTool)
-        self.pushButton_limni.clicked.connect(self.computeGraphTemp)
-        self.pushButton_graphtemp_pressepapier.clicked.connect(self.copygraphclipboard)
-        """
         self.propertiesdialog.updateparamsignal.connect(self.updateParams)
         self.comboBox_volumemethod.currentIndexChanged.connect(self.volumemethodchanged)
         
@@ -106,13 +90,29 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
         
         self.propertiesdialog.meshlayerschangedsignal.connect(self.layerChanged)
         
+        self.timeline = pg.InfiniteLine(0, pen=pg.mkPen('b',  width=2) )
+        self.pyqtgraphwdg.addItem(self.timeline)
+        
+        self.datavline = pg.InfiniteLine(0, angle=90 ,pen=pg.mkPen('r',  width=1)  )
+        self.datahline = pg.InfiniteLine(0, angle=0 , pen=pg.mkPen('r',  width=1) )
+        
+        self.appendCursor()
+        
 
     def onActivation(self):
         """Click on temopral graph + temporary point selection method"""            
         self.activateMapTool()
         
+        self.timeChanged(self.meshlayer.time_displayed)
+        self.meshlayer.timechanged.connect(self.timeChanged)
+        
     def onDesactivation(self):
-        self.resetRubberband()
+        #self.resetRubberband()
+        self.meshlayer.rubberband.reset()
+        try:
+            self.meshlayer.timechanged.connect(self.timeChanged)
+        except:
+            pass
             
 #*********************************************************************************************
 #***************Behaviour functions  **********************************************************
@@ -135,8 +135,10 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
             self.comboBox_volumeparam.setEnabled(True)
         self.activateMapTool()
 
+
     
     def activateMapTool(self):
+
         if self.comboBox_4.currentIndex() == 0:
             self.pushButton_volume.setEnabled(False)
             self.computeVolume()
@@ -144,8 +146,9 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
             self.pushButton_volume.setEnabled(True)
             try:
                 self.deactivateTool()
-            except Exception, e:
-                pass
+            except Exception as e:
+                self.propertiesdialog.errorMessage('Volume_tool - activateMapTool2 ' + str(e))
+
     
         
     def updateParams(self):
@@ -154,18 +157,8 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
         for i in range(len(self.meshlayer.hydrauparser.parametres)):
             temp1 = [str(self.meshlayer.hydrauparser.parametres[i][0])+" : "+str(self.meshlayer.hydrauparser.parametres[i][1])]
             self.comboBox_volumeparam.addItems(temp1)
-            
-    def createRubberband(self):
-        self.rubberband = qgis.gui.QgsRubberBand(self.meshlayer.canvas, qgis.core.QGis.Line)
-        self.rubberband.setWidth(2)
-        self.rubberband.setColor(QtGui.QColor(QtCore.Qt.red))
-            
-    def resetRubberband(self):
-        if self.rubberband:
-            self.rubberband.reset(qgis.core.QGis.Line)
-        if self.rubberbandpoint:
-            self.rubberbandpoint.reset(qgis.core.QGis.Point)
-            
+    
+
             
 #*********************************************************************************************
 #***************Main functions  **********************************************************
@@ -176,8 +169,12 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
         """
         Activated with volume graph tool
         """
-        if not self.rubberband:
-            self.createRubberband()
+
+        try:
+            self.pyqtgraphwdg.scene().sigMouseMoved.disconnect(self.mouseMoved)
+        except :
+            pass
+
         self.dblclktemp = None
         self.textquit0 = "Click for polyline and double click to end (right click to cancel then quit)"
         self.textquit1 = "Select the polyline in a vector layer (Right click to quit)"
@@ -185,22 +182,33 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
         #self.graphtodo = 2
         self.selectionmethod = self.comboBox_4.currentIndex()
         
+
+        
         if self.selectionmethod in [0]:
             layer = qgis.utils.iface.activeLayer()
+            
             if not self.maptool:
                 self.maptool = VolumeMapTool(self.meshlayer.canvas,self.pushButton_volume)
+                
+
             #Listeners of mouse
             self.connectTool()
+
             #init the mouse listener comportement and save the classic to restore it on quit
-            self.meshlayer.canvas.setMapTool(self.maptool)
+            try:
+                self.meshlayer.canvas.setMapTool(self.maptool)
+            except Exception as e:
+                print('computeVolume ' + str(e))
+
             #init the temp layer where the polyline is draw
-            self.rubberband.reset(qgis.core.QGis.Line)
+            #self.rubberband.reset(qgis.core.QGis.Line)
             #init the table where is saved the poyline
             self.pointstoDraw = []
             self.pointstoCal = []
             self.lastClicked = [[-9999999999.9,9999999999.9]]
             # The last valid line we drew to create a free-hand profile
             self.lastFreeHandPoints = []
+            
         elif self.selectionmethod in [1,2]:
             layer = qgis.utils.iface.activeLayer()
             if not (layer.type() == 0 and layer.geometryType()==2):
@@ -208,9 +216,9 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
             elif self.selectionmethod==1 and len(layer.selectedFeatures())==0:
                 QMessageBox.warning(qgis.utils.iface.mainWindow(), "PostTelemac", self.tr("Select a polygon in a polygon vector layer"))
             else:
-                self.ax.cla()
-                grid2 = self.ax.grid(color='0.5', linestyle='-', linewidth=0.5)
-                self.canvas1.draw()
+                #self.ax.cla()
+                #grid2 = self.ax.grid(color='0.5', linestyle='-', linewidth=0.5)
+                #self.canvas1.draw()
                 self.initclass1=[]
                 self.checkBox_12.setChecked(True)
                 iter = layer.selectedFeatures()
@@ -249,30 +257,29 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
         self.initclass.emitprogressbar.connect(self.updateProgressBar)
         self.initclass.finished1.connect(self.workerFinished)
         
-        self.rubberbandpoint.reset(qgis.core.QGis.Point)
-        self.rubberband.reset(qgis.core.QGis.Line)
-        #self.selafinlayer.propertiesdialog.textBrowser_main.append(str(ctime() + ' - Computing flow'))
+        self.meshlayer.rubberband.reset()
+        
         self.propertiesdialog.normalMessage('Start computing volume')
         self.initclass.start(self.meshlayer,self,geom)
         self.pushButton_volume.setEnabled(False)
         
     def workerFinished(self,list1,list2,list3 = None):
         
-        ax = self.ax
+
         if not self.checkBox.isChecked():
-            ax.cla()
-            if  len(self.graphtempdatac)>0:
-                for datacu in self.graphtempdatac:
-                    datacu.hide()
-                    datacu.disable()
-                self.graphtempdatac = []
+            if len(self.plotitem)>0:
+                for plot in self.plotitem:
+                    self.pyqtgraphwdg.removeItem(plot[0])
+            self.plotitem = []
+
 
         maxtemp=None
         mintemp = None
 
-        grid2 = ax.grid(color='0.5', linestyle='-', linewidth=0.5)
+        self.pyqtgraphwdg.showGrid(True,True,0.5)
+        
         for i in range(len(list1)):
-            test2 = ax.plot(list1[i], list2[i], linewidth = 3, visible = True)
+            self.plotitem.append([self.pyqtgraphwdg.plot(list1[i], list2[i], pen=pg.mkPen('b',  width=2) ),list1[i], list2[i] ] )
             if not maxtemp:
                 maxtemp = max(np.array(list2[i]))
             else:
@@ -283,43 +290,96 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
             else:
                 if min(np.array(list2[i]))<mintemp:
                     mintemp = min(np.array(list2[i]))
+        
+        #self.pyqtgraphwdg.autoRange()
+        
+        if False:
+            self.label_volume_resultmax.setText('Max : ' + str('{:,}'.format(maxtemp).replace(',', ' ') ))
+            self.label_volume_resultmin.setText('Min : ' + str('{:,}'.format(mintemp).replace(',', ' ') ))
+        if True:
+            self.label_volume_resultmax.setText('Max : ' + str(round(maxtemp,3)))
+            self.label_volume_resultmin.setText('Min : ' + str(round(mintemp,3)))
+        
 
-        self.graphtempdatac.append(datacursor(test2,formatter="temps:{x:.0f}\nparametre:{y:.2f}".format,bbox=dict(fc='white'),arrowprops=dict(arrowstyle='->', fc='white', alpha=0.5)))
-        self.label_volume_resultmax.setText('Max : ' + str('{:,}'.format(maxtemp).replace(',', ' ') ))
-        self.label_volume_resultmin.setText('Min : ' + str('{:,}'.format(mintemp).replace(',', ' ') ))
-        self.canvas1.draw()
         self.propertiesdialog.normalMessage('Computing volume finished')
+        
         if self.comboBox_4.currentIndex() != 0:
             self.pushButton_volume.setEnabled(True)
 
                 
         self.propertiesdialog.progressBar.reset()
+        
+        self.pyqtgraphwdg.scene().sigMouseMoved.connect(self.mouseMoved)
             
     
+    
+    def mouseMoved(self, pos): # si connexion directe du signal "mouseMoved" : la fonction reçoit le point courant
+
+            if self.pyqtgraphwdg.sceneBoundingRect().contains(pos): # si le point est dans la zone courante
+                    mousePoint = self.vb.mapSceneToView(pos) # récupère le point souris à partir ViewBox
+                    datax = self.plotitem[-1][1]
+                    datay = self.plotitem[-1][2]
+                    nearestindex = np.argmin( abs(np.array(datax)-mousePoint.x()) )
+                    x = datax[nearestindex]
+                    y = datay[nearestindex]
+                    if True:
+                        self.datavline.setPos(x)
+                        self.datahline.setPos(y)
+                    if True:
+                        self.label_X.setText(str(round(x,3)))
+                        self.label_Y.setText(str(round(y,3)))
+                    
+                    
+
+    def timeChanged(self,nb):
+            
+        self.timeline.setPos(self.meshlayer.hydrauparser.getTimes()[nb])
+        
+    def appendCursor(self):
+
+        self.pyqtgraphwdg.addItem(self.datavline)
+        self.pyqtgraphwdg.addItem(self.datahline)
+        
+    def removeCursor(self):
+        self.pyqtgraphwdg.removeItem(self.datavline)
+        self.pyqtgraphwdg.removeItem(self.datahline)
+        
+        
+        
     def copygraphclipboard(self):
 
-        ax = self.ax
+        #ax = self.ax
         
-        self.clipboard = QtGui.QApplication.clipboard()
+        self.clipboard = QApplication.clipboard()
         strtemp=''
         datatemp=[]
         max=0
-        for line in ax.get_lines():
-            data = line.get_xydata()
+        
+        for plotitem in self.plotitem:
+            datax = plotitem[1]
+            datay = plotitem[2]
+            data = np.array([[datax[i],datay[i]] for i in range(len(datax))   ] )
+            
             if len(data)>0:
                 datatemp.append(data)
                 maxtemp = len(data)
                 if maxtemp>max:
                     max = maxtemp
+                    
         if self.vectorlayerflowids:
             for flowid in self.vectorlayerflowids:
                 strtemp = strtemp + 'id : '+str(flowid)+ "\t"+ "\t"
-            strtemp += "\n"
+                
         for i in range(maxtemp):
             for j in range(len(datatemp)):
                 strtemp += str(datatemp[j][i][0])+ "\t" +str(datatemp[j][i][1])+"\t"
             strtemp += "\n"
+                
+
         self.clipboard.setText(strtemp)
+            
+    
+
         
     def addPointRubberband(self,x,y):
         
@@ -328,15 +388,14 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
             if len(x)>1:
                 for i in range(len(x)):
                     points.append(self.meshlayer.xform.transform(qgis.core.QgsPoint(x[i],y[i])))
-                self.rubberband.addGeometry(qgis.core.QgsGeometry.fromPolygon([points]), None)
+                    
+                self.meshlayer.rubberband.rubberbandface.addGeometry(qgis.core.QgsGeometry.fromPolygon([points]), None)
             else:
                 qgspoint = self.meshlayer.xform.transform(qgis.core.QgsPoint(x[0],y[0]))
-                #self.rubberband.addPoint(qgspoint)
-                self.rubberbandpoint.addPoint(qgspoint)
-                #self.rubberband.addGeometry(qgis.core.QgsGeometry.fromPolygon([[qgspoint]]), None)
+                self.meshlayer.rubberband.rubberbandfacenode.addPoint(qgspoint)
         else:
             qgspoint = self.meshlayer.xform.transform(qgis.core.QgsPoint(x,y))
-            self.rubberband.addPoint(qgspoint)
+            self.meshlayer.rubberband.rubberbandfacenode.addPoint(qgspoint)
             
     def updateProgressBar(self,float1):
         self.propertiesdialog.progressBar.setValue(int(float1))
@@ -347,17 +406,23 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
 #********************************************************************************************
         
     def connectTool(self):
-        QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("moved"), self.moved)
-        QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("rightClicked"), self.rightClicked)
-        QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("leftClicked"), self.leftClicked)
-        QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("doubleClicked"), self.doubleClicked)
-        QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("deactivate"), self.deactivateTool)
+
+        self.maptool.moved.connect(self.moved)
+        self.maptool.rightClicked.connect(self.rightClicked)
+        self.maptool.leftClicked.connect(self.leftClicked)
+        self.maptool.doubleClicked.connect(self.doubleClicked)
+        self.maptool.desactivate.connect(self.deactivateTool)
+        
+        
 
     def deactivateTool(self):		#enable clean exit of the plugin
-        QtCore.QObject.disconnect(self.maptool, QtCore.SIGNAL("moved"), self.moved)
-        QtCore.QObject.disconnect(self.maptool, QtCore.SIGNAL("leftClicked"), self.leftClicked)
-        QtCore.QObject.disconnect(self.maptool, QtCore.SIGNAL("rightClicked"), self.rightClicked)
-        QtCore.QObject.disconnect(self.maptool, QtCore.SIGNAL("doubleClicked"), self.doubleClicked)
+
+        self.maptool.moved.disconnect(self.moved)
+        self.maptool.rightClicked.disconnect(self.rightClicked)
+        self.maptool.leftClicked.disconnect(self.leftClicked)
+        self.maptool.doubleClicked.disconnect(self.doubleClicked)
+        self.maptool.desactivate.disconnect(self.deactivateTool)
+
 
     def moved(self,position):			#draw the polyline on the temp layer (rubberband)
         if self.selectionmethod == 0:
@@ -365,14 +430,12 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
                 #Get mouse coords
                 mapPos = self.meshlayer.canvas.getCoordinateTransform().toMapCoordinates(position["x"],position["y"])
                 #Draw on temp layer
-                self.rubberband.reset(qgis.core.QGis.Line)
+                self.meshlayer.rubberband.reset()
+                
                 for i in range(0,len(self.pointstoDraw)):
-                    self.rubberband.addPoint(qgis.core.QgsPoint(self.pointstoDraw[i][0],self.pointstoDraw[i][1]))
-                self.rubberband.addPoint(qgis.core.QgsPoint(mapPos.x(),mapPos.y()))
-        """
-        if self.selectionmethod == 1:
-            return
-        """
+                    self.meshlayer.rubberband.rubberbandface.addPoint(qgis.core.QgsPoint(self.pointstoDraw[i][0],self.pointstoDraw[i][1]))
+                self.meshlayer.rubberband.rubberbandface.addPoint(qgis.core.QgsPoint(mapPos.x(),mapPos.y()))
+
 
     def rightClicked(self,position):	#used to quit the current action
         if self.selectionmethod == 0:
@@ -382,17 +445,11 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
             if len(self.pointstoDraw) > 0:
                 self.pointstoDraw = []
                 self.pointstoCal = []
-                self.rubberband.reset(qgis.core.QGis.Line)
+                #self.rubberband.reset(qgis.core.QGis.Line)
+                self.meshlayer.rubberband.reset()
             else:
                 self.cleaning()
-        """
-        if self.selectionmethod == 1:
-            try:
-                self.previousLayer.removeSelection( False )
-            except:
-                self.iface.mainWindow().statusBar().showMessage("error right click")
-            self.cleaning()
-        """
+
 
     def leftClicked(self,position):		#Add point to analyse
         mapPos = self.meshlayer.canvas.getCoordinateTransform().toMapCoordinates(position["x"],position["y"])
@@ -406,19 +463,11 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
                 #return
             else :
                 if len(self.pointstoDraw) == 0:
-                    self.rubberband.reset(qgis.core.QGis.Line)
+                    #self.rubberband.reset(qgis.core.QGis.Line)
+                    self.meshlayer.rubberband.reset()
                     #self.rubberbandpoint.reset(qgis.core.QGis.Point)
                 self.pointstoDraw += newPoints
-        """
-        if self.selectionmethod == 1:
-            print 'ok'
-            result = SelectLineTool().getPointTableFromSelectedLine(iface, self.tool, newPoints, self.layerindex, self.previousLayer , self.pointstoDraw)
-            self.pointstoDraw = result[0]
-            self.layerindex = result[1]
-            self.previousLayer = result[2]
-            self.launchThread([self.pointstoDraw])
-            self.pointstoDraw = []
-        """
+
 
 
     def doubleClicked(self,position):
@@ -441,15 +490,14 @@ class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
             #temp point to distinct leftclick and dbleclick
             self.dblclktemp = newPoints
             #iface.mainWindow().statusBar().showMessage(self.textquit0)
-        """
-        if self.selectionmethod == 1:
-            return
-        """
+
         
         
     def cleaning(self):     #used on right click
         self.meshlayer.canvas.setMapTool(self.propertiesdialog.maptooloriginal)
         qgis.utils.iface.mainWindow().statusBar().showMessage( "" )
+        
+        
         
         
 class VolumeMapTool(qgis.gui.QgsMapTool):
@@ -461,17 +509,20 @@ class VolumeMapTool(qgis.gui.QgsMapTool):
         self.button = button
 
     def canvasMoveEvent(self,event):
-        self.emit( QtCore.SIGNAL("moved"), {'x': event.pos().x(), 'y': event.pos().y()} )
-
+        #self.emit( QtCore.SIGNAL("moved"), {'x': event.pos().x(), 'y': event.pos().y()} )
+        self.moved.emit( {'x': event.pos().x(), 'y': event.pos().y()} )
 
     def canvasReleaseEvent(self,event):
         if event.button() == QtCore.Qt.RightButton:
-            self.emit( QtCore.SIGNAL("rightClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+            #self.emit( QtCore.SIGNAL("rightClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+            self.rightClicked.emit( {'x': event.pos().x(), 'y': event.pos().y()} )
         else:
-            self.emit( QtCore.SIGNAL("leftClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+            #self.emit( QtCore.SIGNAL("leftClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+            self.leftClicked.emit( {'x': event.pos().x(), 'y': event.pos().y()} )
 
     def canvasDoubleClickEvent(self,event):
-        self.emit( QtCore.SIGNAL("doubleClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+        #self.emit( QtCore.SIGNAL("doubleClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+        self.doubleClicked.emit( {'x': event.pos().x(), 'y': event.pos().y()} )
 
     def activate(self):
         qgis.gui.QgsMapTool.activate(self)
@@ -484,7 +535,8 @@ class VolumeMapTool(qgis.gui.QgsMapTool):
 
 
     def deactivate(self):
-        self.emit( QtCore.SIGNAL("deactivate") )
+        #self.emit( QtCore.SIGNAL("deactivate") )
+        self.desactivate.emit()
         #self.button.setCheckable(False)
         #self.button.setEnabled(True)
         #print  'deactivate'
@@ -493,6 +545,15 @@ class VolumeMapTool(qgis.gui.QgsMapTool):
 
     def setCursor(self,cursor):
         self.cursor = QtGui.QCursor(cursor)
+        
+    moved = QtCore.pyqtSignal(dict)
+    rightClicked = QtCore.pyqtSignal(dict)
+    leftClicked = QtCore.pyqtSignal(dict)
+    doubleClicked = QtCore.pyqtSignal(dict)
+    desactivate = QtCore.pyqtSignal()
+        
+        
+
         
         
 #*********************************************************************************************
@@ -541,7 +602,7 @@ class computeVolume(QtCore.QObject):
                             list2[0] += volume
                 self.finished.emit(list1,list2,list3)
                 
-            except Exception, e :
+            except Exception as e :
                 self.error.emit('volume calculation error : ' + str(e))
                 self.finished.emit([],[],[])
                 
@@ -573,18 +634,20 @@ class computeVolume(QtCore.QObject):
                             list2[0] += volume
                 self.finished.emit(list1,list2,list3)
                 
-            except Exception, e :
+            except Exception as e :
                 self.error.emit('volume calculation error : ' + str(e))
                 self.finished.emit([],[],[])
                 
         else:
             self.finished.emit([],[],[])
             
-            
+    
+    
+    """
     def computeVolumeVoronoiScipy(self, METHOD , points, indexpoints):
-        """
-        Voronoi with scipy  method - not fully working
-        """
+        #
+        #Voronoi with scipy  method - not fully working
+        #
         #getvoronoi table
         voronoi = scipy.spatial.Voronoi(points, furthest_site = False)
         vertices = voronoi.vertices
@@ -627,7 +690,7 @@ class computeVolume(QtCore.QObject):
                 else:
                     volume += result[1]*(h[0,0])
         return volume
-            
+        """
             
 
             
@@ -638,8 +701,10 @@ class computeVolume(QtCore.QObject):
         """
         self.status.emit('***** Nouveau calcul *****************')
         
-        pointsdico = [shapely.geometry.Point(point[0], point[1]) for point in points ]
+        
         c = processing.algs.qgis.voronoi.Context()
+        pointsdico=[processing.algs.qgis.voronoi.Site(point[0], point[1])  for point in points   ]
+        #pointsdico = [shapely.geometry.Point(point[0], point[1]) for point in points ]
         sl = processing.algs.qgis.voronoi.SiteList(pointsdico)
         voropv = processing.algs.qgis.voronoi.voronoi(sl, c)
         self.status.emit(str(voropv))
@@ -737,7 +802,8 @@ class computeVolume(QtCore.QObject):
         recttemp = self.qgspolygone.boundingBox()
         rect = [float(recttemp.xMinimum()), float(recttemp.xMaximum()), float(recttemp.yMinimum()), float(recttemp.yMaximum())] 
 
-        xMesh, yMesh = self.selafinlayer.hydrauparser.getMesh()
+        #xMesh, yMesh = self.selafinlayer.hydrauparser.getMesh()
+        xMesh, yMesh = self.selafinlayer.hydrauparser.getFacesNodes()
 
         valtabx = np.where(np.logical_and(xMesh>rect[0], xMesh< rect[1]))
         valtaby = np.where(np.logical_and(yMesh>rect[2], yMesh< rect[3]))
@@ -763,11 +829,13 @@ class computeVolume(QtCore.QObject):
         
         #first get triangles in linebounding box ************************************************************
         
-        mesh = np.array(self.selafinlayer.hydrauparser.getIkle())
+        #mesh = np.array(self.selafinlayer.hydrauparser.getIkle())
+        mesh = np.array(self.selafinlayer.hydrauparser.getElemFaces())
         recttemp = self.qgspolygone.boundingBox()
         rect = [float(recttemp.xMinimum()), float(recttemp.xMaximum()), float(recttemp.yMinimum()), float(recttemp.yMaximum())] 
         
-        xMesh, yMesh = self.selafinlayer.hydrauparser.getMesh()
+        #xMesh, yMesh = self.selafinlayer.hydrauparser.getMesh()
+        xMesh, yMesh = self.selafinlayer.hydrauparser.getFacesNodes()
 
         trianx = np.array( [ xMesh[mesh[:,0]], xMesh[mesh[:,1]], xMesh[mesh[:,2]]] )
         trianx = np.transpose(trianx)
@@ -811,11 +879,13 @@ class computeVolume(QtCore.QObject):
         
         #first get triangles in linebounding box ************************************************************
         
-        mesh = np.array(self.selafinlayer.hydrauparser.getIkle())
+        #mesh = np.array(self.selafinlayer.hydrauparser.getIkle())
+        mesh = np.array(self.selafinlayer.hydrauparser.getElemFaces())
         recttemp = self.qgspolygone.boundingBox()
         rect = [float(recttemp.xMinimum()), float(recttemp.xMaximum()), float(recttemp.yMinimum()), float(recttemp.yMaximum())] 
         
-        xMesh, yMesh = self.selafinlayer.hydrauparser.getMesh()
+        #xMesh, yMesh = self.selafinlayer.hydrauparser.getMesh()
+        xMesh, yMesh = self.selafinlayer.hydrauparser.getFacesNodes()
 
         trianx = np.array( [ xMesh[mesh[:,0]], xMesh[mesh[:,1]], xMesh[mesh[:,2]]] )
         trianx = np.transpose(trianx)
@@ -846,8 +916,10 @@ class computeVolume(QtCore.QObject):
         
     def computeVolumeMesh(self,METHOD,indextriangles):
         #self.status.emit('surf calc ')
-        xMesh, yMesh = self.selafinlayer.hydrauparser.getMesh()
-        mesh = np.array(self.selafinlayer.hydrauparser.getIkle())
+        #xMesh, yMesh = self.selafinlayer.hydrauparser.getMesh()
+        xMesh, yMesh = self.selafinlayer.hydrauparser.getFacesNodes()
+        #mesh = np.array(self.selafinlayer.hydrauparser.getIkle())
+        mesh = np.array(self.selafinlayer.hydrauparser.getElemFaces())
         paramfreesurface = self.selafinlayer.hydrauparser.paramfreesurface
         parambottom = self.selafinlayer.hydrauparser.parambottom
         volume = None
@@ -948,7 +1020,7 @@ class InitComputeVolume(QtCore.QObject):
         elif self.processtype in [1,2,3]:
             raise GeoAlgorithmExecutionException(str)
         elif self.processtype == 4:
-            print str
+            print(str)
             sys.exit(0)
             
     def writeOutput(self,str1):

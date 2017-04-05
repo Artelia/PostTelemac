@@ -24,8 +24,9 @@ Versions :
 """
 
 
-from PyQt4 import uic, QtCore, QtGui
-from meshlayer_abstract_tool import *
+#from PyQt4 import uic, QtCore, QtGui
+from qgis.PyQt import uic, QtCore, QtGui
+from .meshlayer_abstract_tool import *
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ProfileTool.ui'))
@@ -33,6 +34,8 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ProfileT
 
 
 class ProfileTool(AbstractMeshLayerTool,FORM_CLASS):
+
+    NAME = 'PROFILETOOL'
 
 
     def __init__(self, meshlayer,dialog):

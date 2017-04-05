@@ -126,6 +126,13 @@
       <string/>
      </property>
      <layout class="QGridLayout" name="gridLayout_14">
+      <item row="1" column="2">
+       <widget class="QLabel" name="label_X">
+        <property name="text">
+         <string>/</string>
+        </property>
+       </widget>
+      </item>
       <item row="1" column="1">
        <widget class="QLabel" name="label_max">
         <property name="text">
@@ -146,7 +153,21 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="0" colspan="2">
+      <item row="2" column="0" colspan="2">
+       <widget class="QCheckBox" name="checkBox">
+        <property name="text">
+         <string>Don't delete previous graph</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="QLabel" name="label_Y">
+        <property name="text">
+         <string>/</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="4">
        <widget class="QFrame" name="frame">
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
@@ -156,17 +177,10 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0" colspan="2">
+      <item row="2" column="2" colspan="2">
        <widget class="QPushButton" name="pushButton_graphtemp_pressepapier">
         <property name="text">
          <string>Copy to clipboard</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0" colspan="2">
-       <widget class="QCheckBox" name="checkBox">
-        <property name="text">
-         <string>Don't delete previous graph</string>
         </property>
        </widget>
       </item>
@@ -174,8 +188,10 @@
      <zorder>frame</zorder>
      <zorder>label_max</zorder>
      <zorder>label_min</zorder>
-     <zorder>pushButton_graphtemp_pressepapier</zorder>
      <zorder>checkBox</zorder>
+     <zorder>label_X</zorder>
+     <zorder>label_Y</zorder>
+     <zorder>pushButton_graphtemp_pressepapier</zorder>
     </widget>
    </item>
    <item>

@@ -24,28 +24,29 @@ Versions :
 """
 
 
-from PyQt4 import uic, QtCore, QtGui
-from meshlayer_abstract_tool import *
-import qgis
-"""
-from matplotlib import *
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+#import Qt
+from qgis.PyQt import uic, QtCore, QtGui
 try:
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-except :
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-"""
-
-import matplotlib
+    from qgis.PyQt.QtGui import QVBoxLayout, QApplication
+except:
+    from qgis.PyQt.QtWidgets import QVBoxLayout, QApplication
+import qgis
 import numpy as np
+    
+#local import
+from .meshlayer_abstract_tool import *
+from ..meshlayerlibs import pyqtgraph as pg
+pg.setConfigOption('background', 'w')
 
-from ..meshlayerlibs.mpldatacursor import datacursor
+
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'TemporalGraphTool.ui'))
 
 
 
 class TemporalGraphTool(AbstractMeshLayerTool,FORM_CLASS):
+
+    NAME = 'TEMPORALGRAPHTOOL'
 
     def __init__(self, meshlayer,dialog):
         AbstractMeshLayerTool.__init__(self,meshlayer,dialog)
@@ -59,44 +60,72 @@ class TemporalGraphTool(AbstractMeshLayerTool,FORM_CLASS):
         self.iconpath = os.path.join(os.path.dirname(__file__),'..','icons','tools','Line_Graph_48x48_time.png' )
         self.propertiesdialog.updateparamsignal.connect(self.updateParams)
         self.clickTool = qgis.gui.QgsMapToolEmitPoint(self.propertiesdialog.canvas)
-        self.rubberband = None
+        #self.rubberband = None
         self.graphtempactive = False
         self.graphtempdatac = []
         self.vectorlayerflowids = None
+        self.plotitem = []
+        self.timeline = None
         #Tools tab - temporal graph
-        self.figure1 = matplotlib.pyplot.figure(self.meshlayer.instancecount + 1)
-        font = {'family' : 'arial', 'weight' : 'normal', 'size'   : 12}
-        matplotlib.rc('font', **font)
-        self.canvas1 = matplotlib.backends.backend_qt4agg.FigureCanvasQTAgg(self.figure1)
-        self.ax = self.figure1.add_subplot(111)
-        layout = QtGui.QVBoxLayout()
-        try:
-            self.toolbar = matplotlib.backends.backend_qt4agg.NavigationToolbar2QTAgg(self.canvas1, self.frame,True)
-            layout.addWidget(self.toolbar)
-        except Exception, e:
-            pass
-        layout.addWidget(self.canvas1)
-        self.canvas1.draw()
+        self.pyqtgraphwdg = pg.PlotWidget()
+        layout = QVBoxLayout()
+        layout.addWidget(self.pyqtgraphwdg)
+        self.vb = self.pyqtgraphwdg.getViewBox()
+             
         self.frame.setLayout(layout)
         #Signals connection
         self.comboBox_2.currentIndexChanged.connect(self.activateMapTool)
         self.pushButton_limni.clicked.connect(self.computeGraphTemp)
         self.pushButton_graphtemp_pressepapier.clicked.connect(self.copygraphclipboard)
         
+        self.timeline = pg.InfiniteLine(0, pen=pg.mkPen('b',  width=2) )
+        self.pyqtgraphwdg.addItem(self.timeline)
+        
+        self.datavline = pg.InfiniteLine(0, angle=90 ,pen=pg.mkPen('r',  width=1)  )
+        self.datahline = pg.InfiniteLine(0, angle=0 , pen=pg.mkPen('r',  width=1) )
+        
+        self.appendCursor()
+        
+        
+        
+    def appendCursor(self):
+
+        self.pyqtgraphwdg.addItem(self.datavline)
+        self.pyqtgraphwdg.addItem(self.datahline)
+        
+    def removeCursor(self):
+        self.pyqtgraphwdg.removeItem(self.datavline)
+        self.pyqtgraphwdg.removeItem(self.datahline)
+    
+        
+        
 
     def onActivation(self):
         """Click on temopral graph + temporary point selection method"""
-        self.resetRubberband()
+        #self.resetRubberband()
         try : 
             self.clickTool.canvasClicked.disconnect()
-        except Exception, e : 
+        except Exception as e : 
             pass
+            
+        self.timeChanged(self.meshlayer.time_displayed)
+        self.meshlayer.timechanged.connect(self.timeChanged)
+        
+        
+            
         
         self.activateMapTool()
         
     def onDesactivation(self):
+        """
         if self.rubberband:
             self.rubberband.reset(qgis.core.QGis.Point)
+        """
+        self.meshlayer.rubberband.reset()
+        try:
+            self.meshlayer.timechanged.connect(self.timeChanged)
+        except:
+            pass
             
 #*********************************************************************************************
 #***************Behaviour functions  **********************************************************
@@ -112,7 +141,7 @@ class TemporalGraphTool(AbstractMeshLayerTool,FORM_CLASS):
             self.pushButton_limni.setEnabled(True)
             try:
                 self.clickTool.canvasClicked.disconnect(self.computeGraphTemp)
-            except Exception, e:
+            except Exception as e:
                 pass
                 
         
@@ -122,15 +151,9 @@ class TemporalGraphTool(AbstractMeshLayerTool,FORM_CLASS):
         for i in range(len(self.meshlayer.hydrauparser.parametres)):
             temp1 = [str(self.meshlayer.hydrauparser.parametres[i][0])+" : "+str(self.meshlayer.hydrauparser.parametres[i][1])]
             self.comboBox_parametreschooser.addItems(temp1)
-            
-    def createRubberband(self):
-        self.rubberband = qgis.gui.QgsRubberBand(self.meshlayer.canvas, qgis.core.QGis.Line)
-        self.rubberband.setWidth(2)
-        self.rubberband.setColor(QtGui.QColor(QtCore.Qt.red))
-            
-    def resetRubberband(self):
-        if self.rubberband:
-            self.rubberband.reset(qgis.core.QGis.Point)
+    
+    
+
             
             
 #*********************************************************************************************
@@ -142,8 +165,19 @@ class TemporalGraphTool(AbstractMeshLayerTool,FORM_CLASS):
         """
         Activated with temporal graph tool - points from layer
         """
+        
+        """
         if not self.rubberband:
             self.createRubberband()
+        """
+        try:
+            #for plot in self.plotitem :
+                #plot.sigPointsClicked.disconnect(self.mouseMoved2)
+            self.pyqtgraphwdg.scene().sigMouseMoved.disconnect(self.mouseMoved)
+            #self.pyqtgraphwdg.scene().sigMouseClicked.disconnect(self.mouseClicked)
+        except :
+            pass
+        
         try:
             self.vectorlayerflowids = None
             self.selectionmethod = self.comboBox_2.currentIndex()
@@ -159,8 +193,9 @@ class TemporalGraphTool(AbstractMeshLayerTool,FORM_CLASS):
                     QMessageBox.warning(qgis.utils.iface.mainWindow(), "PostTelemac", self.tr("Select a point vector layer"))
                 else:
                     xformutil = qgis.core.QgsCoordinateTransform(self.meshlayer.realCRS, layer.crs() )
-                    self.rubberband.reset(qgis.core.QGis.Point)
-                    self.ax.cla()
+                    #self.rubberband.reset(qgis.core.QGis.Point)
+                    #self.ax.cla()
+                    #self.pyqtgraphwdg.clear()
                     self.checkBox.setChecked(True)
                     layer = qgis.utils.iface.activeLayer()
                     iter = layer.getFeatures()
@@ -178,22 +213,28 @@ class TemporalGraphTool(AbstractMeshLayerTool,FORM_CLASS):
                         geomfinal.append(geom)
                     if not self.graphtempactive:
                         self.launchThread(geomfinal)    
-        except Exception , e :
-            print str(e)
+        except Exception as e :
+            print ( str(e) )
             
 
     def launchThread(self,geom):
         #if self.graphtodo ==0:
         #self.rubberbandpoint.reset(qgis.core.QGis.Point)
+        """
         if not self.checkBox.isChecked() and self.rubberband :
             self.rubberband.reset(qgis.core.QGis.Point)
+        """
+        if not self.checkBox.isChecked() :
+            self.meshlayer.rubberband.reset()
+            
         self.initclass=InitGraphTemp()
         #self.initclass = self.initclassgraphtemp
 
             
         self.initclass.status.connect(self.propertiesdialog.textBrowser_2.append)
         self.initclass.error.connect(self.propertiesdialog.errorMessage)
-        self.initclass.emitpoint.connect(self.addPointRubberband)
+        #self.initclass.emitpoint.connect(self.addPointRubberband)
+        self.initclass.emitnum.connect(self.meshlayer.rubberband.drawFromNum)
         self.initclass.emitprogressbar.connect(self.updateProgressBar)
         self.initclass.finished1.connect(self.workerFinished)
         
@@ -203,88 +244,115 @@ class TemporalGraphTool(AbstractMeshLayerTool,FORM_CLASS):
         
     def workerFinished(self,list1,list2,list3 = None):
         
-        ax = self.ax
-        if not self.checkBox.isChecked():
-            ax.cla()
-            if  len(self.graphtempdatac)>0:
-                for datacu in self.graphtempdatac:
-                    datacu.hide()
-                    datacu.disable()
-                self.graphtempdatac = []
-
-        maxtemp=None
-        mintemp = None
-
-        grid2 = ax.grid(color='0.5', linestyle='-', linewidth=0.5)
-        for i in range(len(list1)):
-            test2 = ax.plot(list1[i], list2[i], linewidth = 3, visible = True)
-            if not maxtemp:
-                maxtemp = max(np.array(list2[i]))
-            else:
-                if max(np.array(list2[i]))>maxtemp:
-                    maxtemp = max(np.array(list2[i]))
-            if not mintemp:
-                mintemp = min(np.array(list2[i]))
-            else:
-                if min(np.array(list2[i]))<mintemp:
-                    mintemp = min(np.array(list2[i]))
-
-        self.graphtempdatac.append(datacursor(test2,formatter="temps:{x:.0f}\nparametre:{y:.2f}".format,bbox=dict(fc='white'),arrowprops=dict(arrowstyle='->', fc='white', alpha=0.5)))
-        self.label_max.setText('Max : ' + str('{:,}'.format(maxtemp).replace(',', ' ') ))
-        self.label_min.setText('Min : ' + str('{:,}'.format(mintemp).replace(',', ' ') ))
-        self.canvas1.draw()
-        if self.selectionmethod == 1 :
-            self.checkBox.setChecked(False)
-        self.graphtempactive = False
-        if self.comboBox_2.currentIndex() != 0:
-            self.pushButton_limni.setEnabled(True)
-
+        if len(list1)>0 and len(list2)>0:
+        
+            if not self.checkBox.isChecked():
+                if len(self.plotitem)>0:
+                    for plot in self.plotitem:
+                        self.pyqtgraphwdg.removeItem(plot[0])
+                self.plotitem = []
                 
-        self.propertiesdialog.progressBar.reset()
+            maxtemp=None
+            mintemp = None
+            self.pyqtgraphwdg.showGrid(True,True,0.5)
+            
+            for i in range(len(list1)):
+                self.plotitem.append([self.pyqtgraphwdg.plot(list1[i], list2[i], pen=pg.mkPen('b',  width=2) ),list1[i], list2[i] ] )
+                if not maxtemp:
+                    maxtemp = max(np.array(list2[i]))
+                else:
+                    if max(np.array(list2[i]))>maxtemp:
+                        maxtemp = max(np.array(list2[i]))
+                if not mintemp:
+                    mintemp = min(np.array(list2[i]))
+                else:
+                    if min(np.array(list2[i]))<mintemp:
+                        mintemp = min(np.array(list2[i]))
+                        
+            #self.pyqtgraphwdg.autoRange()
+            
+            if False:
+                self.label_max.setText('Max : ' + str('{:,}'.format(maxtemp).replace(',', ' ') ))
+                self.label_min.setText('Min : ' + str('{:,}'.format(mintemp).replace(',', ' ') ))
+            if True:
+                self.label_max.setText('Max : ' + str(round(maxtemp,3)))
+                self.label_min.setText('Min : ' + str(round(mintemp,3)))
+            
+            if self.selectionmethod == 1 :
+                self.checkBox.setChecked(False)
+            self.graphtempactive = False
+            if self.comboBox_2.currentIndex() != 0:
+                self.pushButton_limni.setEnabled(True)
+
+                    
+            self.propertiesdialog.progressBar.reset()
+            
+            self.pyqtgraphwdg.scene().sigMouseMoved.connect(self.mouseMoved)
+            #self.pyqtgraphwdg.scene().sigMouseClicked.connect(self.mouseClicked)
             
     
+    
+    def mouseMoved(self, pos): # si connexion directe du signal "mouseMoved" : la fonction reçoit le point courant
+
+            if self.pyqtgraphwdg.sceneBoundingRect().contains(pos): # si le point est dans la zone courante
+                    mousePoint = self.vb.mapSceneToView(pos) # récupère le point souris à partir ViewBox
+                    datax = self.plotitem[-1][1]
+                    datay = self.plotitem[-1][2]
+                    nearestindex = np.argmin( abs(np.array(datax)-mousePoint.x()) )
+                    x = datax[nearestindex]
+                    y = datay[nearestindex]
+                    if True:
+                        self.datavline.setPos(x)
+                        self.datahline.setPos(y)
+                    if True:
+                        self.label_X.setText(str(round(x,3)))
+                        self.label_Y.setText(str(round(y,3)))
+                    
+                    
+
+    def timeChanged(self,nb):
+            
+        self.timeline.setPos(self.meshlayer.hydrauparser.getTimes()[nb])
+        
+        
+        
+        
     def copygraphclipboard(self):
 
-        ax = self.ax
+        #ax = self.ax
         
-        self.clipboard = QtGui.QApplication.clipboard()
+        self.clipboard = QApplication.clipboard()
         strtemp=''
         datatemp=[]
         max=0
-        for line in ax.get_lines():
-            data = line.get_xydata()
+        
+        for plotitem in self.plotitem:
+            datax = plotitem[1]
+            datay = plotitem[2]
+            data = np.array([[datax[i],datay[i]] for i in range(len(datax))   ] )
+            
             if len(data)>0:
                 datatemp.append(data)
                 maxtemp = len(data)
                 if maxtemp>max:
                     max = maxtemp
+                    
         if self.vectorlayerflowids:
             for flowid in self.vectorlayerflowids:
                 strtemp = strtemp + 'id : '+str(flowid)+ "\t"+ "\t"
-            strtemp += "\n"
+                
         for i in range(maxtemp):
             for j in range(len(datatemp)):
                 strtemp += str(datatemp[j][i][0])+ "\t" +str(datatemp[j][i][1])+"\t"
             strtemp += "\n"
+                
+
         self.clipboard.setText(strtemp)
-        
-    def addPointRubberband(self,x,y):
-        
-        if isinstance(x,list):
-            points = []
-            if len(x)>1:
-                for i in range(len(x)):
-                    points.append(self.meshlayer.xform.transform(qgis.core.QgsPoint(x[i],y[i])))
-                self.rubberband.addGeometry(QgsGeometry.fromPolygon([points]), None)
-            else:
-                qgspoint = self.meshlayer.xform.transform(qgis.core.QgsPoint(x[0],y[0]))
-                #self.rubberband.addPoint(qgspoint)
-                #self.rubberbandpoint.addPoint(qgspoint)
-                self.rubberband.addGeometry(QgsGeometry.fromPolygon([[qgspoint]]), None)
-        else:
-            qgspoint = self.meshlayer.xform.transform(qgis.core.QgsPoint(x,y))
-            self.rubberband.addPoint(qgspoint)
             
+        
+
+    
+    
     def updateProgressBar(self,float1):
         self.propertiesdialog.progressBar.setValue(int(float1))
         
@@ -294,6 +362,7 @@ class TemporalGraphTool(AbstractMeshLayerTool,FORM_CLASS):
 #********************************************************************************************
         
 class GraphTemp(QtCore.QObject):
+
     
     def __init__(self, selafin, graphtemptool, qgspoints, compare):
         
@@ -306,25 +375,74 @@ class GraphTemp(QtCore.QObject):
 
 
     def createGraphTemp(self):
+        
+        DEBUG = True
+    
         try:
             list1=[]
             list2=[]
+            
+            if DEBUG : self.status.emit('points ' + str(self.points) )
+            
             for i in range(len(self.points)):
                 abscisse = []
                 ordonnees=[]
                 #triangle = self.selafinlayer.trifind.__call__(self.points[i][0],self.points[i][1])
                 #if triangle != -1:
                 #enumpoint = self.getNearest(self.points[i])
-                enumpoint = self.selafinlayer.hydrauparser.getNearestPoint(self.points[i][0],self.points[i][1] )
-                if enumpoint:
-                    x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([enumpoint])[0]
+                
+                param = self.graphtemptool.comboBox_parametreschooser.currentIndex()
+                
+                if self.selafinlayer.hydrauparser.parametres[param][2] == 0:
+                    enumpoint = self.selafinlayer.hydrauparser.getNearestElemNode(self.points[i][0],self.points[i][1] )
+                    self.emitnum.emit([enumpoint],0)
+                    """
+                    if DEBUG : self.status.emit('elem enumpoint ' + str(enumpoint) )
+                    coords = np.array(self.selafinlayer.hydrauparser.getElemXYFromNumElem([enumpoint])[0])
+                    if DEBUG : self.status.emit('elem coords ' + str(coords) )
+                    x = coords[:,0].tolist()
+                    y = coords[:,1].tolist()
+                    if DEBUG : self.status.emit('elem coords ' + str(x) + ' ' + str(y) )
+                    """
                     
-                    self.emitpoint.emit(x,y)
+                    
+                elif self.selafinlayer.hydrauparser.parametres[param][2] == 1 :
+                    enumpoint = self.selafinlayer.hydrauparser.getNearestFaceNode(self.points[i][0],self.points[i][1] )
+                    self.emitnum.emit([enumpoint],1)
+                    """
+                    if DEBUG : self.status.emit('facenode enumpoint ' + str(enumpoint) )
+                    x,y = self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([enumpoint])[0]
+                    x = [x]
+                    y = [y]
+                    if DEBUG : self.status.emit('facenode coords ' + str(x) + '  ' + str(y))
+                    """
+                    
+                elif self.selafinlayer.hydrauparser.parametres[param][2] == 2 :
+                    enumpoint = self.selafinlayer.hydrauparser.getNearestFace(self.points[i][0],self.points[i][1] )
+                    self.emitnum.emit([enumpoint],2)
+                    """
+                    if DEBUG : self.status.emit('face enumpoint ' + str(enumpoint) )
+                    coords = self.selafinlayer.hydrauparser.getFaceXYFromNumFace([enumpoint])[0]
+                    if DEBUG : self.status.emit('face coords ' + str(coords) )
+                    x = coords[:,0].tolist()
+                    y = coords[:,1].tolist()
+                    if DEBUG : self.status.emit('elem coords ' + str(x) + ' ' + str(y) )
+                    """
+                    
+                #if DEBUG : self.status.emit('num elem ' + str(enumpoint) + ' param : '+ str(param))
+
+                
+                
+                
+                if enumpoint:
+                    #x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([enumpoint])[0]
+                    
+                    #self.emitpoint.emit(x,y)
                     #abscisse = self.selafinlayer.slf.tags["times"].tolist()
                     abscisse = self.selafinlayer.hydrauparser.getTimes().tolist()
                     
-                    param = self.graphtemptool.comboBox_parametreschooser.currentIndex()
-
+                    #param = self.graphtemptool.comboBox_parametreschooser.currentIndex()
+                    
                     if self.compare :
                         triangles,numpointsfinal,pointsfinal,coef = self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getInterpFactorInTriangleFromPoint([x],[y])
                         self.status.emit(str(triangles)+' ' +str(numpointsfinal)+' ' +str(pointsfinal)+' ' +str(coef))
@@ -334,17 +452,17 @@ class GraphTemp(QtCore.QObject):
                             #layer2serie += float(coef[0][i]) * self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getTimeSerie([numpoint],[self.selafinlayer.parametres[param[0]][3]],self.selafinlayer.parametres)
                             layer2serie += float(coef[0][i]) * self.selafinlayer.propertiesdialog.postutils.compareprocess.hydrauparsercompared.getTimeSerie([numpoint +1],[self.selafinlayer.hydrauparser.parametres[param][3]],self.selafinlayer.hydrauparser.parametres)
                         #print 'ok1'
-                        layer1serie = self.selafinlayer.hydrauparser.getTimeSerie([enumpoint + 1],[param],self.selafinlayer.hydrauparser.parametres)
+                        layer1serie = self.selafinlayer.hydrauparser.getTimeSerie([enumpoint],[param],self.selafinlayer.hydrauparser.parametres)
                         tempordonees =  layer2serie  - layer1serie
                     else:
-                        tempordonees =  self.selafinlayer.hydrauparser.getTimeSerie([enumpoint + 1],[param],self.selafinlayer.hydrauparser.parametres)
+                        tempordonees =  self.selafinlayer.hydrauparser.getTimeSerie([enumpoint],[param],self.selafinlayer.hydrauparser.parametres)
                     
                     ordonnees = tempordonees[0][0].tolist()
                     list1.append(abscisse)
                     list2.append(ordonnees)
             self.finished.emit(list1,list2)
-        except Exception, e:
-            self.status.emit('graph temp ' + str(e))
+        except Exception as e:
+            self.error.emit('meshlayer_temporalgraph_tool - createGraphTemp ' + str(e))
             self.finished.emit([],[])
 
     progress = QtCore.pyqtSignal(int)
@@ -352,8 +470,9 @@ class GraphTemp(QtCore.QObject):
     error = QtCore.pyqtSignal(str)
     killed = QtCore.pyqtSignal()
     finished = QtCore.pyqtSignal(list,list)
-    emitpoint = QtCore.pyqtSignal(float,float)
+    emitpoint = QtCore.pyqtSignal(list,list)
     emitprogressbar = QtCore.pyqtSignal(float)
+    emitnum = QtCore.pyqtSignal(list,int)
 
       
 
@@ -384,8 +503,9 @@ class InitGraphTemp(QtCore.QObject):
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.createGraphTemp)
         self.worker.status.connect(self.writeOutput)
-        self.worker.error.connect(self.raiseError)
+        self.worker.error.connect(self.writeError)
         self.worker.emitpoint.connect(self.emitPoint)
+        self.worker.emitnum.connect(self.emitNum)
         self.worker.emitprogressbar.connect(self.updateProgressBar)
         self.worker.finished.connect(self.workerFinished)
         self.worker.finished.connect(self.worker.deleteLater)
@@ -401,11 +521,14 @@ class InitGraphTemp(QtCore.QObject):
         elif self.processtype in [1,2,3]:
             raise GeoAlgorithmExecutionException(str)
         elif self.processtype == 4:
-            print str
+            print (str)
             sys.exit(0)
             
     def writeOutput(self,str1):
         self.status.emit(str(str1))
+        
+    def writeError(self,str1):
+        self.error.emit(str(str1))
         
     def workerFinished(self,list1,list2):
         self.finished1.emit(list1,list2)
@@ -415,11 +538,15 @@ class InitGraphTemp(QtCore.QObject):
         
     def updateProgressBar(self,float1):
         self.emitprogressbar.emit(float1)
+        
+    def emitNum(self,list1,int1):
+        self.emitnum.emit(list1,int1)
 
         
             
     status = QtCore.pyqtSignal(str)
     error = QtCore.pyqtSignal(str)
+    emitnum = QtCore.pyqtSignal(list,int)
     finished1 = QtCore.pyqtSignal(list,list)
-    emitpoint = QtCore.pyqtSignal(float,float)
+    emitpoint = QtCore.pyqtSignal(list,list)
     emitprogressbar = QtCore.pyqtSignal(float)

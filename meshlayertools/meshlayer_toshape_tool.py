@@ -24,14 +24,15 @@ Versions :
 """
 
 
-from PyQt4 import uic, QtCore, QtGui
-from meshlayer_abstract_tool import *
+#from PyQt4 import uic, QtCore, QtGui
+from qgis.PyQt import uic, QtCore, QtGui
+from .meshlayer_abstract_tool import *
 import os
 import qgis
 
-from toshape.posttelemac_util_extractshp import *
-from toshape.posttelemac_util_extractmesh import *
-from toshape.posttelemac_util_extractpts import *
+from .toshape.posttelemac_util_extractshp import *
+from .toshape.posttelemac_util_extractmesh import *
+from .toshape.posttelemac_util_extractpts import *
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ToshapeTool.ui'))
@@ -39,6 +40,8 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ToshapeT
 
 
 class ToShapeTool(AbstractMeshLayerTool,FORM_CLASS):
+
+    NAME = 'TOSHAPETOOL'
 
 
     def __init__(self, meshlayer,dialog):
@@ -130,8 +133,13 @@ class ToShapeTool(AbstractMeshLayerTool,FORM_CLASS):
         
     def create_points(self):
         self.initclass=InitSelafinMesh2Pts()
+        """
         self.initclass.status.connect(self.propertiesdialog.textBrowser_2.append)
         self.initclass.finished1.connect(self.workershapePointFinished)
+        """
+        self.initclass.status.connect(self.propertiesdialog.logMessage)
+        self.initclass.error.connect(self.propertiesdialog.errorMessage)
+        
         self.initclass.start(                 
                              0,                 #0 : thread inside qgis (plugin) - 1 : thread processing - 2 : modeler (no thread) - 3 : modeler + shpouput - 4: outsideqgis
                              os.path.normpath(self.meshlayer.hydraufilepath),                 #path to selafin file
@@ -154,8 +162,13 @@ class ToShapeTool(AbstractMeshLayerTool,FORM_CLASS):
 
     def create_shp(self):
         self.initclass=InitSelafinContour2Shp()
+        """
         self.initclass.status.connect(self.propertiesdialog.textBrowser_2.append)
         self.initclass.error.connect(self.propertiesdialog.textBrowser_2.append)
+        """
+        self.initclass.status.connect(self.propertiesdialog.logMessage)
+        self.initclass.error.connect(self.propertiesdialog.errorMessage)
+        
         self.initclass.finished1.connect(self.workershapeFinished)
         self.propertiesdialog.normalMessage(self.tr("2Shape - coutour creation launched - watch progress on log tab"))
         
@@ -189,7 +202,10 @@ class ToShapeTool(AbstractMeshLayerTool,FORM_CLASS):
             
     def create_shp_maillage(self):
         self.initclass=InitSelafinMesh2Shp()
-        self.initclass.status.connect(self.propertiesdialog.textBrowser_2.append)
+        #self.initclass.status.connect(self.propertiesdialog.textBrowser_2.append)
+        
+        self.initclass.status.connect(self.propertiesdialog.logMessage)
+        
         if self.checkBox_3.isChecked():
             self.initclass.finished1.connect(self.workerFinishedHillshade)
         else:

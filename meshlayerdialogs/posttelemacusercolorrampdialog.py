@@ -25,7 +25,13 @@
 #unicode behaviour
 from __future__ import unicode_literals
 
-from PyQt4 import uic, QtGui
+#from PyQt4 import uic, QtGui
+from qgis.PyQt import uic, QtCore, QtGui
+try:
+    from qgis.PyQt.QtGui import QDialog, QTableWidgetItem
+except:
+    from qgis.PyQt.QtWidgets import QDialog, QTableWidgetItem
+
 import os
 import qgis.gui
 
@@ -33,7 +39,7 @@ import qgis.gui
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__),'..', 'ui', 'usercolorramp.ui'))
 
-class UserColorRampDialog(QtGui.QDialog, FORM_CLASS):
+class UserColorRampDialog(QDialog, FORM_CLASS):
 
     def __init__(self, selafinlayer, parent=None):
         """Constructor."""
@@ -65,47 +71,56 @@ class UserColorRampDialog(QtGui.QDialog, FORM_CLASS):
         if self.meshlayer.propertiesdialog.tabWidget_lvl_vel.currentIndex() == 0 : #contour
             self.tableWidget.setRowCount(len(self.meshlayer.meshrenderer.lvl_contour)-1)
             for i in range(len(self.meshlayer.meshrenderer.lvl_contour)-1):
-                colorwdg = qgis.gui.QgsColorButtonV2()
+                try:
+                    colorwdg = qgis.gui.QgsColorButtonV2()
+                except:
+                    colorwdg = qgis.gui.QgsColorButton()
                 colorwdg.setAllowAlpha(True)
                 colorwdg.setColor(QtGui.QColor(self.meshlayer.meshrenderer.cmap_contour_leveled[i][0]*255,self.meshlayer.meshrenderer.cmap_contour_leveled[i][1]*255,self.meshlayer.meshrenderer.cmap_contour_leveled[i][2]*255,self.meshlayer.meshrenderer.cmap_contour_leveled[i][3]*255))
                 self.tableWidget.setCellWidget(i,0,colorwdg)
-                self.tableWidget.setItem(i, 1, QtGui.QTableWidgetItem(str(self.meshlayer.meshrenderer.lvl_contour[i])))
-                self.tableWidget.setItem(i, 2, QtGui.QTableWidgetItem(str(self.meshlayer.meshrenderer.lvl_contour[i+1])))
+                self.tableWidget.setItem(i, 1, QTableWidgetItem(str(self.meshlayer.meshrenderer.lvl_contour[i])))
+                self.tableWidget.setItem(i, 2, QTableWidgetItem(str(self.meshlayer.meshrenderer.lvl_contour[i+1])))
         elif self.meshlayer.propertiesdialog.tabWidget_lvl_vel.currentIndex() == 1 : #velocity
             self.tableWidget.setRowCount(len(self.meshlayer.meshrenderer.lvl_vel)-1)
             for i in range(len(self.meshlayer.meshrenderer.lvl_vel)-1):
-                colorwdg = qgis.gui.QgsColorButtonV2()
+                try:
+                    colorwdg = qgis.gui.QgsColorButtonV2()
+                except:
+                    colorwdg = qgis.gui.QgsColorButton()
                 colorwdg.setAllowAlpha(True)
                 colorwdg.setColor(QtGui.QColor(self.meshlayer.meshrenderer.cmap_vel_leveled[i][0]*255,self.meshlayer.meshrenderer.cmap_vel_leveled[i][1]*255,self.meshlayer.meshrenderer.cmap_vel_leveled[i][2]*255,self.meshlayer.meshrenderer.cmap_vel_leveled[i][3]*255))
                 self.tableWidget.setCellWidget(i,0,colorwdg)
-                self.tableWidget.setItem(i, 1, QtGui.QTableWidgetItem(str(self.meshlayer.meshrenderer.lvl_vel[i])))
-                self.tableWidget.setItem(i, 2, QtGui.QTableWidgetItem(str(self.meshlayer.meshrenderer.lvl_vel[i+1])))
+                self.tableWidget.setItem(i, 1, QTableWidgetItem(str(self.meshlayer.meshrenderer.lvl_vel[i])))
+                self.tableWidget.setItem(i, 2, QTableWidgetItem(str(self.meshlayer.meshrenderer.lvl_vel[i+1])))
             
     def addrow(self):
         introw = self.tableWidget.currentRow()
         self.tableWidget.insertRow(introw+1)
-        colorwdg = qgis.gui.QgsColorButtonV2()
+        try:
+            colorwdg = qgis.gui.QgsColorButtonV2()
+        except:
+            colorwdg = qgis.gui.QgsColorButton()
         self.tableWidget.setCellWidget(introw+1,0,colorwdg)
-        self.tableWidget.setItem(introw+1, 1, QtGui.QTableWidgetItem(self.tableWidget.item(introw,2)))
-        self.tableWidget.setItem(introw+1, 2, QtGui.QTableWidgetItem(self.tableWidget.item(introw+2,1)))
+        self.tableWidget.setItem(introw+1, 1, QTableWidgetItem(self.tableWidget.item(introw,2)))
+        self.tableWidget.setItem(introw+1, 2, QTableWidgetItem(self.tableWidget.item(introw+2,1)))
         
         
     def removerow(self):
         introw = self.tableWidget.currentRow()
         self.tableWidget.removeRow(introw)
         if  introw != 0 and  introw != (self.tableWidget.rowCount()):
-            self.tableWidget.setItem(introw, 1, QtGui.QTableWidgetItem(self.tableWidget.item(introw-1,2)))
+            self.tableWidget.setItem(introw, 1, QTableWidgetItem(self.tableWidget.item(introw-1,2)))
         
         
     def checkUpperLower(self, row,column):
         try:
             self.tableWidget.cellChanged.disconnect(self.checkUpperLower)
-        except Excetion, e:
+        except Exception as e:
             pass
         if column == 1:
-            self.tableWidget.setItem(row-1, 2, QtGui.QTableWidgetItem(self.tableWidget.item(row,column)))
+            self.tableWidget.setItem(row-1, 2, QTableWidgetItem(self.tableWidget.item(row,column)))
         elif column == 2:
-            self.tableWidget.setItem(row+1, 1, QtGui.QTableWidgetItem(self.tableWidget.item(row,column)))
+            self.tableWidget.setItem(row+1, 1, QTableWidgetItem(self.tableWidget.item(row,column)))
         
         self.tableWidget.cellChanged.connect(self.checkUpperLower)
         

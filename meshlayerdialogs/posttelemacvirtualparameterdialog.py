@@ -23,7 +23,14 @@
 #unicode behaviour
 from __future__ import unicode_literals
 
-from PyQt4 import uic, QtGui
+#from PyQt4 import uic, QtGui
+from qgis.PyQt import uic, QtCore, QtGui
+try:
+    from qgis.PyQt.QtGui import QDialog, QTreeWidgetItem
+except:
+    from qgis.PyQt.QtWidgets import QDialog, QTreeWidgetItem
+    
+    
 import os.path
 import pickle
 
@@ -31,7 +38,7 @@ import pickle
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__),'..', 'ui', 'def_variable.ui'))
 
-class DefVariablesDialog(QtGui.QDialog, FORM_CLASS):
+class DefVariablesDialog(QDialog, FORM_CLASS):
     def __init__(self, lst_param, lst_var, parent=None):
         """Constructor."""
         super(DefVariablesDialog, self).__init__(parent)
@@ -49,6 +56,8 @@ class DefVariablesDialog(QtGui.QDialog, FORM_CLASS):
         lst_fn = ["+","-","*","/","**","abs()", "cos()", "int()", "sin()",'if_then_else("condition",if_true,if_false)']
 
         self.tab_variables.itemDoubleClicked.connect(self.add_variable)
+        self.tab_variables_2.itemDoubleClicked.connect(self.add_variable)
+        
         self.lst_fonctions.doubleClicked.connect(self.add_fonction)
         self.txt_nom_variable.textEdited.connect(self.active_bb_valide)
         self.txt_formule.textChanged.connect(self.active_bb_valide)
@@ -57,8 +66,13 @@ class DefVariablesDialog(QtGui.QDialog, FORM_CLASS):
         self.tab_variables.headerItem().setText(0, "Pos")
         self.tab_variables.headerItem().setText(1, "Nom")
         self.tab_variables.resizeColumnToContents(0)
+        
+        self.tab_variables_2.headerItem().setText(0, "Pos")
+        self.tab_variables_2.headerItem().setText(1, "Nom")
+        self.tab_variables_2.resizeColumnToContents(0)
 
-        self.fill_tab(self.tab_variables, lst_var)
+        self.fill_tab(self.tab_variables, lst_var,0)
+        self.fill_tab(self.tab_variables_2, lst_var,1)
         self.fill_list(self.lst_fonctions, lst_fn)
         #self.init_cb_classe("")
 
@@ -79,9 +93,12 @@ class DefVariablesDialog(QtGui.QDialog, FORM_CLASS):
             new_var = {}
             new_var["nom"] = self.txt_nom_variable.text()
             new_var["formule"] = self.txt_formule.toPlainText()
+            new_var["formuleparam"] = new_var["formule"][ new_var["formule"].index('V')+1]
             #new_var["classe"] = self.cb_classe.currentText()
             #return (new_var) 
-            return [self.txt_nom_variable.text(),self.txt_formule.toPlainText() ]
+            return [self.txt_nom_variable.text(),self.txt_formule.toPlainText() ,int(new_var["formule"][ new_var["formule"].index('V')+1]) ]
+            
+            
         
     def init_cb_classe(self, txt):
         idx = 0
@@ -114,13 +131,14 @@ class DefVariablesDialog(QtGui.QDialog, FORM_CLASS):
         name_list.setModel(model)
         
 
-    def fill_tab(self, name_list, lst_var):
+    def fill_tab(self, name_list, lst_var, type):
         itms = []
         for elt in lst_var:
-            itm = QtGui.QTreeWidgetItem()
-            itm.setText(0, str(elt[0]))
-            itm.setText(1, elt[1])
-            itms.append(itm)
+            if elt[2] == type :
+                itm = QTreeWidgetItem()
+                itm.setText(0, str(elt[0]))
+                itm.setText(1, elt[1])
+                itms.append(itm)
 
         name_list.addTopLevelItems(itms)
 

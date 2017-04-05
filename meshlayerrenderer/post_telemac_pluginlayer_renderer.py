@@ -4,7 +4,8 @@
 from __future__ import unicode_literals
 
 import qgis.core
-from PyQt4 import QtGui, QtCore
+#from PyQt4 import QtGui, QtCore
+from qgis.PyQt import QtGui, QtCore
 
 class PostTelemacPluginLayerRenderer(qgis.core.QgsMapLayerRenderer):
 
@@ -15,8 +16,9 @@ class PostTelemacPluginLayerRenderer(qgis.core.QgsMapLayerRenderer):
         
 
     def render(self):
+        
         try:
-            if self.meshlayer.hydrauparser !=None and self.meshlayer.hydrauparser.hydraufile !=None and self.meshlayer.meshrenderer != None :
+            if self.meshlayer.hydrauparser !=None and self.meshlayer.hydrauparser.path !=None and self.meshlayer.meshrenderer != None :
                 bool1,image1,image2 = self.meshlayer.meshrenderer.getimage(self.meshlayer,self.rendererContext)
             else:
                 image1 = QtGui.QImage()
@@ -30,7 +32,7 @@ class PostTelemacPluginLayerRenderer(qgis.core.QgsMapLayerRenderer):
                 painter.drawImage(0,0,image2)
             painter.restore()
             return bool1
-        except Exception, e:
+        except Exception as e:
             #self.meshlayer.propertiesdialog.errorMessage('Rendering : ' + str(e))
             self.meshlayer.propertiesdialog.errorMessage('Renderer Error')
             return False

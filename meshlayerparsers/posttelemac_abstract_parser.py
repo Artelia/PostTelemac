@@ -21,16 +21,53 @@ Versions :
  ***************************************************************************/
 """
 from __future__ import unicode_literals
-import matplotlib
-from matplotlib import tri
+
+from ..meshlayertools import utils
+
+
+"""
+version = utils.getQgisVersion()
+if version < 2.20:
+    import matplotlib
+    from matplotlib import tri
+    import networkx as nx
+    from scipy.spatial import cKDTree
+"""
+
+try:
+    from scipy.spatial import cKDTree
+    SCIPYOK = True
+except Exception as e:
+    SCIPYOK = False
+    
+#force desactivate scipy
+SCIPYOK = False
+    
 from numpy import sin, cos, abs, int
 import numpy as np
-from scipy.spatial import cKDTree
+
 import time
-import networkx as nx
 import numbers
-from PyQt4 import QtGui, QtCore
+#from PyQt4 import QtGui, QtCore
+from qgis.PyQt import QtGui, QtCore
 import os
+import qgis
+
+try:
+    import matplotlib.tri
+    MATPLOTLIBTRIOK = True
+except:
+    MATPLOTLIBTRIOK = False
+    
+if MATPLOTLIBTRIOK:
+    from matplotlib.tri import LinearTriInterpolator
+    from matplotlib.tri import Triangulation
+    
+try:
+    import networkx as nx
+    NETWORKXOK = True
+except:
+    NETWORKXOK = False
 
 
 
@@ -39,19 +76,37 @@ class PostTelemacAbstractParser(QtCore.QObject):
     emitMessage = QtCore.pyqtSignal(str)
 
     def __init__(self,virtualparamtoloadoninit = None):
-        QtCore.QObject.__init__(self)
+        #QtCore.QObject.__init__(self)
+        super(QtCore.QObject,self).__init__()
         #self.pluginlayer = layer1
         self.virtualparamtoloadoninit = virtualparamtoloadoninit
         self.path = None
         self.hydraufile = None
+        """
         self.pointcount = None
         self.meshcount = None
         self.itertimecount = None
-        self.skdtree = None
+        """
+        #new
+        self.elemcount = None
+        self.facesnodescount = None
+        self.facescount = None
+        self.itertimecount = None
+        
+        #self.skdtree = None
+        #new :
+        self.skdtreeelemnode = None
+        self.skdtreefacenode = None
+        
+        #new : 
+        self.facesindex = None
+        self.elemfacesindex = None
+        
         self.triangulation = None
         self.triangulationisvalid = [False,None]
+        self.interpolator = None
         self.trifind = None
-        self.parametres = None      # [...,[index, name, formula or None, index od compared param], ...]    
+        self.parametres = None      # [...,[0 : index, 1 : name, 2 : parametertype, 3 : rawindex, 4 : formula or None, 5 : index od compared param], ...]   - typevar (0 : elem, 1 : facenode, 2 : face)] 
         self.parametrev = None
         self.parametrevx = None         #specific num for velolity x parameter
         self.parametrevy = None
@@ -71,8 +126,16 @@ class PostTelemacAbstractParser(QtCore.QObject):
     def setXYTranslation(self,xtransl, ytransl):
         self.translatex = xtransl
         self.translatey = ytransl
-        self.initCkdTree()
-        self.initMplTriangulation()
+        
+        if SCIPYOK:
+            self.initCkdTree()
+        
+        """
+        version = utils.getQgisVersion()
+        if version < 2.20:
+            self.initCkdTree()
+            self.initMplTriangulation()
+        """
         
     def initPathDependantVariablesWhenLoading(self):
         """
@@ -81,38 +144,8 @@ class PostTelemacAbstractParser(QtCore.QObject):
         """
         pass
         
-    def getRawValues(self,time1):
-        """
-        return array : 
-        array[param number][node value for param number]
-        """
-        return np.array([[None]])
         
-    def getRawTimeSerie(self,arraynumpoint,arrayparam,layerparametres = None):
-        """
-        Warning : point index begin at 1
-        [..., param[numpts[values]], ... ]
-        """
-        return np.array([None])
-        
-    def getMesh(self):
-        """
-        return MESHX: np.array[x1,X2,...], MESHY:[y1,y2,...]
-        """
-        return (np.array([None]), np.array([None]) )
-        
-    def getVarnames(self):
-        """
-        return [...[varname, dimension],...]
-        """
-        return np.array([None])
-    
-    def getIkle(self):
-        """
-        return array [...,(meshn:)[point1,point2,point3], ...]
-        """
-        return np.array([None])
-        
+
     def getTimes(self):
         """
         return array of times computed
@@ -120,7 +153,125 @@ class PostTelemacAbstractParser(QtCore.QObject):
         return np.array([None])
         
         
+    #****************************************************************************************
+    #****************************************************************************************
+    #****************************************************************************************
+    
+    def getVarNames(self):
+        """
+        return np.array[varname, typevar (0 : elem, 1 : facenode, 2 : face)]
+        """
+        return np.array([])
+    
+    #*********** Elems
+    
+    def getElemNodes(self):
+        """
+        xyz
+        3T : /
+        hec : Cells_Center_Coordinate
         
+        return (np.array(x), np.array(y) )
+        """
+        return ( np.array([]),np.array([]) )
+    
+    
+    def getElemRawValue(self, time1):
+        """
+        3T : /
+        hec : value
+        
+        return np.array[param number][node value for param number]
+        
+        """
+        return np.array([])
+        
+    def getElemRawTimeSerie(self,arraynumelemnode,arrayparam,layerparametres = None):
+        """
+        
+        return np.array[param][numelem][value for time t]
+        
+        """
+        return np.array([])
+        
+
+    
+    
+    #*********** Face Node
+    
+    def getFacesNodes(self):
+        """
+        3T : xyz
+        hec : FacePoints_Coordinate
+        
+        return (np.array(x), np.array(y) )
+        
+        """
+        return ( np.array([]),np.array([]) )
+        
+    def getElemFaces(self):
+        """
+        It's the mesh
+        3T : ikle
+        hec : Faces_FacePoint_Indexes
+        
+        return np.array([facenodeindex linked with the elem ])
+        """
+        return np.array([])
+        
+        
+        
+    def getFacesNodesRawValues(self, time1):
+        """
+        3T : getvalues
+        
+        return np.array[param number][node value for param number]
+        
+        """
+        return np.array([])
+        
+    def getFacesNodesRawTimeSeries(self,arraynumelemnode,arrayparam,layerparametres = None):
+        """
+        3T : getvalues
+        
+        return np.array[param][numelem][value for time t]
+        
+        """
+        return np.array([])
+        
+    #*********** Face
+        
+    def getFaces(self):
+        """
+        return np.array([facenodeindex linked with the face ])
+        """
+        return np.array([])
+    
+    
+    def getFacesRawValues(self, time1):
+        """
+        3T : /
+        hec : velocity
+        return np.array[param number][node value for param number]
+        
+        """
+        return np.array([])
+    
+    def getFacesRawTimeSeries(self,arraynumelemnode,arrayparam,layerparametres = None):
+        """
+        3T : /
+        hec : velocity
+        
+        return np.array[param][numelem][value for time t]
+        
+        """
+        return np.array([])
+    
+    
+    #****************************************************************************************
+    #****************************************************************************************
+    #****************************************************************************************
+
         
         
         
@@ -130,6 +281,35 @@ class PostTelemacAbstractParser(QtCore.QObject):
     
     #****************************************************************************************
     #******************  Load functions                *************************************
+    
+    
+    def extent(self):
+        x1, y1 = self.getElemNodes()
+        x2, y2 = self.getFacesNodes()
+        
+        
+        if len(x1)>0 :
+            rect1 = qgis.core.QgsRectangle(float(min(x1)), float(min(y1)), float(max(x1)),  float(max(y1)))
+        else:
+            rect1 = None
+            
+        if len(x2)>0 :
+            rect2 = qgis.core.QgsRectangle(float(min(x2)), float(min(y2)), float(max(x2)),  float(max(y2)))
+        else:
+            rect2 = None
+            
+        if rect1 and rect2:
+            rect = rect1.union(rect2).boundingBox()
+        
+        else:
+            if rect1:
+                rect = rect1
+            else:
+                rect = rect2
+        
+        
+        return rect
+    
         
     def loadHydrauFile(self,path1):
         """
@@ -140,40 +320,84 @@ class PostTelemacAbstractParser(QtCore.QObject):
         self.initClassicThingsAndCkdTreeAndMatplotLib()
     
     def initClassicThingsAndCkdTreeAndMatplotLib(self):
-        self.pointcount = len(self.getMesh()[0])
-        self.meshcount = len(self.getIkle())
-        self.itertimecount = len(self.getTimes())-1
-        self.initCkdTree()
-        self.initMplTriangulation()
+        if False:
+            self.pointcount = len(self.getMesh()[0])
+            self.meshcount = len(self.getIkle())
+            self.itertimecount = len(self.getTimes())-1
+        if True:
+            self.elemcount = len(   self.getElemFaces() )
+            self.facesnodescount = len(self.getFacesNodes()[0]   )
+            self.facescount = len(   self.getFaces() )
+            self.itertimecount = len(self.getTimes())-1
+        
+        if SCIPYOK:
+            self.initCkdTree()
+            
+            
+        
+        """
+        version = utils.getQgisVersion()
+        if version < 2.20:
+            self.initCkdTree()
+            self.initMplTriangulation()
+        """
         self.initSelafinParameters()
         
+        if MATPLOTLIBTRIOK:
+            self.createInterpolator()
+            
+    
+    
+    
+
     def initCkdTree(self):
-        meshx, meshy = self.getMesh()
-        arraymesh = np.array([[meshx[i], meshy[i] ] for i in range(self.pointcount) ])
-        self.skdtree = cKDTree(arraymesh,leafsize=100)
+        """
+        xx
+        self.skdtreeelemnode = None
+        self.skdtreefacenode = None
+        """
         
-    def initMplTriangulation(self):
-        meshx, meshy = self.getMesh()
-        ikle = self.getIkle()
-        self.triangulation = matplotlib.tri.Triangulation(meshx,meshy,np.array(ikle))
-        bool1, error = self.checkTriangul()
-        if bool1:
-            self.trifind = self.triangulation.get_trifinder()
-            self.triangulationisvalid = [True,None]
-        else:
-            self.triangulationisvalid = [False,error]
-            """
-            if self.pluginlayer != None:
-                self.pluginlayer.propertiesdialog.errorMessage('Duplicated points : ' + str( (self.triangulationisvalid[1] + 1).tolist()  ) + ' - Triangulation is invalid')
-            """
-            self.emitMessage.emit('Duplicated points : ' + str( (self.triangulationisvalid[1] + 1).tolist()  ) + ' - Triangulation is invalid')
+        #meshx, meshy = self.getMesh()
+        if len(self.getElemNodes()[0]) > 0:
+            x, y = self.getElemNodes()
+            arraymesh = np.array([[x[i], y[i] ] for i in range(self.elemcount) ])
+            self.skdtreeelemnode = cKDTree(arraymesh,leafsize=100)
+            
+        if len(self.getFacesNodes()[0]) > 0:
+            x, y = self.getFacesNodes()
+            arraymesh = np.array([[x[i], y[i] ] for i in range(self.facesnodescount) ])
+            self.skdtreefacenode = cKDTree(arraymesh,leafsize=100)
+            
+
+    def createInterpolator(self):
+
+        elemfaces = self.getElemFaces()
         
-        
+        #interpolator for triangle mesh
+        if len(elemfaces) > 0 and len(elemfaces.shape) > 1 and elemfaces.shape[1] == 3 :
+            
+            meshx, meshy = self.getFacesNodes()
+            ikle = self.getElemFaces()
+            self.triangulation = Triangulation(meshx,meshy,np.array(ikle))
+            bool1, error = self.checkTriangul()
+            
+            if bool1:
+                #self.trifind = self.triangulation.get_trifinder()
+                self.triangulationisvalid = [True,None]
+                
+            else:
+                self.triangulationisvalid = [False,error]
+                self.emitMessage.emit('Duplicated points : ' + str( (self.triangulationisvalid[1] + 1).tolist()  ) + ' - Triangulation is invalid')
+                
+                
+                
     def checkTriangul(self):
         import collections
         d = collections.OrderedDict()
         indexfinal = []
-        x,y = self.getMesh()
+        #x,y = self.getMesh()
+        x,y = self.getFacesNodes()
+        
         p = [[x[i],y[i]] for i in range(len(x))]
         p1 = np.array(p)
         for i, a in enumerate(p1):
@@ -197,9 +421,73 @@ class PostTelemacAbstractParser(QtCore.QObject):
             return False,np.array(indexfinal)
         else:
             return True,None
+                    
+                    
+    def updateInterpolator(self, time1):
+        
+        if self.triangulationisvalid[0]:
+            #self.triinterp = [matplotlib.tri.LinearTriInterpolator(self.hydrauparser.triangulation, self.values[i]) for i in range(len(self.hydrauparser.parametres))]
+            values = self.getValues(time1)
+            self.interpolator = [LinearTriInterpolator(self.triangulation, values[i]) for i in range(len(self.parametres))]
+            return True
+        else:
+            return False
+            
             
 
+            
+
+            
+            
     def initSelafinParameters(self):
+        """
+        Called load_selafin by when changing selafin file
+        Set selafin variables
+        """
+        #self.initTriangul()
+        self.parametres = []
+        #load  parametres in self.parametres
+        #for i,name in enumerate(self.getVarnames()):
+        elemparcount = 0
+        facenodeparcount = 0
+        faceparcount = 0
+        for i,name in enumerate(self.getVarNames()):
+            if int(name[1]) == 0:
+                self.parametres.append([i,name[0].strip(),int(name[1]),elemparcount, None,i])
+                elemparcount += 1
+            elif int(name[1]) == 1:
+                self.parametres.append([i,name[0].strip(),int(name[1]),facenodeparcount, None,i])
+                facenodeparcount += 1
+            elif int(name[1]) == 2:
+                self.parametres.append([i,name[0].strip(),int(name[1]),faceparcount, None,i])
+                faceparcount += 1
+            
+        """
+        if self.pluginlayer != None and len(self.pluginlayer.parametrestoload['virtual_parameters'])>0:    #case of virtual parameters when loadin a selafin layer
+            for param in self.pluginlayer.parametrestoload['virtual_parameters']:
+                self.parametres.append([len(self.parametres),param[1],param[2],len(self.parametres)])
+        if self.pluginlayer != None and (self.pluginlayer.parametrestoload['xtranslation'] != 0 or self.pluginlayer.parametrestoload['ytranslation'] != 0):
+            self.setXYTranslation(self.pluginlayer.parametrestoload['xtranslation'],self.pluginlayer.parametrestoload['ytranslation'])
+        """
+        if self.virtualparamtoloadoninit != None:
+            if  len(self.virtualparamtoloadoninit['virtual_parameters'])>0:    #case of virtual parameters when loadin a selafin layer
+                for param in self.virtualparamtoloadoninit['virtual_parameters']:
+                    self.parametres.append([len(self.parametres),
+                                            param[1], 
+                                            param[2] ,
+                                            None ,
+                                            param[3],
+                                            len(self.parametres)])
+                    
+                    
+            if  (self.virtualparamtoloadoninit['xtranslation'] != 0 or self.virtualparamtoloadoninit['ytranslation'] != 0):
+                self.setXYTranslation(self.virtualparamtoloadoninit['xtranslation'],self.virtualparamtoloadoninit['ytranslation'])
+        
+        
+        self.identifyKeysParameters()
+            
+
+    def initSelafinParameters2(self):
         """
         Called load_selafin by when changing selafin file
         Set selafin variables
@@ -209,6 +497,7 @@ class PostTelemacAbstractParser(QtCore.QObject):
         #load  parametres in self.parametres
         for i,name in enumerate(self.getVarnames()):
             self.parametres.append([i,name.strip(),None,i])
+            
         """
         if self.pluginlayer != None and len(self.pluginlayer.parametrestoload['virtual_parameters'])>0:    #case of virtual parameters when loadin a selafin layer
             for param in self.pluginlayer.parametrestoload['virtual_parameters']:
@@ -267,7 +556,12 @@ class PostTelemacAbstractParser(QtCore.QObject):
                     paramfreesurface = self.getParameterName("SURFACELIBRE")[0]
                     parambottom = self.getParameterName("BATHYMETRIE")[0]
                     self.parametreh = len(self.parametres)
-                    self.parametres.append([len(self.parametres),"HAUTEUR D'EAU",'V'+str(paramfreesurface)+' - V'+str(parambottom),len(self.parametres)])
+                    self.parametres.append([len(self.parametres),
+                                            "HAUTEUR D'EAU",
+                                            self.parametres[paramfreesurface][2], 
+                                            None,
+                                            'V'+str(paramfreesurface)+' - V'+str(parambottom),
+                                            len(self.parametres)])
             else:
                 self.parametreh = self.getParameterName("HAUTEUR")[0]
 
@@ -277,7 +571,12 @@ class PostTelemacAbstractParser(QtCore.QObject):
                     paramvx = self.getParameterName("VITESSEU")[0]
                     paramvy = self.getParameterName("VITESSEV")[0]
                     self.parametrev = len(self.parametres)
-                    self.parametres.append([len(self.parametres),"VITESSE",'(V'+str(paramvx)+'**2 + V'+str(paramvy)+'**2)**0.5',len(self.parametres)])
+                    self.parametres.append([len(self.parametres),
+                                            "VITESSE",
+                                            self.parametres[paramvx][2], 
+                                            None,
+                                            '(V'+str(paramvx)+'**2 + V'+str(paramvy)+'**2)**0.5',
+                                            len(self.parametres)])
             else:
                 self.parametrev = self.getParameterName("VITESSE")[0]
         
@@ -287,12 +586,63 @@ class PostTelemacAbstractParser(QtCore.QObject):
     #****************************************************************************************
     #******************  Parameters and else functions  *************************************
     
-            
+    
+    
     def getValues(self,time):
+        """
+        Get the values of paameters for time time
+        
+        getElemRawValue
+        getFacesNodesRawValues
+        
+        typevar (0 : elem, 1 : facenode, 2 : face)]
+        
+        """
+        values = []
+        
+        
+        try:
+            elemvalue = self.getElemRawValue(time)
+            facenodevalues = self.getFacesNodesRawValues(time)
+            facevalue = self.getFacesRawValues(time)
+            
+            for param in self.parametres:
+                if param[4]:        #for virtual parameter - compute it
+                    if param[2] == 0 :  #elem value
+                        self.dico = self.getDico(param[4], self.parametres, values,'values')
+                        val = eval(param[4],{"__builtins__":None}, self.dico)
+                        #elemvalue = np.vstack((elemvalue,val))
+                        values.append(val)
+                    elif param[2] == 1 :    #face node value
+                        self.dico = self.getDico(param[4], self.parametres, values,'values')
+                        val = eval(param[4],{"__builtins__":None}, self.dico)
+                        #facenodevalues = np.vstack((facenodevalues,val))
+                        values.append(val)
+                    elif param[2] == 2 :    #face node value
+                        self.dico = self.getDico(param[4], self.parametres, values,'values')
+                        val = eval(param[4],{"__builtins__":None}, self.dico)
+                        #facenodevalues = np.vstack((facenodevalues,val))
+                        values.append(val)
+                else:
+                    if param[2] == 0 : #elem value
+                        values.append(elemvalue[param[3]])
+                    elif param[2] == 1 : #face node value
+                        values.append(facenodevalues[param[3]])
+                    elif param[2] == 2 : #face  value
+                        values.append(facevalue[param[3]])
+        except Exception as e:
+            self.emitMessage.emit('Abstractparser - getValues : ' + str(e))
+        #return facenodevalues, elemvalue
+        return values
+        
+        
+            
+    def getValues2(self,time):
         """
         Get the values of paameters for time time
         """
         values = self.getRawValues(time)
+        
         #print str(self.parametres)
         for param in self.parametres:
             if param[2]:        #for virtual parameter - compute it
@@ -302,27 +652,99 @@ class PostTelemacAbstractParser(QtCore.QObject):
         return values
     
     
-    def getTimeSerie(self,arraynumpoint,arrayparam,layerparametres = None):
+    def getTimeSerie(self, arraynumpoint ,arrayparam,layerparametres = None):
         """
         Warning : point index begin at 1
         """
+        DEBUG = False
         result = []
+        #print arraynumpoint
+        #arraynumpointtemp = list(arraynumpoint)
         try:
             for param in arrayparam:
-                if layerparametres != None and layerparametres[param][2]:
-                    dico = self.getDico(layerparametres[param][2], layerparametres,arraynumpoint,'timeseries')
-                    tempordonees = eval(layerparametres[param][2],{}, dico)
+                if layerparametres != None and layerparametres[param][4]:
+                    dico = self.getDico(layerparametres[param][4], layerparametres,arraynumpoint,'timeseries')
+                    tempordonees = eval(layerparametres[param][4],{}, dico)
                     result.append(tempordonees[0])
                 else:
-                    #tempordonees = self.hydraufile.getSERIES(arraynumpoint,[param],False)
-                    tempordonees = self.getRawTimeSerie(arraynumpoint,[param],False)
-                    result.append(tempordonees[0])
-        except Exception, e:
-            print 'getserie ' + str(e)
+                    if False:
+                        #tempordonees = self.hydraufile.getSERIES(arraynumpoint,[param],False)
+                        tempordonees = self.getRawTimeSerie(arraynumpoint,[param],False)
+                        result.append(tempordonees[0])
+                        
+                    if self.parametres[param][2] == 0 : #elem value
+                        if DEBUG : print( 'getTimeSerie getElemRawTimeSerie  ' + str(arraynumpoint) )
+                        tempordonees = self.getElemRawTimeSerie(arraynumpoint,[self.parametres[param][3]],False)
+                        result.append(tempordonees[0])
+                    elif self.parametres[param][2] == 1 : #face node value
+                        if DEBUG : print( 'getTimeSerie getFacesNodesRawTimeSeries')
+                        tempordonees = self.getFacesNodesRawTimeSeries(arraynumpoint,[self.parametres[param][3]],False)
+                        result.append(tempordonees[0])
+                    elif self.parametres[param][2] == 2 : #face  value
+                        if DEBUG : print( 'getTimeSerie getFacesRawTimeSeries')
+                        tempordonees = self.getFacesRawTimeSeries(arraynumpoint,[self.parametres[param][3]],False)
+                        result.append(tempordonees[0])
+                        
+        except Exception as e:
+            self.emitMessage.emit('Abstractparser - getTimeSerie : ' + str(e))
+            #print 'getserie ' + str(e)
         return np.array(result)
         
         
+        
     def getDico(self,expr, parametres,enumpointorvalues,type):
+        dico = {}
+        try:
+            dico['sin'] = sin
+            dico['cos'] = cos
+            dico['abs'] = abs
+            dico['int'] = int
+            dico['if_then_else'] = self.if_then_else
+            a = 'V{}'
+            #nb_var = len(values)
+            nb_var = len( self.getElemRawValue(0) ) + len(self.getFacesNodesRawValues(0) )
+            #nb_var  = len(enumpointorvalues)
+            i = 0
+            num_var = 0
+            while num_var < nb_var:
+                if not parametres[i][4]:
+                    rawindex = parametres
+                    if type == 'values':
+                        dico[a.format(i)] = enumpointorvalues[i]
+                    elif type == 'timeseries':
+                        if False:
+                            dico[a.format(i)] = self.getRawTimeSerie(enumpointorvalues,[i])
+                        if True:
+                            if parametres[i][2] == 0 : #elem value
+                                #if DEBUG : print 'getTimeSerie getElemRawTimeSerie'
+                                #tempordonees = self.getElemRawTimeSerie(arraynumpoint,[self.parametres[param][3]],False)
+                                #tempordonees = self.getElemRawTimeSerie(arraynumpoint,[parametres[i][3]],False)
+                                #result.append(tempordonees[0])
+                                dico[a.format(i)] = self.getElemRawTimeSerie(enumpointorvalues,[parametres[i][3]])
+                            elif parametres[i][2] == 1 : #face node value
+                                #if DEBUG : print 'getTimeSerie getFacesNodesRawTimeSeries'
+                                #tempordonees = self.getFacesNodesRawTimeSeries(arraynumpoint,[parametres[i][3]],False)
+                                #result.append(tempordonees[0])
+                                dico[a.format(i)] = self.getFacesNodesRawTimeSeries(enumpointorvalues,[parametres[i][3]])
+                            elif parametres[i][2] == 2 : #face  value
+                                #if DEBUG : print 'getTimeSerie getFacesRawTimeSeries'
+                                #tempordonees = self.getFacesRawTimeSeries(arraynumpoint,[parametres[i][3],False)
+                                #result.append(tempordonees[0])
+                                dico[a.format(i)] = self.getFacesRawTimeSeries(enumpointorvalues,[parametres[i][3]])
+                        
+                        
+                        
+                        
+                        
+                num_var += 1
+                i += 1
+        except Exception as e:
+            self.emitMessage.emit('Abstractparser - getDico : ' + str(e))
+            #print 'getdico ' + str(e)
+        return dico
+        
+        
+    def getDico2(self,expr, parametres,enumpointorvalues,type):
         dico = {}
         try:
             dico['sin'] = sin
@@ -343,8 +765,8 @@ class PostTelemacAbstractParser(QtCore.QObject):
                         dico[a.format(i)] = self.getRawTimeSerie(enumpointorvalues,[i])
                 num_var += 1
                 i += 1
-        except Exception, e:
-            print 'getdico ' + str(e)
+        except Exception as e:
+            print('getdico ' + str(e) )
         return dico
         
         
@@ -382,20 +804,135 @@ class PostTelemacAbstractParser(QtCore.QObject):
     #****************************************************************************************
     #******************  Spatials functions  ************************************************
         
-    def getXYFromNumPoint(self,arraynumpoint):
-        meshx,meshy = self.getMesh()
+    def getFaceNodeXYFromNumPoint(self,arraynumpoint):
+        meshx,meshy = self.getFacesNodes()
         #return [(self.hydraufile.MESHX[i], self.hydraufile.MESHY[i]) for i in arraynumpoint]
-        return [(meshx[i], meshy[i]) for i in arraynumpoint]
+        return [[meshx[i], meshy[i]] for i in arraynumpoint]
         
-    def getNearestPoint(self,x,y):
+    def getElemXYFromNumElem(self,arraynumelem):
+        meshx,meshy = self.getFacesNodes()
+        arrayelem = self.getElemFaces()
+        #return [(self.hydraufile.MESHX[i], self.hydraufile.MESHY[i]) for i in arraynumpoint]
+        result = []
+        for numelem in arraynumelem:
+            result.append([ (meshx[i], meshy[i]) for i in arrayelem[numelem]       ])
+            
+        return result
+        
+    def getFaceXYFromNumFace(self,arraynumelem):
+        meshx,meshy = self.getFacesNodes()
+        arrayelem = self.getFaces()
+        #return [(self.hydraufile.MESHX[i], self.hydraufile.MESHY[i]) for i in arraynumpoint]
+        result = []
+        for numelem in arraynumelem:
+            result.append([ (meshx[i], meshy[i]) for i in arrayelem[numelem]       ])
+            
+        return result
+    
+
+            
+        
+        
+    def getNearestFaceNode(self,x,y):
         """
         Get the nearest point in selafin mesh
         point is an array [x,y]
         return num of selafin MESH point
         """
+        #self.skdtreeelemnode = None
+        #self.skdtreefacenode = None
+        if SCIPYOK:
+            point1 = [[x,y]]
+            numfinal = self.skdtreefacenode.query(point1,k=1)[1][0]
+            return numfinal
+        else :
+            meshx,meshy = self.getFacesNodes()
+            diffx = np.array(meshx) - x
+            diffy = np.array(meshy) - y
+            dist = np.square(diffx)+np.square(diffy)
+            return np.argmin(dist)
+            
+        
+    def getNearestElemNode(self,x,y):
+        """
+        Get the nearest point in selafin mesh
+        point is an array [x,y]
+        return num of selafin MESH point
+        """
+        #self.skdtreeelemnode = None
+        #self.skdtreefacenode = None
+
+        
         point1 = [[x,y]]
-        numfinal = self.skdtree.query(point1,k=1)[1][0]
-        return numfinal
+
+        meshx,meshy = self.getFacesNodes()
+        #nearestfacenodenum = self.skdtreefacenode.query(point1,k=1)[1][0]
+        nearestfacenodenum = self.getNearestFaceNode(x,y)
+        #print self.getElemFaces().shape
+        if len(self.getElemFaces().shape) == 1 :
+            faces=[]
+            elemfaces = self.getElemFaces()
+            #face1 = [np.array(a) for a in elemfaces]
+            for i, elem in enumerate(elemfaces):
+                if len(np.where(np.array(elem) ==  nearestfacenodenum )[0])>0:
+                    faces.append(i)
+        else:
+            faces = np.where(np.array(self.getElemFaces()) ==  nearestfacenodenum )[0]
+            
+            
+        qgspoint  = qgis.core.QgsGeometry.fromPoint(qgis.core.QgsPoint(x,y) )
+
+        for face in faces:
+            geom = qgis.core.QgsGeometry.fromPolygon([[qgis.core.QgsPoint(meshx[facenode],meshy[facenode])  for facenode in self.getElemFaces()[face] ] ] )
+            #print qgspoint.asPoint()
+            #print geom.asPolygon()
+            
+            if qgspoint.intersects(geom):
+                numfinal = face
+                #print 'numfinal ' + str(numfinal)
+                return numfinal
+        #print '0'
+        return 0
+
+        
+        
+    def getNearestFace(self,x,y):
+        """
+        Get the nearest point in selafin mesh
+        point is an array [x,y]
+        return num of selafin MESH point
+        """
+        #self.skdtreeelemnode = None
+        #self.skdtreefacenode = None
+
+        point1 = [[x,y]]
+
+        meshx,meshy = self.getFacesNodes()
+        #nearestfacenodenum = self.skdtreefacenode.query(point1,k=1)[1][0]
+        nearestfacenodenum = self.getNearestFaceNode(x,y)
+        #print self.getElemFaces().shape
+        faces = np.where(np.array(self.getFaces()) ==  nearestfacenodenum )[0]
+            
+        qgspoint  = qgis.core.QgsGeometry.fromPoint(qgis.core.QgsPoint(x,y) )
+        mindist = None
+        for face in faces:
+            geom = qgis.core.QgsGeometry.fromPolyline([qgis.core.QgsPoint(meshx[facenode],meshy[facenode])  for facenode in self.getFaces()[face] ]  )
+            #print qgspoint.asPoint()
+            #print geom.asPolygon()
+            #distance 
+            if mindist == None:
+                mindist = geom.distance(qgspoint)
+                facefinal = face
+            else:
+                disttemp = geom.distance(qgspoint)
+                if disttemp < mindist:
+                    mindist = disttemp
+                    facefinal = face
+        return facefinal
+
+                
+
+        
         
     def getInterpFactorInTriangleFromPoint(self,x,y):
         """
@@ -434,16 +971,53 @@ class PostTelemacAbstractParser(QtCore.QObject):
         
         return triangles,numpointsfinal,pointsfinal,coef
         
+        
+    
+    
     def createNetworkxGraph(self):
-        G = nx.Graph()
-        G.add_edges_from([(edge[0],edge[1]) for edge in self.triangulation.edges])
-        self.networkxgraph = G
+        if NETWORKXOK:
+            G = nx.Graph()
+            #G.add_edges_from([(edge[0],edge[1]) for edge in self.triangulation.edges])
+            G.add_edges_from([(edge[0],edge[1]) for edge in self.getFaces()])
+            self.networkxgraph = G
+            return True
+        else:
+            return False
+        
         
     def getShortestPath(self,enumpointdebut,enumpointfin):
-        if self.networkxgraph != None:
+        if NETWORKXOK and self.networkxgraph != None:
             return nx.shortest_path(self.networkxgraph, enumpointdebut, enumpointfin)
         else :
             return None
+            
+    def getBoundary(self):
+        elems = self.getElemFaces()
+        meshx,meshy = self.getFacesNodes()
+        #compt = 0
+        geoms = []
+        for elem in elems:
+            if len(elem)>2:
+                geoms.append([qgis.core.QgsPoint(meshx[facenode],meshy[facenode])  for facenode in elem ])
+                
+        finalgeom = qgis.core.QgsGeometry.fromPolygon(geoms )
+        #finalgeom.convertToSingleType()
+        
+        
+                
+        if False:
+            if len(elem)>2:
+                if compt == 0:
+                    finalgeom = qgis.core.QgsGeometry.fromPolygon([[qgis.core.QgsPoint(meshx[facenode],meshy[facenode])  for facenode in elem ] ] )
+                else:
+                    elemgeom = qgis.core.QgsGeometry.fromPolygon([[qgis.core.QgsPoint(meshx[facenode],meshy[facenode])  for facenode in elem ] ] )
+                    finalgeom = finalgeom.combine(elemgeom)
+                compt +=1
+                    
+                    
+        return finalgeom
+            
+    
             
     def getParameterName(self,param):
         trouve = False
@@ -460,8 +1034,11 @@ class PostTelemacAbstractParser(QtCore.QObject):
                     #print str(paramtemp[1]) + ' ' +str(tabtemp)
                     if paramtemp[1] in tabtemp:
                         trouve = True
+                        f.close()
                         return paramtemp
                 if not trouve:
+                    f.close()
                     return None
         if not trouve:
+            f.close()
             return None

@@ -24,8 +24,9 @@ Versions :
 """
 
 
-from PyQt4 import uic, QtCore, QtGui
-from meshlayer_abstract_tool import *
+#from PyQt4 import uic, QtCore, QtGui
+from qgis.PyQt import uic, QtCore, QtGui
+from .meshlayer_abstract_tool import *
 import qgis
 
 import matplotlib
@@ -37,6 +38,8 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'CompareT
 
 
 class CompareTool(AbstractMeshLayerTool,FORM_CLASS):
+
+    NAME = 'COMPARETOOL'
 
     def __init__(self, meshlayer,dialog):
         AbstractMeshLayerTool.__init__(self,meshlayer,dialog)
@@ -70,13 +73,18 @@ class CompareTool(AbstractMeshLayerTool,FORM_CLASS):
         pass
             
 
-    def initCompare(self):
+    def initCompare(self,fname = None):
         self.checkBox_6.setCheckState(0)
         #file to compare choice
         str1 = self.tr("Selafin file chooser")
         str2 = self.tr("Telemac files")
         str3 = self.tr("All files")  
-        fname = self.propertiesdialog.qfiledlg.getOpenFileName(None,str1,self.propertiesdialog.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
+        
+        if isinstance(fname,bool) : #click on openfile connexion
+            try:
+                fname, extension = self.propertiesdialog.qfiledlg.getOpenFileName(None,str1,self.propertiesdialog.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
+            except:
+                fname, extension = self.propertiesdialog.qfiledlg.getOpenFileNameAndFilter(None,str1,self.propertiesdialog.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
         #Things
         if fname:
             #update dialog
@@ -164,7 +172,7 @@ class CompareTool(AbstractMeshLayerTool,FORM_CLASS):
                 try:
                     self.meshlayer.updatevalue.disconnect(self.meshlayer.updateSelafinValues1)
                     self.meshlayer.updatevalue.connect(self.compareprocess.updateSelafinValue)
-                except Exception, e:
+                except Exception as e:
                     pass
                 #self.initclassgraphtemp.compare = True
                 self.meshlayer.triinterp = None
@@ -181,7 +189,7 @@ class CompareTool(AbstractMeshLayerTool,FORM_CLASS):
                 try:
                     self.meshlayer.updatevalue.disconnect(self.compareprocess.updateSelafinValue)
                     self.meshlayer.updatevalue.connect(self.meshlayer.updateSelafinValues1)
-                except Exception, e:
+                except Exception as e:
                     pass
                 #self.initclassgraphtemp.compare = False
                 self.meshlayer.triinterp = None
@@ -191,8 +199,8 @@ class CompareTool(AbstractMeshLayerTool,FORM_CLASS):
                 self.propertiesdialog.setTreeWidgetIndex(self.propertiesdialog.treeWidget_parameters,0,self.meshlayer.param_displayed)
                 self.meshlayer.updateSelafinValues()
                 self.meshlayer.triggerRepaint()
-        except Exception, e:
-            print str(e)
+        except Exception as e:
+            print( str(e) )
 
             
             
@@ -234,10 +242,14 @@ class getCompareValue(QtCore.QObject):
     def updateSelafinValue(self,onlyparamtimeunchanged = -1):
         temp1 = []
         lenvarnames = len(self.layer.hydrauparser.parametres)
-        meshx1,meshy1 = self.layer.hydrauparser.getMesh()
-        ikle1 = self.layer.hydrauparser.getIkle()
-        meshx2,meshy2 = self.hydrauparsercompared.getMesh()
-        ikle2 = self.hydrauparsercompared.getIkle()
+        #meshx1,meshy1 = self.layer.hydrauparser.getMesh()
+        meshx1,meshy1 = self.layer.hydrauparser.getFacesNodes()
+        #ikle1 = self.layer.hydrauparser.getIkle()
+        ikle1 = self.layer.hydrauparser.getElemFaces()
+        #meshx2,meshy2 = self.hydrauparsercompared.getMesh()
+        #ikle2 = self.hydrauparsercompared.getIkle()
+        meshx2,meshy2 = self.hydrauparsercompared.getFacesNodes()
+        ikle2 = self.hydrauparsercompared.getElemFaces()
 
 
         try:
@@ -252,7 +264,7 @@ class getCompareValue(QtCore.QObject):
                     valuetab = []
                     for i in range(lenvarnames):
                         if self.layer.hydrauparser.parametres[i][3] is not None :
-                            value = self.hydrauparsercompared.getValues(self.layer.time_displayed)[self.layer.hydrauparser.parametres[i][3]] - self.layer.hydrauparser.getValues(self.layer.time_displayed)[i]
+                            value = np.array(self.hydrauparsercompared.getValues(self.layer.time_displayed)[self.layer.hydrauparser.parametres[i][3]]) - np.array(self.layer.hydrauparser.getValues(self.layer.time_displayed)[i])
                         else:
                             value = [np.nan]*len(meshx1)
                             value = np.array(value).transpose()
@@ -277,7 +289,8 @@ class getCompareValue(QtCore.QObject):
                         else:
                             self.triinterp.append(None)
                     valuesslf2 = []
-                    count = self.layer.hydrauparser.pointcount
+                    #count = self.layer.hydrauparser.pointcount
+                    count = self.layer.hydrauparser.facesnodescount
                     #projection for matching parameters
                     tabtemp=[]
                     for  j in range(lenvarnames):
@@ -287,7 +300,7 @@ class getCompareValue(QtCore.QObject):
                             tabtemp = np.array([np.nan]*count)
                             tabtemp = tabtemp.transpose()
                         valuesslf2.append(tabtemp)
-                    temp1 = valuesslf2 - self.layer.hydrauparser.getValues(self.layer.time_displayed)
+                    temp1 = valuesslf2 - np.array(self.layer.hydrauparser.getValues(self.layer.time_displayed))
                     self.values = np.nan_to_num(temp1)
                     
                     if self.tool.comboBox_compare_method.currentIndex() == 1:
@@ -301,8 +314,8 @@ class getCompareValue(QtCore.QObject):
                 
 
                 
-        except Exception, e:
-            print str("updateSelafinValue :"+str(e))
+        except Exception as e:
+            print( str("updateSelafinValue :"+str(e)) )
             #self.status.emit("updateSelafinValue :"+str(e))
             self.values = None
             #self.finished.emit()

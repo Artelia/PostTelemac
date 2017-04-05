@@ -23,9 +23,10 @@ Versions :
  ***************************************************************************/
 """
 
-from PyQt4 import QtGui, QtCore
+#from PyQt4 import QtGui, QtCore
+from qgis.PyQt import QtGui, QtCore
 import numpy as np
-from post_telemac_pluginlayer_colormanager import *
+from .post_telemac_pluginlayer_colormanager import *
 import qgis
 import time
 
@@ -41,9 +42,14 @@ class AbstractMeshRenderer(QtCore.QObject):
         self.meshlayer = meshlayer
         self.colormanager = PostTelemacColorManager(self.meshlayer,self)
         self.alpha_displayed = 100.0
-        
+        """
         self.meshxreprojected = None
         self.meshyreprojected = None
+        """
+        
+        self.elemnodereprojected = (None,None)
+        self.facenodereprojected = (None,None)
+        
         
         self.__CRSChangeRequested.connect(self.CrsChanged)
         
@@ -108,18 +114,34 @@ class AbstractMeshRenderer(QtCore.QObject):
     #*****************************************************************
         
     def changeTriangulationCRS(self):
+        """
+        self.elemnodereprojected = (None,None)
+        self.facenodereprojected = (None,None)
+        """
         try:
             if self.meshlayer != None and self.meshlayer.hydrauparser != None:
-                meshx, meshy = self.meshlayer.hydrauparser.getMesh()
-                #ikle = self.meshlayer.hydrauparser.getIkle()
-                self.meshxreprojected, self.meshyreprojected = self.getTransformedCoords(meshx, meshy)
-                self.meshxreprojected = np.array(self.meshxreprojected)
-                self.meshyreprojected = np.array(self.meshyreprojected)
-                #self.triangulation = matplotlib.tri.Triangulation(self.meshxreprojected,self.meshyreprojected,np.array(ikle))
+                if False:
+                    meshx, meshy = self.meshlayer.hydrauparser.getMesh()
+                    #ikle = self.meshlayer.hydrauparser.getIkle()
+                    self.meshxreprojected, self.meshyreprojected = self.getTransformedCoords(meshx, meshy)
+                    self.meshxreprojected = np.array(self.meshxreprojected)
+                    self.meshyreprojected = np.array(self.meshyreprojected)
+                    #self.triangulation = matplotlib.tri.Triangulation(self.meshxreprojected,self.meshyreprojected,np.array(ikle))
+                if True:
+                    x,y =  self.meshlayer.hydrauparser.getElemNodes()
+                    if len(x)>0:
+                        xtemp,ytemp = self.getTransformedCoords(x, y)
+                        self.elemnodereprojected = (np.array(xtemp), np.array(ytemp))
+                    x,y =  self.meshlayer.hydrauparser.getFacesNodes()
+                    if len(x)>0:
+                        xtemp,ytemp = self.getTransformedCoords(x, y)
+                        self.facenodereprojected = (np.array(xtemp), np.array(ytemp))
+                    
+                    
                 self.__CRSChangeRequested.emit()
                 
-        except Exception, e :
-            print str('changecrs : '+str(e))
+        except Exception as e :
+            self.meshlayer.propertiesdialog.errorMessage('Abstract get image - changeTriangulationCRS : ' + str(e))
             
     def getTransformedCoords(self,xcoords,ycoords,direction = True):
         coordinatesAsPoints = [ qgis.core.QgsPoint(xcoords[i], ycoords[i]) for i in range(len(xcoords))]
@@ -136,6 +158,9 @@ class AbstractMeshRenderer(QtCore.QObject):
         #temp = self.colormanager.qgsvectorgradientcolorrampv2ToColumncolor(colorramp)
         #self.cmap_mpl_contour_raw = self.colormanager.columncolorToCmap(temp)
         self.cmap_contour_raw = self.colormanager.qgsvectorgradientcolorrampv2ToColumncolor(colorramp,inverse)
+        
+        #print('colorramp : ' + str(colorramp) + ' \n cmapcontourraw :' +str(self.cmap_contour_raw) )
+        
         self.change_cm_contour(self.cmap_contour_raw)
             
     def color_palette_changed_vel(self,colorramp,inverse):
@@ -159,7 +184,12 @@ class AbstractMeshRenderer(QtCore.QObject):
         """
         self.lvl_contour = tab
         self.change_cm_contour(self.cmap_contour_raw)
-        qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+        try:
+            qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+        except Exception as e:
+            #print('openglgetimage -change_cm_contour ' +   str(e))
+            #self.meshlayer.propertiesdialog.errorMessage( 'abstractgetimage -change_lvl_contour ' + str(e) )
+            qgis.utils.iface.layerTreeView().refreshLayerSymbology(self.meshlayer.id())
         self.meshlayer.propertiesdialog.lineEdit_levelschoosen.setText(str(self.lvl_contour))
         self.meshlayer.triggerRepaint()
         
@@ -169,7 +199,12 @@ class AbstractMeshRenderer(QtCore.QObject):
         """
         self.lvl_vel = tab
         self.change_cm_vel( self.cmap_vel_raw)
-        qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+        try:
+            qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+        except Exception as e:
+            #print('openglgetimage -change_cm_contour ' +   str(e))
+            #self.meshlayer.propertiesdialog.errorMessage( 'abstractgetimage -change_lvl_contour ' + str(e) )
+            qgis.utils.iface.layerTreeView().refreshLayerSymbology(self.meshlayer.id())
         #self.propertiesdialog.lineEdit_levelschoosen_2.setText(str(self.lvl_vel))
         self.meshlayer.propertiesdialog.lineEdit_levelschoosen.setText(str(self.lvl_vel))
         self.meshlayer.triggerRepaint()
@@ -181,15 +216,21 @@ class AbstractMeshRenderer(QtCore.QObject):
         return a new triangulation based on triangles visbles in the canvas. 
         return index of selafin points correspondind to the new triangulation
         """
-        mesh = np.array(meshlayer.hydrauparser.getIkle())
+        #mesh = np.array(meshlayer.hydrauparser.getIkle())
+        mesh = np.array(meshlayer.hydrauparser.getElemFaces())
+        
         recttemp = rendererContext.extent()
         rect = [float(recttemp.xMinimum()), float(recttemp.xMaximum()), float(recttemp.yMinimum()), float(recttemp.yMaximum())] 
         """
         xMesh, yMesh = selafin.hydrauparser.getMesh()
         xMesh, yMesh = self.getTransformedCoords(xMesh, yMesh)
         """
+        """
         xMesh = self.meshxreprojected
         yMesh = self.meshyreprojected
+        """
+        xMesh, yMesh = self.facenodereprojected
+        
 
         trianx = np.array( [ xMesh[mesh[:,0]], xMesh[mesh[:,1]], xMesh[mesh[:,2]]] )
         trianx = np.transpose(trianx)
@@ -244,8 +285,9 @@ class AbstractMeshRenderer(QtCore.QObject):
         #initialize rendered image dimension
         
         DEBUG = False
-        self.debugtext = []
-        self.timestart = time.clock()
+        if DEBUG :
+            self.debugtext = []
+            self.timestart = time.clock()
         
         painter = rendererContext.painter()
         self.__imageChangedMutex.lock()
@@ -333,7 +375,7 @@ class AbstractMeshRenderer(QtCore.QObject):
             return (True,img1,img2)
  
         
-        except Exception, e :
+        except Exception as e :
             meshlayer.propertiesdialog.textBrowser_2.append('Get rendered image : '+str(e))
             return(False,QtGui.QImage(),QtGui.QImage())
         

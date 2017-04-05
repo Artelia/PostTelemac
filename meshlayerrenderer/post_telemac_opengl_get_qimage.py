@@ -26,7 +26,7 @@ Versions :
 #import qgis
 import qgis.core 
 #import PyQT
-from PyQt4 import QtGui, QtCore
+
 #import matplotlib
 #import matplotlib
 #matplotlib.use('Agg')
@@ -38,24 +38,38 @@ import numpy as np
 
 #other imports
 from time import ctime
-import cStringIO
+#import cStringIO
 import gc
 import time
 
 from OpenGL.GL import *
 from OpenGL.GL import shaders
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtOpenGL import QGLPixelBuffer, QGLFormat, QGLContext
+#from PyQt4 import QtGui, QtCore
+from qgis.PyQt import QtGui, QtCore
+try:
+    from qgis.PyQt.QtGui import QApplication
+except:
+    from qgis.PyQt.QtWidgets import  QApplication
+    
+try:
+    from PyQt4.QtCore import *
+    from PyQt4.QtGui import *
+    from PyQt4.QtOpenGL import QGLPixelBuffer, QGLFormat, QGLContext
+except:
+    from PyQt5.QtCore import *
+    from PyQt5.QtGui import *
+    from PyQt5.QtOpenGL import  QGLFormat, QGLContext
 
 import numpy
 from math import log, ceil, exp
 
-from utilities import complete_filename, format_
+#from utilities import complete_filename, format_
 
-from post_telemac_pluginlayer_colormanager import *
-from post_telemac_abstract_get_qimage import *
+from .post_telemac_pluginlayer_colormanager import *
+from .post_telemac_abstract_get_qimage import *
+
+
 
 PRECISION = 0.01
 
@@ -78,28 +92,20 @@ class MeshRenderer(AbstractMeshRenderer):
         #self.meshlayer = meshlayer
         #self.ax = self.fig.add_subplot(111)
         #Reprojected things
-        self.triangulation = None   #the reprojected triangulation
-        self.meshxreprojected, self.meshyreprojected = None, None
-        #mpl figures
-        self.tricontourf1 = None    #the contour plot
-        self.meshplot = None    #the meshplot
-        self.quiverplot = None  #the quiver plot
-        self.tritemp = None #the matplotlib triangulation centred on canvas view
-        #other
-        self.image_mesh = None
+        #self.meshxreprojected, self.meshyreprojected = None, None
         self.goodpointindex  = None
         self.arraypoints = None
 
         
         #Opengl
-        self.__vtxtodraw = numpy.require(vtx, numpy.float32, 'F')
-        self.__idxtodraw = numpy.require(idx, numpy.int32, 'F')
+        self.__vtxfacetodraw = numpy.require(vtx, numpy.float32, 'F')
+        self.__idxfacetodraw = numpy.require(idx, numpy.int32, 'F')
         
         self.__vtxcanvas = numpy.require(vtx, numpy.float32, 'F')
         self.__idxcanvas = numpy.require(idx, numpy.int32, 'F')
         
-        self.__vtxtotal = numpy.require(vtx, numpy.float32, 'F')
-        self.__idxtotal = numpy.require(idx, numpy.int32, 'F')
+        self.__vtxfacetotal = numpy.require(vtx, numpy.float32, 'F')
+        self.__idxfacetotal = numpy.require(idx, numpy.int32, 'F')
         
         self.__pixBuf = None
         #self.__legend = legend
@@ -109,7 +115,7 @@ class MeshRenderer(AbstractMeshRenderer):
         self.__colorPerElement = False
         self.__recompileShader = False
 
-        self.__vtxtotal[:,2] = 0
+        self.__vtxfacetotal[:,2] = 0
         
         self.meshlayer = meshlayer
         
@@ -128,15 +134,102 @@ class MeshRenderer(AbstractMeshRenderer):
         
         self.timemax = 1000
         
+        self.timestart = None
+        
         
     #************************************************************************************
     #*************************************** Display behaviour******************************
     #************************************************************************************
     
     def CrsChanged(self):
+        #ikle = self.meshlayer.hydrauparser.getIkle()
+        #mesh = self.meshlayer.hydrauparser.getElemFaces()
+        #nodecoords = np.array( [[self.meshxreprojected[i], self.meshyreprojected[i], 0.0]   for i in range(len(self.meshxreprojected))         ] )
+        #nodecoords = np.array( [[self.facenodereprojected[0][i], self.facenodereprojected[1][i], 0.0]   for i in range(len(self.facenodereprojected[0]))         ] )
+        
+        #reset : facenode elemnode
+        self.resetFaceNodeCoord()
+        #self.resetIdx()
+        
+        self.resetMesh()
+        
+    def resetFaceNodeCoord(self, vtx = None):
+        #__vtx
+        if False:
+            if vtx != None:
+                self.__vtxfacetotal = numpy.require(vtx, numpy.float32, 'F')
+                
+            else:
+                #self.__vtxfacetotal = np.array( [[self.meshxreprojected[i], self.meshyreprojected[i], 0.0]   for i in range(len(self.meshxreprojected))         ] )
+                self.__vtxfacetotal = np.array( [[self.facenodereprojected[0][i], self.facenodereprojected[1][i], 0.0]   for i in range(len(self.facenodereprojected[0]))         ] )
+        if True:
+            try:
+                self.__vtxfacetotal = np.array( [[self.facenodereprojected[0][i], self.facenodereprojected[1][i], 0.0]   for i in range(len(self.facenodereprojected[0]))         ] )
+                self.__idxfacetotal = self.meshlayer.hydrauparser.getElemFaces()
+                self.__idxfaceonlytotal = self.meshlayer.hydrauparser.getFaces()
+                #wherebegin polygon
+                self.__idxfacetotalcountidx = [0]
+                self.__idxfacetotalcountlen = []
+                
+                
+                
+                for elem in self.__idxfacetotal:
+                    self.__idxfacetotalcountidx.append((self.__idxfacetotalcountidx[-1] )+len(elem))
+                    #self.__idxfacetotalcountlen.append(len(elem))
+                self.__idxfacetotalcountidx = np.array(self.__idxfacetotalcountidx)
+                self.__idxfacetotalcountlen = np.array( [len(elem) for elem in self.__idxfacetotal ] )
+            except Exception as e:
+                print('resetFaceNodeCoord ' + str(e))
+            
+        self.__vtxfacetodraw = self.__vtxfacetotal
+        self.__idxfacetodraw = self.__idxfacetotal 
+        self.__idxfaceonlytodraw = self.__idxfaceonlytotal
+        if False:
+            self.__idxfacetodraw1Darray = np.concatenate(self.__idxfacetodraw)
+            self.__idxfaceonlytodraw1Darray = np.concatenate(self.__idxfaceonlytodraw)
+        if True:
+            """
+            self.__idxfacetodraw1Darray = self.__idxfacetodraw.ravel()
+            self.__idxfaceonlytodraw1Darray = self.__idxfaceonlytodraw.ravel()
+            print ( self.__idxfacetodraw1Darray)
+            """
+            self.__idxfacetodraw1Darray = np.array([idx for idxs in self.__idxfacetodraw for idx in idxs])
+            self.__idxfaceonlytodraw1Darray = np.array([idx for idxs in self.__idxfaceonlytodraw for idx in idxs])
+        
+    if False:
+        def resetIdx(self,idx = None):
+            #__idx
+            if False:
+                if idx != None:
+                    if False:
+                        try:
+                            self.__idxfacetotal = numpy.require(idx, numpy.int32, 'F')
+                        except Exception as e :
+                            self.__idxfacetotal = idx
+                    else:
+                        self.__idxfacetotal = numpy.require(idx, numpy.int32, 'F')
+                else:
+                    #self.__idxfacetotal = self.meshlayer.hydrauparser.getIkle()
+                    self.__idxfacetotal = self.meshlayer.hydrauparser.getElemFaces()
+                    
+            if True:
+                self.__idxfacetotal = self.meshlayer.hydrauparser.getElemFaces()
+                self.__idxfacetotal = self.meshlayer.hydrauparser.getElemFaces()
+                
+            self.__idxfacetodraw = self.__idxfacetotal 
+        
+        
+    def resetMesh(self):
+        self.__vtxmesh  = np.array( [[self.facenodereprojected[0][i], self.facenodereprojected[1][i], 0.0]   for i in range(len(self.facenodereprojected[0]))         ] )
+        self.__idxmesh =  self.meshlayer.hydrauparser.getFaces()
+        
+        
+    
+    
+    def CrsChanged2(self):
         ikle = self.meshlayer.hydrauparser.getIkle()
         nodecoords = np.array( [[self.meshxreprojected[i], self.meshyreprojected[i], 0.0]   for i in range(len(self.meshxreprojected))         ] )
-        self.resetCoord(nodecoords)
+        self.resetFaceNodeCoord(nodecoords)
         self.resetIdx(ikle)
         
             
@@ -145,8 +238,12 @@ class MeshRenderer(AbstractMeshRenderer):
         change the color map and layer symbology
         """
         self.cmap_contour_leveled = self.colormanager.fromColorrampAndLevels(self.lvl_contour, cm_raw)
-        
-        qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+        try:
+            qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+        except Exception as e:
+            #print('openglgetimage -change_cm_contour ' +   str(e))
+            #self.meshlayer.propertiesdialog.errorMessage( 'openglgetimage -change_cm_contour ' + str(e) )
+            qgis.utils.iface.layerTreeView().refreshLayerSymbology(self.meshlayer.id())
         #transparency - alpha changed
         if self.cmap_contour_leveled != None and len(self.lvl_contour) > 0:
             colortemp = np.array(self.cmap_contour_leveled)
@@ -164,7 +261,7 @@ class MeshRenderer(AbstractMeshRenderer):
                     color = colortemp[0]
                     gradudation.append(  (QtGui.QColor.fromRgbF(color[0],color[1],color[2] ,color[3]),  self.lvl_contour[0] , self.lvl_contour[1]    )   )
                 self.setGraduation(gradudation)
-            except Exception, e:
+            except Exception as e:
                 self.meshlayer.propertiesdialog.errorMessage( 'toggle graduation ' + str(e) )
     
         if self.meshlayer.draw:
@@ -179,7 +276,12 @@ class MeshRenderer(AbstractMeshRenderer):
         if False:
             cm = self.colormanager.arrayStepRGBAToCmap(cm_raw)
             self.cmap_mpl_vel,self.norm_mpl_vel , self.color_mpl_vel = self.colormanager.changeColorMap(cm,self.lvl_vel)
-            qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+            try:
+                qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+            except Exception as e:
+                #print('openglgetimage -change_cm_contour ' +   str(e))
+                #self.meshlayer.propertiesdialog.errorMessage( 'openglgetimage -change_cm_contour ' + str(e) )
+                qgis.utils.iface.layerTreeView().refreshLayerSymbology(self.meshlayer.id())
             #transparency - alpha changed
             if self.color_mpl_vel != None:
                 colortemp = np.array(self.color_mpl_vel.tolist())
@@ -193,8 +295,13 @@ class MeshRenderer(AbstractMeshRenderer):
         else:
             #print 'change vl'
             self.cmap_vel_leveled = self.colormanager.fromColorrampAndLevels(self.lvl_vel, cm_raw)
-            
-            qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+            try:
+                qgis.utils.iface.legendInterface().refreshLayerSymbology(self.meshlayer)
+            except Exception as e:
+                #print('openglgetimage -change_cm_contour ' +   str(e))
+                #self.meshlayer.propertiesdialog.errorMessage( 'openglgetimage -change_cm_contour ' + str(e) )
+                qgis.utils.iface.layerTreeView().refreshLayerSymbology(self.meshlayer.id())
+                
             #transparency - alpha changed
             if self.cmap_vel_leveled != None and len(self.lvl_vel) > 0:
                 colortemp = np.array(self.cmap_vel_leveled)
@@ -213,7 +320,7 @@ class MeshRenderer(AbstractMeshRenderer):
                         color = colortemp[0]
                         gradudation.append(  (QtGui.QColor.fromRgbF(color[0],color[1],color[2] ,color[3]),  self.lvl_vel[0] , self.lvl_vel[1]    )   )
                     self.setGraduationVelocity(gradudation)
-                except Exception, e:
+                except Exception as e:
                     self.meshlayer.propertiesdialog.errorMessage( 'toggle graduation ' + str(e) )
         
             if self.meshlayer.draw:
@@ -228,7 +335,7 @@ class MeshRenderer(AbstractMeshRenderer):
 
     
     def canvasPaned(self):
-        if QtGui.QApplication.instance().thread() != QtCore.QThread.currentThread():
+        if QApplication.instance().thread() != QtCore.QThread.currentThread():
             self.__img = None
             #self.__imageChangeRequested.emit(rendererContext)
             self.__imageChangeRequested.emit()
@@ -254,7 +361,7 @@ class MeshRenderer(AbstractMeshRenderer):
             
         
     def canvasChangedWithSameBBox(self):
-        if self.__vtxcanvas == None:
+        if False and self.__vtxcanvas == None:
             xMeshcanvas, yMeshcanvas, goodiklecanvas,self.goodpointindex = self.getCoordsIndexInCanvas(self.meshlayer,self.rendererContext)
             #self.resetIdx(goodiklecanvas)
             nodecoords = np.array( [[xMeshcanvas[i], yMeshcanvas[i], 0.0]   for i in range(len(xMeshcanvas))         ] )
@@ -262,14 +369,14 @@ class MeshRenderer(AbstractMeshRenderer):
             
             self.__idxcanvas = numpy.require(goodiklecanvas, numpy.int32, 'F')
             
-            #self.resetCoord(nodecoords)
+            #self.resetFaceNodeCoord(nodecoords)
             #self.meshadaptedtocanvas = True
             
-        self.__vtxtodraw = self.__vtxcanvas
-        self.__idxtodraw = self.__idxcanvas
+        #self.__vtxfacetodraw = self.__vtxcanvas
+        #self.__idxfacetodraw = self.__idxcanvas
         
         
-        if QtGui.QApplication.instance().thread() != QtCore.QThread.currentThread():
+        if QApplication.instance().thread() != QtCore.QThread.currentThread():
             self.__img = None
             #self.__imageChangeRequested.emit(rendererContext)
             self.__imageChangeRequested.emit()
@@ -297,7 +404,7 @@ class MeshRenderer(AbstractMeshRenderer):
     def canvasCreation(self):
         #self.meshadaptedtocanvas = False
         
-        #self.resetCoord()
+        #self.resetFaceNodeCoord()
         #self.resetIdx()
         
         self.__vtxcanvas = None
@@ -305,14 +412,14 @@ class MeshRenderer(AbstractMeshRenderer):
         self.goodpointindex = None
         
         
-        self.__vtxtodraw = self.__vtxtotal
-        self.__idxtodraw = self.__idxtotal
+        self.__vtxfacetodraw = self.__vtxfacetotal
+        self.__idxfacetodraw = self.__idxfacetotal
         
         
         
         
         
-        if QtGui.QApplication.instance().thread() != QtCore.QThread.currentThread():
+        if QApplication.instance().thread() != QtCore.QThread.currentThread():
             try:
                 self.__img = None
                 #self.__imageChangeRequested.emit(rendererContext)
@@ -328,10 +435,10 @@ class MeshRenderer(AbstractMeshRenderer):
                 if not self.rendererContext.renderingStopped():
                     #if not self.showmesh:
                     #painter.drawImage(0, 0, self.__img)
-                    self.debugtext += ['img done : ' + str(round(time.clock()-self.timestart,3))  ]
+                    #self.debugtext += ['img done : ' + str(round(time.clock()-self.timestart,3))  ]
                     return(self.__img,None)
-            except Exception, e:
-                print str(e)
+            except Exception as e:
+                print( str(e) )
                 
         else:
             self.__drawInMainThread()
@@ -348,66 +455,27 @@ class MeshRenderer(AbstractMeshRenderer):
         
             self.__imageChangedMutex.lock()
             
-            
-            
-            #xMeshcanvas, yMeshcanvas, goodiklecanvas,self.goodpointindex = self.getCoordsIndexInCanvas(self.meshlayer,self.__rendererContext)
-            #self.resetIdx(goodiklecanvas)
-            #nodecoords = np.array( [[xMeshcanvas[i], yMeshcanvas[i], 0.0]   for i in range(len(xMeshcanvas))         ] )
-            #self.resetCoord(nodecoords)
-            
-            if False:
-                transform = self.rendererContext.coordinateTransform()
-                ext = self.rendererContext.extent()
-                mapToPixel = self.rendererContext.mapToPixel()
-                
-                size = QtCore.QSize((ext.xMaximum()-ext.xMinimum())/mapToPixel.mapUnitsPerPixel(),
-                             (ext.yMaximum()-ext.yMinimum())/mapToPixel.mapUnitsPerPixel()) \
-                                     if abs(mapToPixel.mapRotation()) < .01 else self.sizepx            
-            
             includevel = True
             
-            """
-            if self.goodpointindex == None:
-                value = self.meshlayer.value
-                if includevel :
-                    list1 = [[value[i], self.meshlayer.values[self.meshlayer.hydrauparser.parametrevx][i],  self.meshlayer.values[self.meshlayer.hydrauparser.parametrevy][i]] for i in range(len(value))]
-                    list1 = np.array(list1)
-            else:
-                value = self.meshlayer.value[self.goodpointindex]
-                if includevel :
-                    list1 = [[self.meshlayer.value[i], self.meshlayer.values[self.meshlayer.hydrauparser.parametrevx][i],  self.meshlayer.values[self.meshlayer.hydrauparser.parametrevy][i]] for i in range(len(self.meshlayer.value))]
-                    list1 = np.array(list1)[self.goodpointindex]
-            """
-            if False:
-                value = self.meshlayer.value
-                print value
-                print value.shape
-                list1 = [[value[i], self.meshlayer.values[self.meshlayer.hydrauparser.parametrevx][i],  self.meshlayer.values[self.meshlayer.hydrauparser.parametrevy][i]] for i in range(len(value))]
-                list1 = np.array(list1)
-                
-                
-                if True :
-                    if self.goodpointindex != None:
-                        list1 = list1[self.goodpointindex]
-            else:
+            if self.meshlayer.hydrauparser.parametres[self.meshlayer.param_displayed][2] == 0 :
+                list1 = self.meshlayer.value
+            
+            if self.meshlayer.hydrauparser.parametres[self.meshlayer.param_displayed][2] == 1:
+            
                 if self.meshlayer.hydrauparser.parametrevx!= None and self.meshlayer.hydrauparser.parametrevy != None:
                     list1 = np.stack((self.meshlayer.value, self.meshlayer.values[self.meshlayer.hydrauparser.parametrevx], self.meshlayer.values[self.meshlayer.hydrauparser.parametrevy]), axis=-1)
                 else:
-                    list1 = np.stack((self.meshlayer.value, np.array([0] * self.meshlayer.hydrauparser.pointcount), np.array([0] * self.meshlayer.hydrauparser.pointcount)), axis=-1)
+                    list1 = np.stack((self.meshlayer.value, np.array([0] * self.meshlayer.hydrauparser.facesnodescount), np.array([0] * self.meshlayer.hydrauparser.facesnodescount)), axis=-1)
             
                 if True :
                     if self.goodpointindex != None:
                         list1 = list1[self.goodpointindex]
                         
                         
-            """
-            if rendererContext != None :
-                ext = rendererContext.extent()
-                mapToPixel = rendererContext.mapToPixel()
-                size = QtCore.QSize((ext.xMaximum()-ext.xMinimum())/mapToPixel.mapUnitsPerPixel(),
-                                 (ext.yMaximum()-ext.yMinimum())/mapToPixel.mapUnitsPerPixel())
-            """
-            
+            if self.meshlayer.hydrauparser.parametres[self.meshlayer.param_displayed][2] == 2 :
+                list1 = self.meshlayer.value
+                        
+                        
 
             self.__img = self.image(
                     list1,
@@ -418,122 +486,14 @@ class MeshRenderer(AbstractMeshRenderer):
                     (self.rendererContext.mapToPixel().mapUnitsPerPixel(),
                      self.rendererContext.mapToPixel().mapUnitsPerPixel()),
                      self.rendererContext.mapToPixel().mapRotation())
-            """
-            
-            self.__img = self.image(
-                    list1,
-                    self.sizepx,
-                    #size,
-                    (.5*(ext.xMinimum() + ext.xMaximum()),
-                     .5*(ext.yMinimum() + ext.yMaximum())),
-                    (rendererContext.mapToPixel().mapUnitsPerPixel(),
-                     rendererContext.mapToPixel().mapUnitsPerPixel()),
-                     rendererContext.mapToPixel().mapRotation())
-            """
+
                      
             self.__imageChangedMutex.unlock()
                      
-        except Exception, e:
-            print 'draw ' + str(e)
+        except Exception as e:
+            print( 'draw ' + str(e) )
 
         
-        
-
-                
-    """
-                
-
-
-    def getimage(self,meshlayer,rendererContext):
-    
-        DEBUG = True
-        self.debugtext = []
-        self.timestart = time.clock()
-    
-        try:
-            painter = rendererContext.painter()
-            self.__imageChangedMutex.lock()
-            self.__rendererContext = qgis.core.QgsRenderContext(rendererContext)
-            self.__rendererContext.setPainter(None)
-            self.__size = painter.viewport().size()
-            self.__img = None
-            self.__imageChangedMutex.unlock()
-            
-            if False:    #size test
-                recttemp = rendererContext.extent()
-                rect = [float(recttemp.xMinimum()), float(recttemp.xMaximum()), float(recttemp.yMinimum()), float(recttemp.yMaximum())]
-                mupp = float(rendererContext.mapToPixel().mapUnitsPerPixel())
-                sizepx = [ round(((rect[1] - rect[0] )/mupp),2) , round(((rect[3]  - rect[2] )/mupp),2) ]
-                dpi1 = rendererContext.painter().device().logicalDpiX()
-                dpi2 =dpi1
-                #matplotlib figure dimension
-                width= (sizepx[0])/dpi1
-                lenght = (sizepx[1])/dpi1
-                
-                if False:
-                    print 'size opengl : ' + str(self.__size.width())+ ' ' +str(self.__size.height())
-                    print 'size mpl : ' + str(width) + ' ' + str(lenght)
-                    print 'size mpl2 : ' + str(sizepx) 
-                    print str(abs(rendererContext.mapToPixel().mapRotation()) )
-            
-            if QtGui.QApplication.instance().thread() != QtCore.QThread.currentThread():
-                self.__imageChangeRequested.emit()
-                
-                while not self.__img  and not self.__rendererContext.renderingStopped():
-                    # active wait to avoid deadlocking if event loop is stopped
-                    # this happens when a render job is cancellled
-                    QtCore.QThread.msleep(1)
-                
-                if not rendererContext.renderingStopped():
-                    #if not self.showmesh:
-                    #painter.drawImage(0, 0, self.__img)
-                    if DEBUG : self.debugtext += ['deplacement : ' + str(round(time.clock()-self.timestart,3))  ]
-                    if DEBUG : self.meshlayer.propertiesdialog.textBrowser_2.append(str(self.debugtext))
-                    return(True,self.__img,None)
-                    
-            else:
-                self.__drawInMainThread()
-                painter.drawImage(0, 0, self.__img)
-                return(True,self.__img,None)
-            
-            
-            
-            
-        except Exception, e :
-            meshlayer.propertiesdialog.textBrowser_2.append('getqimage1 : '+str(e))
-            return(False,QtGui.QImage(),QtGui.QImage())
-
-            
-            
-            
-    def __drawInMainThread(self):
-        self.__imageChangedMutex.lock()
-        
-        
-        transform = self.__rendererContext.coordinateTransform()
-        ext = self.__rendererContext.extent()
-        mapToPixel = self.__rendererContext.mapToPixel()
-        
-        size = QtCore.QSize((ext.xMaximum()-ext.xMinimum())/mapToPixel.mapUnitsPerPixel(),
-                     (ext.yMaximum()-ext.yMinimum())/mapToPixel.mapUnitsPerPixel()) \
-                             if abs(mapToPixel.mapRotation()) < .01 else self.__size
-
-
-
-        self.__img = self.image(
-                #self.meshlayer.value,
-                self.meshlayer.value,
-                size,
-                (.5*(ext.xMinimum() + ext.xMaximum()),
-                 .5*(ext.yMinimum() + ext.yMaximum())),
-                (mapToPixel.mapUnitsPerPixel(),
-                 mapToPixel.mapUnitsPerPixel()),
-                 mapToPixel.mapRotation())
-        
-        
-        self.__imageChangedMutex.unlock()
-    
-    """
         
     #************************************************************************************
     #*************************************** Secondary func  ******************************
@@ -586,8 +546,13 @@ class MeshRenderer(AbstractMeshRenderer):
         elif selafin.showvelocityparams['type'] == 2:
             if not self.goodpointindex == None :
                 #tabx, taby = selafin.hydrauparser.getMesh()
+                """
                 tabx = self.meshxreprojected
                 taby = self.meshyreprojected
+                """
+                tabx = self.facenodereprojected[0]
+                taby = self.facenodereprojected[1]
+                
                 goodnum = self.goodpointindex
                 tabx = tabx[goodnum]
                 taby = taby[goodnum]
@@ -609,8 +574,12 @@ class MeshRenderer(AbstractMeshRenderer):
         tabx, taby = selafin.hydrauparser.getMesh()
         tabx, taby = self.getTransformedCoords(tabx,taby)
         """
+        """
         tabx = self.meshxreprojected
         taby = self.meshyreprojected
+        """
+        tabx = self.facenodereprojected[0]
+        taby = self.facenodereprojected[1]
         
         valtabx = np.where(np.logical_and(tabx>rect[0], tabx< rect[1]))
         valtaby = np.where(np.logical_and(taby>rect[2], taby< rect[3]))
@@ -773,24 +742,6 @@ class MeshRenderer(AbstractMeshRenderer):
         self.__compileShaders()
         self.__pixBufMesh.doneCurrent()
 
-    def resetCoord(self, vtx = None):
-        #__vtx
-        if vtx != None:
-            self.__vtxtotal = numpy.require(vtx, numpy.float32, 'F')
-            
-        else:
-            self.__vtxtotal = np.array( [[self.meshxreprojected[i], self.meshyreprojected[i], 0.0]   for i in range(len(self.meshxreprojected))         ] )
-            
-        self.__vtxtodraw = self.__vtxtotal
-    
-    def resetIdx(self,idx = None):
-        #__idx
-        if idx != None:
-            self.__idxtotal = numpy.require(idx, numpy.int32, 'F')
-        else:
-            self.__idxtotal = self.meshlayer.hydrauparser.getIkle()
-            
-        self.__idxtodraw = self.__idxtotal 
 
 
     def image(self, values, imageSize, center, mapUnitsPerPixel, rotation=0):
@@ -799,9 +750,13 @@ class MeshRenderer(AbstractMeshRenderer):
         Values are normalized using valueRange = (minValue, maxValue).
         transparency is in the range [0,1]"""
         
+        DEBUGTIME = False
         
-        DEBUG = False
-        debugstring = ''
+
+        if DEBUGTIME :
+            self.debugtext = []
+            self.timestart = time.clock()
+        
         
         if False:
             if QApplication.instance().thread() != QThread.currentThread():
@@ -832,6 +787,9 @@ class MeshRenderer(AbstractMeshRenderer):
             
             
             
+            
+            
+            
             if True:
                 
                 #define current opengl drawing
@@ -841,7 +799,6 @@ class MeshRenderer(AbstractMeshRenderer):
                     self.__compileShaders()
                     
                 #init gl client
-                debugstring += ' / init'
                 #glClearColor(1., 1., 1., 1.)
                 #glClearColor(0., 0., 0., 1.)
                 glClearColor(0., 0., 0., 0.)
@@ -850,7 +807,6 @@ class MeshRenderer(AbstractMeshRenderer):
                 glEnableClientState(GL_TEXTURE_COORD_ARRAY)
                 glEnable(GL_TEXTURE_2D)
 
-                debugstring +=  '/enable/'
                 if True:
                     #initialisation de la transparence
                     glEnable(GL_BLEND)
@@ -869,7 +825,6 @@ class MeshRenderer(AbstractMeshRenderer):
                 glMatrixMode(GL_MODELVIEW)
                 glLoadIdentity()
                 
-                debugstring += '/scale/'
                 # scale
                 glScalef(2./(roundupSz.width()*mapUnitsPerPixel[0]),
                          2./(roundupSz.height()*mapUnitsPerPixel[1]),
@@ -881,14 +836,12 @@ class MeshRenderer(AbstractMeshRenderer):
                              -center[1],
                              0)
                              
+                if DEBUGTIME : self.debugtext += ['init done : ' + str(round(time.clock()-self.timestart,3))  ]
+                             
 
                 if self.meshlayer.showmesh :   #draw triangle contour but not inside
                     #Draw the object here
-                    #Disable texturing, lighting, etc. here
-                    #glDisableClientState(GL_TEXTURE_COORD_ARRAY) non...
                     glDisable(GL_TEXTURE_2D)
-                    #glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-                    #glClear(GL_COLOR_BUFFER_BIT)
                     glUseProgram(0)
                     
                     glColor4f(0.2,0.2,0.2,0.2)
@@ -896,19 +849,13 @@ class MeshRenderer(AbstractMeshRenderer):
                     glPolygonMode(GL_FRONT, GL_LINE)
                     glPolygonMode(GL_BACK, GL_LINE)
                     #Draw the object here
-
-
-                    #self.__legend._setUniforms(self.__pixBuf)
-                    # these vertices contain 2 single precision coordinates
-                    glVertexPointerf(self.__vtxtodraw)
-                    #glTexCoordPointer(1, GL_FLOAT, 0, val)
-                    glDrawElementsui(GL_TRIANGLES, self.__idxtodraw)
-                    
-                    
+                    glVertexPointerf(self.__vtxmesh)
+                    glDrawElementsui(GL_LINES, self.__idxmesh)
                     #glPolygonMode(GL_FRONT_AND_BACK,GL_FILL)
                     glPolygonMode(GL_FRONT, GL_FILL)
                     glPolygonMode(GL_BACK, GL_FILL)
-
+                    
+                    if DEBUGTIME : self.debugtext += ['mesh done : ' + str(round(time.clock()-self.timestart,3))  ]
                     
                     
                     
@@ -916,7 +863,7 @@ class MeshRenderer(AbstractMeshRenderer):
                         #glDisable(GL_TEXTURE_2D)
                         glEnable(GL_PROGRAM_POINT_SIZE)
                         glEnable(GL_TEXTURE_2D)
-                        #print self.__vtxtodraw
+                        #print self.__vtxfacetodraw
                         
 
                             
@@ -1080,24 +1027,383 @@ class MeshRenderer(AbstractMeshRenderer):
                         glUniform2f( temp ,  float( roundupSz.width() )  , float( roundupSz.height() )   )
                         
                         # these vertices contain 2 single precision coordinates
-                        glVertexPointerf(self.__vtxtodraw)
+                        glVertexPointerf(self.__vtxfacetodraw)
                         glTexCoordPointer(3, GL_FLOAT, 0, val)
-                        glDrawArrays(GL_POINTS, 0, len(self.__vtxtodraw))
+                        glDrawArrays(GL_POINTS, 0, len(self.__vtxfacetodraw))
+                        
+                        if DEBUGTIME : self.debugtext += ['velocity done : ' + str(round(time.clock()-self.timestart,3))  ]
                     
-                             
-                glEnable(GL_TEXTURE_2D)
-                glUseProgram(self.__shaders)
                 
+                
+                if self.meshlayer.hydrauparser.parametres[self.meshlayer.param_displayed][2] == 0 :
+                    try:
+                        if False:
+                            glEnable(GL_TEXTURE_2D)
+                            glColor4f(0.2,0.2,0.2,0.2)
+                            glVertexPointerf(self.__vtxfacetodraw)
+                            
+                            temp = np.array(sum(self.__idxfacetodraw.tolist(),[]))
+                            #print self.__idxfacetodraw.shape
+                            #print self.__idxfacetodraw.flatten().shape
+                            #glDrawElementsui( GL_TRIANGLE_FAN, self.__idxfacetodraw)
+                            for elem in self.__idxfacetodraw:
+                                if len(elem)>2:
+                                    glDrawElementsui( GL_TRIANGLE_FAN, np.array(elem))
+                                    
+                        if False:
+                            glUseProgram(0)
+                            glDisable(GL_TEXTURE_2D)
+                            glEnableClientState( GL_VERTEX_ARRAY )
+                            #glEnable(GL_TEXTURE_2D)
+                            glColor4f(0.2,0.2,0.2,0.2)
+                            #print self.__graduation
+                            glVertexPointerf(self.__vtxfacetodraw)
+                            print( len(self.__idxfacetodraw) )
+                            
+                            #print 'len ' + str( len(self.__idxfacetodraw) ) + ' ' + str(len(val))
+                            #print self.__graduation
+                            
+                            for i, elem in enumerate(self.__idxfacetodraw):
+                                if len(elem)>2:
+                                    if val[i] > self.__graduation[-1][2]:
+                                        continue
+                                    j = 0
+                                    while j < len(self.__graduation) and val[i] > self.__graduation[j][1]  :
+                                        j+=1
+                                    j+= -1
+
+                                    #print j
+                                    glColor4f(self.__graduation[j][0].redF(), self.__graduation[j][0].greenF(), self.__graduation[j][0].blueF() ,  self.__graduation[j][0].alphaF()   )
+                                    #c.redF(), c.greenF(), c.blueF(), c.alphaF())
+                                    
+                                    
+                                    if True:
+                                        try:
+                                            #print str(i) + '  ' + str(elem)
+                                            glDrawElements(GL_TRIANGLE_FAN, len(elem), GL_UNSIGNED_BYTE, elem)
+                                            #print str(i) + '  ' + str(elem)
+                                        except Exception as e:
+                                            print( str(e) )
+                                    
+                                    if False:
+                                        glBegin(GL_TRIANGLE_FAN)
+                                        for id in elem:
+                                            glVertex2f(self.__vtxfacetodraw[id][0],self.__vtxfacetodraw[id][1])
+                                        glEnd()
+                                
+                        if True:
+                            if DEBUGTIME : self.debugtext += ['param render start : ' + str(round(time.clock()-self.timestart,3))  ]
+                            #glDisable(GL_TEXTURE_2D)
+                            #glEnableClientState( GL_VERTEX_ARRAY )
+                            glColor4f(0.2,0.2,0.2,0.2)
+                            
+                            if True:
+                                
+                                
+                                #print 'vertex'
+                                #vtx = self.__vtxfacetodraw[sum(self.__idxfacetodraw,[])]
+                                vtx = self.__vtxfacetodraw[self.__idxfacetodraw1Darray]
+                                if DEBUGTIME : self.debugtext += ['param render vertex interm : ' + str(round(time.clock()-self.timestart,3))  ]
+                                #print vtx
+                                #print np.array(vtx).shape
+                                #print str( vtx[0:10]    ) 
+                                glVertexPointerf(vtx)
+                                
+                            if False:
+                                glVertexPointerf(self.__vtxfacetodraw)
+                                
+                            if DEBUGTIME : self.debugtext += ['param render vertex done : ' + str(round(time.clock()-self.timestart,3))  ]
+                            
+                            if False:
+                                print( str(np.array(sum(self.__idxfacetodraw,[])).shape ) + ' ' + str() )
+                                print( str( self.__idxfacetotalcountidx[0:10]    ) + ' ' +str( self.__idxfacetotalcountidx[-10:] ))
+                                print( str( self.__idxfacetotalcountlen[0:10]    ) + ' ' +str( self.__idxfacetotalcountlen[-10:] ))
+                                print( str(  np.max( self.__idxfacetotalcountidx )  ))
+                                
+                                print( self.__idxfacetotalcountidx[0:2])
+                                print( self.__idxfacetotalcountlen[0:2])
+                        
+
+                            
+                            
+                            if True:
+                                #print 'render 1'
+                                glDisable(GL_TEXTURE_2D)
+                                glUseProgram(0)
+                                #glEnableClientState(GL_COLOR_ARRAY)
+                                glColor4f(0.2,0.2,0.2,0.2)
+                                """
+                                first = bounds[:-1]
+                                count = np.diff(bounds)
+                                primcount = len(bounds) - 1
+                                gl.glMultiDrawArrays(primtype, first, count, primcount)
+                                """
+                                
+                                #print 'render 2'
+                                if DEBUGTIME : self.debugtext += ['param render color begin : ' + str(round(time.clock()-self.timestart,3))  ]
+                                colors = np.zeros((len(val),4))
+                                #colors = np.zeros((np.max(np.array(sum(self.__idxfacetodraw,[])))+1,4))
+                                
+                                #print val.shape
+                                #print self.__idxfacetodraw.shape
+                                
+                                
+                                colors[:,:] = np.NAN
+                                #print colors
+                                
+                                
+                                for gradu in self.__graduation:
+                                    #temp = np.where(val > gradu[1])
+                                    #print np.where(np.logical_and(val > gradu[1], val < gradu[2]))
+                                    tempidx = np.where(np.logical_and(val > gradu[1], val < gradu[2]))
+                                    if len(tempidx)>0:
+                                        #print np.array([gradu[0].redF()   , gradu[0].greenF() , gradu[0].blueF() ,gradu[0].alphaF() ])
+                                        colors[tempidx] = [gradu[0].redF()   , gradu[0].greenF() , gradu[0].blueF() ,gradu[0].alphaF() ]
+                                    #colors[np.logical_and(val > gradu[1], val < gradu[2])] = np.array([gradu[0].redF()   , gradu[0].greenF() , gradu[0].blueF() ,gradu[0].alphaF() ])
+                                    
+                                    #self.__graduation[j][0].redF(), self.__graduation[j][0].greenF(), self.__graduation[j][0].blueF() ,  self.__graduation[j][0].alphaF()
+                                
+                                #print colors
+                                colors[colors[:,0] == np.NAN] = np.array([0.,0.,0.,0.])
+                                #print colors.shape
+                                #print np.max(np.array(sum(self.__idxfacetodraw,[])))
+                                
+                                #colors2 = colors[sum(self.__idxfacetodraw,[])]
+                                if DEBUGTIME : self.debugtext += ['param render color end : ' + str(round(time.clock()-self.timestart,3))  ]
+                                    
+                                #print 'render 3'
+                                first = self.__idxfacetotalcountidx[:-1]
+                                count = np.diff(self.__idxfacetotalcountidx)
+                                primcount = len(self.__idxfacetotalcountidx) - 1
+                                
+                                if DEBUGTIME : self.debugtext += ['param render first count end : ' + str(round(time.clock()-self.timestart,3))  ]
+                                
+                                if False:
+                                    trueidx = np.where(count>2)
+                                    first = first[trueidx]
+                                    count = count[trueidx]
+                                    primcount = len(first)
+                                    
+                                #print '3bis'
+                                
+                                colors2 = np.repeat(colors,count, axis = 0)
+                                
+                                #print colors2.shape
+                                #print vtx.shape
+                                
+                                if DEBUGTIME : self.debugtext += ['param render first colorpointer begin : ' + str(round(time.clock()-self.timestart,3))  ]
+                                if True:
+                                    glEnableClientState(GL_COLOR_ARRAY)
+                                    #glColorPointerf(colors2)
+                                    glColorPointer(4, GL_FLOAT, 0, colors2)
+                                if DEBUGTIME : self.debugtext += ['param render first colorpointer end : ' + str(round(time.clock()-self.timestart,3))  ]
+                                #colors = colors[trueidx]
+                                
+                                #print colors
+                                
+                                #print str(first[0:10]) + ' ' +str(first[-10:]) + ' ' + str(len(first))
+                                #print str(count[0:10])+ ' ' +str(count[-10:])+ ' ' + str(len(count))
+                                #print str( primcount )
+                                
+                                #print count[0]
+                                #print self.__idxfacetodraw[0:count]
+                                #idxtemp = np.array(sum(self.__idxfacetodraw,[]) )
+                                #print idxtemp
+                                #print 'render 4'
+                                glMultiDrawArrays(GL_TRIANGLE_FAN, first, count, primcount)
+                                if DEBUGTIME : self.debugtext += ['param render first draw array end : ' + str(round(time.clock()-self.timestart,3))  ]
+                                #glMultiDrawElements(GL_TRIANGLE_FAN, count[0], GL_UNSIGNED_BYTE, self.__idxfacetodraw, 1 )
+                                #glMultiDrawElements(GL_TRIANGLE_FAN, count, GL_UNSIGNED_BYTE, idxtemp, 10 )
+                                #print 'render 5'
+                                glDisableClientState(GL_COLOR_ARRAY)
+                            
+                            if False:
+                                glUseProgram(0)
+                                glEnable(GL_PRIMITIVE_RESTART)
+                                glPrimitiveRestartIndex(99999)
+                                if False and self.setprimitive :
+                                    glPrimitiveRestartIndex(-1)
+                                    self.setprimitive = False
+                                temp = []
+                                for i, elem in enumerate(self.__idxfacetodraw):
+                                    if len(elem)>2:
+                                        if i>0:
+                                        
+                                            temp1 = np.array(elem).tolist()
+                                            temp1.insert(0,99999)
+                                            temp.append(temp1)
+                                        else:
+                                            temp1 = np.array(elem).tolist()
+                                            temp.append(temp1)
+                                idx1 = np.array(sum(temp,[]) )
+                                print(self.__idxfacetodraw[0:20])
+                                print(idx1[0:20])
+                                print(self.__vtxfacetodraw[0:4])
+                                
+                                
+                                #glDrawElements(GL_TRIANGLE_FAN, 20, GL_UNSIGNED_INT, idx1)
+                                glDrawElements(GL_TRIANGLE_FAN, 5, GL_UNSIGNED_BYTE, idx1)
+                            
+                            #glMultiDrawArrays(GL_TRIANGLE_FAN, self.__idxfacetotalcountidx[0:2], self.__idxfacetotalcountlen[0:2], 2) #; // 2 fans
+                                
+                    except Exception as e:
+                        print( 'face elem rendering ' + str(e) )
+                    
+                
+                elif self.meshlayer.hydrauparser.parametres[self.meshlayer.param_displayed][2] == 1 :
+
+                    glEnable(GL_TEXTURE_2D)
+                    glUseProgram(self.__shaders)
+                    
+                    #self.__legend._setUniforms(self.__pixBuf)
+                    # these vertices contain 2 single precision coordinates
+                    glVertexPointerf(self.__vtxfacetodraw)
+                    glTexCoordPointer(3, GL_FLOAT, 0, val)
+                    glDrawElementsui(GL_TRIANGLES, self.__idxfacetodraw)
+                    
+                elif self.meshlayer.hydrauparser.parametres[self.meshlayer.param_displayed][2] == 2 :
+                    try:
+
+                        if True:
+                            """
+                            self.__vtxfacetodraw = self.__vtxfacetotal
+                            self.__idxfacetodraw = self.__idxfacetotal 
+                            self.__idxfaceonlytodraw = self.__idxfaceonlytotal
+                            self.__idxfacetodraw1Darray = np.concatenate(self.__idxfacetodraw)
+                            self.__idxfaceonlytodraw1Darray = np.concatenate(self.__idxfaceonlytodraw)
+                            """
+                            
+                            if DEBUGTIME : self.debugtext += ['param render start : ' + str(round(time.clock()-self.timestart,3))  ]
+                            #glDisable(GL_TEXTURE_2D)
+                            #glEnableClientState( GL_VERTEX_ARRAY )
+                            glColor4f(0.2,0.2,0.2,0.2)
+                            
+                            if True:
+                                vtx = self.__vtxfacetodraw[self.__idxfaceonlytodraw1Darray]
+                                if DEBUGTIME : self.debugtext += ['param render vertex interm : ' + str(round(time.clock()-self.timestart,3))  ]
+                                #print vtx
+                                #print np.array(vtx).shape
+                                #print str( vtx[0:10]    ) 
+                                glVertexPointerf(vtx)
+                                
+                            #print 'vtxshape ' + str(vtx.shape)
+                                
+                                
+                            if DEBUGTIME : self.debugtext += ['param render vertex done : ' + str(round(time.clock()-self.timestart,3))  ]
+                            
+                            if False:
+                                print( str(np.array(sum(self.__idxfacetodraw,[])).shape ) + ' ' + str() )
+                                print( str( self.__idxfacetotalcountidx[0:10]    ) + ' ' +str( self.__idxfacetotalcountidx[-10:] ) )
+                                print( str( self.__idxfacetotalcountlen[0:10]    ) + ' ' +str( self.__idxfacetotalcountlen[-10:] ) )
+                                print( str(  np.max( self.__idxfacetotalcountidx )  ) )
+                                
+                                print( self.__idxfacetotalcountidx[0:2] )
+                                print( self.__idxfacetotalcountlen[0:2] )
+                        
+
+                            
+                            
+                            if True:
+                                #print 'render 1'
+                                glDisable(GL_TEXTURE_2D)
+                                glUseProgram(0)
+                                #glEnableClientState(GL_COLOR_ARRAY)
+                                glColor4f(0.2,0.2,0.2,0.2)
+                                """
+                                first = bounds[:-1]
+                                count = np.diff(bounds)
+                                primcount = len(bounds) - 1
+                                gl.glMultiDrawArrays(primtype, first, count, primcount)
+                                """
+                                
+                                #print 'render 2'
+                                if DEBUGTIME : self.debugtext += ['param render color begin : ' + str(round(time.clock()-self.timestart,3))  ]
+                                colors = np.zeros((len(val),4))
+                                #colors = np.zeros((np.max(np.array(sum(self.__idxfacetodraw,[])))+1,4))
+                                
+                                #print val.shape
+                                #print self.__idxfacetodraw.shape
+                                
+                                
+                                colors[:,:] = np.NAN
+                                #print colors
+                                
+                                
+                                for gradu in self.__graduation:
+                                    #temp = np.where(val > gradu[1])
+                                    #print np.where(np.logical_and(val > gradu[1], val < gradu[2]))
+                                    tempidx = np.where(np.logical_and(val > gradu[1], val < gradu[2]))
+                                    if len(tempidx)>0:
+                                        #print np.array([gradu[0].redF()   , gradu[0].greenF() , gradu[0].blueF() ,gradu[0].alphaF() ])
+                                        colors[tempidx] = [gradu[0].redF()   , gradu[0].greenF() , gradu[0].blueF() ,gradu[0].alphaF() ]
+                                    #colors[np.logical_and(val > gradu[1], val < gradu[2])] = np.array([gradu[0].redF()   , gradu[0].greenF() , gradu[0].blueF() ,gradu[0].alphaF() ])
+                                    
+                                    #self.__graduation[j][0].redF(), self.__graduation[j][0].greenF(), self.__graduation[j][0].blueF() ,  self.__graduation[j][0].alphaF()
+                                
+                                #print colors
+                                colors[colors[:,0] == np.NAN] = np.array([0.,0.,0.,0.])
+                                #print colors.shape
+                                #print np.max(np.array(sum(self.__idxfacetodraw,[])))
+                                
+                                #colors2 = colors[sum(self.__idxfacetodraw,[])]
+                                if DEBUGTIME : self.debugtext += ['param render color end : ' + str(round(time.clock()-self.timestart,3))  ]
+                                    
+                                #print 'render 3'
+                                #first = self.__idxfacetotalcountidx[:-1]
+                                #count = np.diff(self.__idxfacetotalcountidx)
+                                #primcount = len(self.__idxfacetotalcountidx) - 1
+                                
+                                if DEBUGTIME : self.debugtext += ['param render first count end : ' + str(round(time.clock()-self.timestart,3))  ]
+                                
+                                    
+                                #print '3bis'
+                                
+                                colors2 = np.repeat(colors,2, axis = 0)
+                                
+                                #print colors2.shape
+                                #print vtx.shape
+                                
+                                if DEBUGTIME : self.debugtext += ['param render first colorpointer begin : ' + str(round(time.clock()-self.timestart,3))  ]
+                                if True:
+                                    glEnableClientState(GL_COLOR_ARRAY)
+                                    #glColorPointerf(colors2)
+                                    glColorPointer(4, GL_FLOAT, 0, colors2)
+                                if DEBUGTIME : self.debugtext += ['param render first colorpointer end : ' + str(round(time.clock()-self.timestart,3))  ]
+                                #colors = colors[trueidx]
+                                
+                                #print colors
+                                
+                                #print str(first[0:10]) + ' ' +str(first[-10:]) + ' ' + str(len(first))
+                                #print str(count[0:10])+ ' ' +str(count[-10:])+ ' ' + str(len(count))
+                                #print str( primcount )
+                                
+                                #print count[0]
+                                #print self.__idxfacetodraw[0:count]
+                                #idxtemp = np.array(sum(self.__idxfacetodraw,[]) )
+                                #print idxtemp
+                                #print 'render 4'
+                                #print 'draw'
+                                glLineWidth(5) #or whatever
+                                glDrawArrays(GL_LINES, 0, len(vtx))
+                                #print 'draw2'
+                                #glDrawArrays(GL_POINTS, 0, len(self.__vtxfacetodraw))
+                                if DEBUGTIME : self.debugtext += ['param render first draw array end : ' + str(round(time.clock()-self.timestart,3))  ]
+                                #glMultiDrawElements(GL_TRIANGLE_FAN, count[0], GL_UNSIGNED_BYTE, self.__idxfacetodraw, 1 )
+                                #glMultiDrawElements(GL_TRIANGLE_FAN, count, GL_UNSIGNED_BYTE, idxtemp, 10 )
+                                #print 'render 5'
+                                glDisableClientState(GL_COLOR_ARRAY)
+                            
+
+                                
+                    except Exception as e:
+                        print( 'face elem rendering ' + str(e) )
+                    
 
 
-                #self.__legend._setUniforms(self.__pixBuf)
-                # these vertices contain 2 single precision coordinates
-                glVertexPointerf(self.__vtxtodraw)
-                glTexCoordPointer(3, GL_FLOAT, 0, val)
-                glDrawElementsui(GL_TRIANGLES, self.__idxtodraw)
+
+
                 
-                
-                debugstring += '/image/'
+                if DEBUGTIME : self.debugtext += ['param done : ' + str(round(time.clock()-self.timestart,3))  ]
             
             
             else:
@@ -1106,602 +1412,16 @@ class MeshRenderer(AbstractMeshRenderer):
             img = self.__pixBuf.toImage()
             self.__pixBuf.doneCurrent()
             
-            if DEBUG :
-                print debugstring
+            if DEBUGTIME : self.debugtext += ['image done : ' + str(round(time.clock()-self.timestart,3))  ]
+            if DEBUGTIME : self.meshlayer.propertiesdialog.textBrowser_2.append(str(self.debugtext))
+                
+            
+            #img.save('c://test2.jpg')
             
             return img.copy( .5*(roundupSz.width()-imageSize.width()),
                              .5*(roundupSz.height()-imageSize.height()),
                              imageSize.width(), imageSize.height())
-        except Exception, e :
-            print str(e)
+        except Exception as e :
+            print( str(e) )
             return QImage()
 
-    def doRenderWork(self,val, imageSize, center, mapUnitsPerPixel, rotation=0):
-        DEBUG = False
-        debugstring = ''
-    
-       #define current opengl drawing
-        #self.__pixBuf.makeCurrent()
-        #??
-        if self.__recompileShader:
-            self.__compileShaders()
-            
-        #init gl client
-        debugstring += ' / init'
-        #glClearColor(1., 1., 1., 1.)
-        #glClearColor(0., 0., 0., 1.)
-        glClearColor(0., 0., 0., 0.)
-        # tell OpenGL that the VBO contains an array of vertices
-        glEnableClientState(GL_VERTEX_ARRAY)
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY)
-        glEnable(GL_TEXTURE_2D)
-
-        debugstring +=  '/enable/'
-        if True:
-            #initialisation de la transparence
-            glEnable(GL_BLEND)
-            #la couleur de l'objet va etre (1-alpha_de_l_objet) * couleur du fond et (le_reste * couleur originale)
-            #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-            glBlendFunc(GL_SRC_ALPHA_SATURATE, GL_ONE)
-        else:
-            glDisable(GL_BLEND)
-            glEnable(GL_ALPHA_TEST);
-            glAlphaFunc(GL_GREATER, 0.1) # Or some fitting threshold for your texture
-
-        glShadeModel(GL_FLAT)
-        # clear the buffer
-        glClear(GL_COLOR_BUFFER_BIT)
-        # set orthographic projection (2D only)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-        
-        debugstring += '/scale/'
-        # scale
-        glScalef(2./(roundupSz.width()*mapUnitsPerPixel[0]),
-                 2./(roundupSz.height()*mapUnitsPerPixel[1]),
-                 1)
-        # rotate
-        glRotatef(-rotation, 0, 0, 1)
-        ## translate
-        glTranslatef(-center[0],
-                     -center[1],
-                     0)
-                     
-
-        if self.meshlayer.showmesh :   #draw triangle contour but not inside
-            #Draw the object here
-            #Disable texturing, lighting, etc. here
-            #glDisableClientState(GL_TEXTURE_COORD_ARRAY) non...
-            glDisable(GL_TEXTURE_2D)
-            #glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-            #glClear(GL_COLOR_BUFFER_BIT)
-            glUseProgram(0)
-            
-            glColor4f(0.2,0.2,0.2,0.2)
-            glLineWidth(1) #or whatever
-            glPolygonMode(GL_FRONT, GL_LINE)
-            glPolygonMode(GL_BACK, GL_LINE)
-            #Draw the object here
-
-
-            #self.__legend._setUniforms(self.__pixBuf)
-            # these vertices contain 2 single precision coordinates
-            glVertexPointerf(self.__vtxtodraw)
-            #glTexCoordPointer(1, GL_FLOAT, 0, val)
-            glDrawElementsui(GL_TRIANGLES, self.__idxtodraw)
-            
-            
-            #glPolygonMode(GL_FRONT_AND_BACK,GL_FILL)
-            glPolygonMode(GL_FRONT, GL_FILL)
-            glPolygonMode(GL_BACK, GL_FILL)
-
-            
-            
-            
-        if self.meshlayer.showvelocityparams['show']:
-                glDisable(GL_TEXTURE_2D)
-                glEnable(GL_PROGRAM_POINT_SIZE)
-                
-                #print self.__vtxtodraw
-                
-                if False:
-                
-                    if False:
-                        vertex_shader_vel = shaders.compileShader("""
-                                attribute vec3 position;
-                                void main()
-                                {
-                                    gl_Position = vec4(position, 1.0);
-                                    gl_PointSize = 5.0;
-                                }
-                            """, GL_VERTEX_SHADER)
-                    
-                    
-                    if False:
-                        vertex_shader_vel = shaders.compileShader("""
-                            #version 120
-                            const float SQRT_2 = 1.4142135623730951;
-                            uniform mat4 ortho;
-                            uniform float size, orientation, linewidth, antialias;
-                            attribute vec3 position;
-                            varying vec2 rotation;
-                            varying vec2 v_size;
-                            void main ( )
-                                {
-                                rotation = vec2(cos(orientation), sin(orientation));
-                                gl_Position = ortho * vec4(position, 1.0);
-                                v_size = M_SQRT_2 * size + 2.0 * (linewidth + 1.5 * antialias);
-                                gl_PointSize = v_size;
-                                }
-                            """, GL_VERTEX_SHADER)
-                            
-                    if False:
-                        vertex_shader_vel = shaders.compileShader("""
-                            #version 120 
-                            void main()
-                            {
-                              gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;		
-                              gl_TexCoord[0] = gl_MultiTexCoord0;
-                            }
-                            """, GL_VERTEX_SHADER)
-                            
-                            
-                    if False:
-                        fragment_shader_vel = shaders.compileShader("""
-                            varying float value;
-                            //varying vec2 valuevel;
-                            varying float w;
-                            varying vec3 normal;
-                            varying vec4 ecPos;
-                            uniform float transparency;
-                            uniform float minValue;
-                            uniform float maxValue;
-                            uniform bool logscale;
-                            uniform bool withNormals;
-                            uniform sampler2D tex;
-                            """+self.__pixelColor+"""
-                            //out vec4 outColor;
-                            void main()
-                                {
-                                    gl_FragColor = pixelColor(value);
-                                }
-                            """, GL_FRAGMENT_SHADER)
-                    if False:
-                        fragment_shader_vel = shaders.compileShader("""
-                            vec4 filled(float distance, float linewidth, float antialias, vec4 fill)
-                            {
-                                vec4 frag_color;
-                                float t = linewidth/2.0 - antialias;
-                                float signed_distance = distance;
-                                float border_distance = abs(signed_distance) - t;
-                                float alpha = border_distance/antialias;
-                                alpha = exp(-alpha*alpha);
-                                // Within linestroke
-                                if( border_distance < 0.0 )
-                                    frag_color = fill;
-                                // Within shape
-                                else if( signed_distance < 0.0 )
-                                    frag_color = fill;
-                                else
-                                    // Outside shape
-                                    if( border_distance > (linewidth/2.0 + antialias) )
-                                        discard;
-                                    else // Line stroke exterior border
-                                        frag_color = vec4(fill.rgb, alpha * fill.a);
-                                return frag_color;
-                            }
-                            // Computes the signed distance from a line
-                            float line_distance(vec2 p, vec2 p1, vec2 p2) {
-                                vec2 center = (p1 + p2) * 0.5;
-                                float len = length(p2 - p1);
-                                vec2 dir = (p2 - p1) / len;
-                                vec2 rel_p = p - center;
-                                return dot(rel_p, vec2(dir.y, -dir.x));
-                            }
-                            // Computes the signed distance from a line segment
-                            float segment_distance(vec2 p, vec2 p1, vec2 p2) {
-                                vec2 center = (p1 + p2) * 0.5;
-                                float len = length(p2 - p1);
-                                vec2 dir = (p2 - p1) / len;
-                                vec2 rel_p = p - center;
-                                float dist1 = abs(dot(rel_p, vec2(dir.y, -dir.x)));
-                                float dist2 = abs(dot(rel_p, dir)) - 0.5*len;
-                                return max(dist1, dist2);
-                            }
-                            // Computes the center with given radius passing through p1 & p2
-                            vec4 circle_from_2_points(vec2 p1, vec2 p2, float radius)
-                            {
-                                float q = length(p2-p1);
-                                vec2 m = (p1+p2)/2.0;
-                                vec2 d = vec2( sqrt(radius*radius - (q*q/4.0)) * (p1.y-p2.y)/q,
-                                               sqrt(radius*radius - (q*q/4.0)) * (p2.x-p1.x)/q);
-                                return  vec4(m+d, m-d);
-                            }
-                            float arrow_stealth(vec2 texcoord,
-                                                float body, float head,
-                                                float linewidth, float antialias)
-                            {
-                                float w = linewidth/2.0 + antialias;
-                                vec2 start = -vec2(body/2.0, 0.0);
-                                vec2 end   = +vec2(body/2.0, 0.0);
-                                float height = 0.5;
-                                // Head : 4 lines
-                                float d1 = line_distance(texcoord, end-head*vec2(+1.0,-height),
-                                                                   end);
-                                float d2 = line_distance(texcoord, end-head*vec2(+1.0,-height),
-                                                                   end-vec2(3.0*head/4.0,0.0));
-                                float d3 = line_distance(texcoord, end-head*vec2(+1.0,+height), end);
-                                float d4 = line_distance(texcoord, end-head*vec2(+1.0,+0.5),
-                                                                   end-vec2(3.0*head/4.0,0.0));
-                                // Body : 1 segment
-                                float d5 = segment_distance(texcoord, start, end - vec2(linewidth,0.0));
-                                return min(d5, max( max(-d1, d3), - max(-d2,d4)));
-                            }
-                            
-                            //uniform vec2 iResolution;
-                            vec2 iResolution = vec2(100.0,100.0);
-                            //uniform vec2 iMouse;
-                            vec2 iMouse = vec2( 100.0, 100.0 );
-                            void main()
-                            {
-                                const float M_PI = 3.14159265358979323846;
-                                const float SQRT_2 = 1.4142135623730951;
-                                const float linewidth = 3.0;
-                                const float antialias =  1.0;
-                                const float rows = 32.0;
-                                const float cols = 32.0;
-                                float body = min(iResolution.x/cols, iResolution.y/rows) / SQRT_2;
-                                vec2 texcoord = gl_FragCoord.xy;
-                                vec2 size   = iResolution.xy / vec2(cols,rows);
-                                vec2 center = (floor(texcoord/size) + vec2(0.5,0.5)) * size;
-                                texcoord -= center;
-                                // float theta = M_PI/3.0 + 0.1*(center.x / cols + center.y / rows);
-                                float theta = M_PI-atan(center.y-iMouse.y,  center.x-iMouse.x);
-                                float cos_theta = cos(theta);
-                                float sin_theta = sin(theta);
-                                texcoord = vec2(cos_theta*texcoord.x - sin_theta*texcoord.y,
-                                                sin_theta*texcoord.x + cos_theta*texcoord.y);
-                                // float d = arrow_curved(texcoord, body, 0.25*body, linewidth, antialias);
-                                float d = arrow_stealth(texcoord, body, 0.25*body, linewidth, antialias);
-                                // float d = arrow_triangle_90(texcoord, body, 0.15*body, linewidth, antialias);
-                                // float d = arrow_triangle_60(texcoord, body, 0.20*body, linewidth, antialias);
-                                // float d = arrow_triangle_30(texcoord, body, 0.25*body, linewidth, antialias);
-                                // float d = arrow_angle_90(texcoord, body, 0.15*body, linewidth, antialias);
-                                // float d = arrow_angle_60(texcoord, body, 0.20*body, linewidth, antialias);
-                                // float d = arrow_angle_30(texcoord, body, 0.25*body, linewidth, antialias);
-                                gl_FragColor = filled(d, linewidth, antialias, vec4(0,0,0,1));
-                                // gl_FragColor = stroke(d, linewidth, antialias, vec4(0,0,0,1));
-                            }
-                         """, GL_FRAGMENT_SHADER)
-                         
-                         
-                         
-                    if False:
-                        geom_shader_vel = shaders.compileShader("""
-                            layout(points) in;
-                            layout(points, max_vertices = 1) out;
-
-                            void main()
-                            {
-                                gl_Position = gl_in[0].gl_Position;
-                                EmitVertex();
-                                EndPrimitive();
-                            }
-                        
-                            """, GL_GEOMETRY_SHADER)
-
-                    
-                    if False :
-                        geom_shader_vel = shaders.compileShader("""
-                            layout(points) in;
-                            layout(line_strip, max_vertices = 2) out;
-
-                            void main()
-                            {
-                                gl_Position = gl_in[0].gl_Position + vec4(-0.1, 0.0, 0.0, 0.0);
-                                EmitVertex();
-
-                                gl_Position = gl_in[0].gl_Position + vec4(0.1, 0.0, 0.0, 0.0);
-                                EmitVertex();
-
-                                EndPrimitive();
-                            }
-                        
-                            """, GL_GEOMETRY_SHADER)
-                            
-
-                    
-                
-                
-                if True :
-                    
-                    
-                    if True:
-                    
-                        vertex_shader_vel = shaders.compileShader("""
-                            //varying float valuev;
-                            varying vec2 valuevel;
-                            varying float w;
-                            varying vec3 normal;
-                            varying vec4 ecPos;
-                            void main()
-                            {
-                                ecPos = gl_ModelViewMatrix * gl_Vertex;
-                                normal = normalize(gl_NormalMatrix * gl_Normal);
-                                //value = gl_MultiTexCoord0.st.x;
-                                //valuev = gl_MultiTexCoord0.x;
-                                valuevel = gl_MultiTexCoord0.yz;
-                                //w = valuev > 0.0 ? 1.0 : 0.0;
-                                gl_Position = ftransform();
-                                gl_PointSize = 10.0;
-                            }
-                            """, GL_VERTEX_SHADER)
-                    
-                    if True :
-                    
-                    
-                        geom_shader_vel = shaders.compileShader("""
-                            varying vec2 valuevel[];
-                            out float value ;
-                            
-                            layout(points) in;
-                            layout(triangle, max_vertices = 3) out;
-
-
-                            void main()
-                            {
-                                value = sqrt( valuevel[0].x * valuevel[0].x + valuevel[0].y * valuevel[0].y ) ;
-                                //gl_Position = gl_in[0].gl_Position;
-                                gl_in[0].gl_Position + vec4(-0.05 * valuevel[0].y, 0.05 * valuevel[0].x, 0.0, 0.0);
-                                EmitVertex();
-
-                                
-                                gl_in[0].gl_Position + vec4(0.05 * valuevel[0].y, -0.05 * valuevel[0].x, 0.0, 0.0);
-                                EmitVertex();
-                                
-                                gl_Position = gl_in[0].gl_Position + vec4(0.05 * valuevel[0].x, 0.05 * valuevel[0].y, 0.0, 0.0);
-                                EmitVertex();
-
-                                EndPrimitive();
-                                
-                                
-                                gl_in[0].gl_Position + vec4(-0.05 * valuevel[0].y, 0.05 * valuevel[0].x, 0.0, 0.0);
-                                EmitVertex();
-
-                                
-                                gl_in[0].gl_Position + vec4(0.05 * valuevel[0].y, -0.05 * valuevel[0].x, 0.0, 0.0);
-                                EmitVertex();
-                                
-                                gl_Position = gl_in[0].gl_Position + vec4(0.05 * valuevel[0].x, 0.05 * valuevel[0].y, 0.0, 0.0);
-                                EmitVertex();
-
-                                EndPrimitive();
-                                
-                                
-                                
-                            }
-                        
-                            """, GL_GEOMETRY_SHADER)
-                    
-                    if True:
-                        fragment_shader_vel = shaders.compileShader("""
-                            varying float value;
-                            varying vec2 valuevel;
-                            """+self.__pixelColorVelocity+"""
-                            
-                            void main() {
-                              //gl_FragColor = vec4(  min( value ,1.0  ), 0.0, 0.0, 1.0);
-                              gl_FragColor = pixelColor(value);
-                              
-                              }
-                         """, GL_FRAGMENT_SHADER)
-                         
-                    self.__shadersvel = shaders.compileProgram(vertex_shader_vel, fragment_shader_vel, geom_shader_vel)
-                    
-                if False:
-                
-                    if True:
-                    
-                        vertex_shader_vel = shaders.compileShader("""
-                            #version 120
-                            const float SQRT_2 = 1.4142135623730951;
-                            uniform mat4 ortho;
-                            //uniform float size, orientation, linewidth, antialias;
-                            
-                            attribute vec3 position;
-                            varying vec2 rotation;
-                            varying vec2 v_size;
-                            void main ()
-                            {
-                            float orientation = 1.0;
-                            
-                            rotation = vec2(cos(orientation), sin(orientation));
-                            gl_Position = ortho *  vec4(position, 1.0);
-                            v_size = M_SQRT_2   *  size + 2.0  *   (linewidth + 1.5  *  antialias);
-                            gl_PointSize = v_size;
-                            }
-                            """, GL_VERTEX_SHADER)
-                    
-                    
-                    if True:
-                       fragment_shader_vel = shaders.compileShader("""
-                            vec4 filled(float distance, float linewidth, float antialias, vec4 fill)
-                            {
-                                vec4 frag_color;
-                                float t = linewidth/2.0 - antialias;
-                                float signed_distance = distance;
-                                float border_distance = abs(signed_distance) - t;
-                                float alpha = border_distance/antialias;
-                                alpha = exp(-alpha*alpha);
-                                // Within linestroke
-                                if( border_distance < 0.0 )
-                                    frag_color = fill;
-                                // Within shape
-                                else if( signed_distance < 0.0 )
-                                    frag_color = fill;
-                                else
-                                    // Outside shape
-                                    if( border_distance > (linewidth/2.0 + antialias) )
-                                        discard;
-                                    else // Line stroke exterior border
-                                        frag_color = vec4(fill.rgb, alpha * fill.a);
-                                return frag_color;
-                            }
-                            // Computes the signed distance from a line
-                            float line_distance(vec2 p, vec2 p1, vec2 p2) {
-                                vec2 center = (p1 + p2) * 0.5;
-                                float len = length(p2 - p1);
-                                vec2 dir = (p2 - p1) / len;
-                                vec2 rel_p = p - center;
-                                return dot(rel_p, vec2(dir.y, -dir.x));
-                            }
-                            // Computes the signed distance from a line segment
-                            float segment_distance(vec2 p, vec2 p1, vec2 p2) {
-                                vec2 center = (p1 + p2) * 0.5;
-                                float len = length(p2 - p1);
-                                vec2 dir = (p2 - p1) / len;
-                                vec2 rel_p = p - center;
-                                float dist1 = abs(dot(rel_p, vec2(dir.y, -dir.x)));
-                                float dist2 = abs(dot(rel_p, dir)) - 0.5*len;
-                                return max(dist1, dist2);
-                            }
-                            // Computes the center with given radius passing through p1 & p2
-                            vec4 circle_from_2_points(vec2 p1, vec2 p2, float radius)
-                            {
-                                float q = length(p2-p1);
-                                vec2 m = (p1+p2)/2.0;
-                                vec2 d = vec2( sqrt(radius*radius - (q*q/4.0)) * (p1.y-p2.y)/q,
-                                               sqrt(radius*radius - (q*q/4.0)) * (p2.x-p1.x)/q);
-                                return  vec4(m+d, m-d);
-                            }
-                            float arrow_stealth(vec2 texcoord,
-                                                float body, float head,
-                                                float linewidth, float antialias)
-                            {
-                                float w = linewidth/2.0 + antialias;
-                                vec2 start = -vec2(body/2.0, 0.0);
-                                vec2 end   = +vec2(body/2.0, 0.0);
-                                float height = 0.5;
-                                // Head : 4 lines
-                                float d1 = line_distance(texcoord, end-head*vec2(+1.0,-height),
-                                                                   end);
-                                float d2 = line_distance(texcoord, end-head*vec2(+1.0,-height),
-                                                                   end-vec2(3.0*head/4.0,0.0));
-                                float d3 = line_distance(texcoord, end-head*vec2(+1.0,+height), end);
-                                float d4 = line_distance(texcoord, end-head*vec2(+1.0,+0.5),
-                                                                   end-vec2(3.0*head/4.0,0.0));
-                                // Body : 1 segment
-                                float d5 = segment_distance(texcoord, start, end - vec2(linewidth,0.0));
-                                return min(d5, max( max(-d1, d3), - max(-d2,d4)));
-                            }
-                            
-                            //uniform vec2 iResolution;
-                            vec2 iResolution = vec2(100.0,100.0);
-                            //uniform vec2 iMouse;
-                            vec2 iMouse = vec2( 100.0, 100.0 );
-                            void main()
-                            {
-                                const float M_PI = 3.14159265358979323846;
-                                const float SQRT_2 = 1.4142135623730951;
-                                const float linewidth = 3.0;
-                                const float antialias =  1.0;
-                                const float rows = 32.0;
-                                const float cols = 32.0;
-                                float body = min(iResolution.x/cols, iResolution.y/rows) / SQRT_2;
-                                vec2 texcoord = gl_FragCoord.xy;
-                                vec2 size   = iResolution.xy / vec2(cols,rows);
-                                vec2 center = (floor(texcoord/size) + vec2(0.5,0.5)) * size;
-                                texcoord -= center;
-                                // float theta = M_PI/3.0 + 0.1*(center.x / cols + center.y / rows);
-                                float theta = M_PI-atan(center.y-iMouse.y,  center.x-iMouse.x);
-                                float cos_theta = cos(theta);
-                                float sin_theta = sin(theta);
-                                texcoord = vec2(cos_theta*texcoord.x - sin_theta*texcoord.y,
-                                                sin_theta*texcoord.x + cos_theta*texcoord.y);
-                                // float d = arrow_curved(texcoord, body, 0.25*body, linewidth, antialias);
-                                float d = arrow_stealth(texcoord, body, 0.25*body, linewidth, antialias);
-                                // float d = arrow_triangle_90(texcoord, body, 0.15*body, linewidth, antialias);
-                                // float d = arrow_triangle_60(texcoord, body, 0.20*body, linewidth, antialias);
-                                // float d = arrow_triangle_30(texcoord, body, 0.25*body, linewidth, antialias);
-                                // float d = arrow_angle_90(texcoord, body, 0.15*body, linewidth, antialias);
-                                // float d = arrow_angle_60(texcoord, body, 0.20*body, linewidth, antialias);
-                                // float d = arrow_angle_30(texcoord, body, 0.25*body, linewidth, antialias);
-                                gl_FragColor = filled(d, linewidth, antialias, vec4(0,0,0,1));
-                                // gl_FragColor = stroke(d, linewidth, antialias, vec4(0,0,0,1));
-                            }
-                         """, GL_FRAGMENT_SHADER)
-                
-                
-                    self.__shadersvel = shaders.compileProgram(vertex_shader_vel, fragment_shader_vel)
-                    
-                    
-                #glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-                #glClear(GL_COLOR_BUFFER_BIT)
-                glUseProgram(self.__shadersvel)
-                
-                
-                
-                #glColor4f(0.2,0.2,0.2,0.2)
-                glLineWidth(5) #or whatever
-                glPolygonMode(GL_FRONT, GL_LINE)
-                glPolygonMode(GL_BACK, GL_LINE)
-                #Draw the object here
-                
-                
-                
-                #self.__legend._setUniforms(self.__pixBuf)
-                # these vertices contain 2 single precision coordinates
-                glVertexPointerf(self.__vtxtodraw)
-                glTexCoordPointer(3, GL_FLOAT, 0, val)
-                #glDrawElementsui(GL_LINES, self.__idxtodraw)
-                #glDrawElementsui(GL_TRIANGLE_STRIP,range(len(self.__vtxtodraw)))
-                
-                if self.arraypoints == None:
-                    self.arraypoints = range(len(self.__vtxtodraw))
-                    
-                #glDrawElementsui(GL_POINTS,len(self.arraypoints) )
-                glDrawArrays(GL_POINTS, 0, len(self.__vtxtodraw))
-                
-                glPolygonMode(GL_FRONT_AND_BACK,GL_FILL)
-                #glPolygonMode(GL_FRONT, GL_FILL)
-                #glPolygonMode(GL_BACK, GL_FILL)
-            
-            
-                     
-                     
-        glEnable(GL_TEXTURE_2D)
-        glUseProgram(self.__shaders)
-        
-
-
-        #self.__legend._setUniforms(self.__pixBuf)
-        # these vertices contain 2 single precision coordinates
-        glVertexPointerf(self.__vtxtodraw)
-        glTexCoordPointer(3, GL_FLOAT, 0, val)
-        glDrawElementsui(GL_TRIANGLES, self.__idxtodraw)
-        
-        
-        
-        if False:   #draw triangle contour but not inside
-            #Draw the object here
-            #Disable texturing, lighting, etc. here
-            glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-            glDisable(GL_TEXTURE_2D)
-            glColor4f(1.,1.,1.,0.8)
-            glLineWidth(2) #or whatever
-            glPolygonMode(GL_FRONT, GL_LINE)
-            glPolygonMode(GL_BACK, GL_LINE)
-            #Draw the object here
-            #glPolygonMode(GL_FRONT_AND_BACK,GL_FILL)
-            glPolygonMode(GL_FRONT, GL_FILL);
-            glPolygonMode(GL_BACK, GL_FILL);
-            
-            
-
-            
-        
-        #glDrawElements(GL_TRIANGLES, self.__idx)
-        
-        debugstring += '/image/'
-    
-        

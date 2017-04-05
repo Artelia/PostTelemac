@@ -32,27 +32,64 @@ except ValueError:
     # API has already been set so we can't set it again.
     pass
 
-from OpenGL.GL import shaders
+if False:
+    from PyQt4 import uic, QtCore, QtGui
+    from PyQt4.QtOpenGL import *
+    from PyQt4 import QtCore, QtGui, QtOpenGL
+    
+if False:
+    try:
+        from qgis.PyQt import uic, QtCore, QtGui
+        from qgis.PyQt.QtOpenGL import *
+        from qgis.PyQt import QtCore, QtGui, QtOpenGL
+    except:
+        pass
+        
+        
+if True:
+    try:
+        from qgis.PyQt.QtGui import QDialog, QVBoxLayout
+    except:
+        from qgis.PyQt.QtWidgets import QDialog, QVBoxLayout
+        
+    try:
+        from PyQt4 import uic, QtCore, QtGui, QtOpenGL
+        from PyQt4.QtOpenGL import *
+    except:
+        from PyQt5 import uic, QtCore, QtGui, QtOpenGL
+        from PyQt5.QtOpenGL import *
+        
+        
+    
+try:
+    from OpenGL.GL import *
+    from OpenGL.GL import shaders
+    import OpenGL
+    OpenGL.ERROR_CHECKING = True
+    from OpenGL.GL import *
+    from OpenGL.GLU import *
+except:
+    pass
 
-from PyQt4 import uic, QtCore, QtGui
-from meshlayer_abstract_tool import *
 
-from OpenGL.GL import *
-from PyQt4 import QtGui
-from PyQt4.QtOpenGL import *
 
-from PyQt4 import QtCore, QtGui, QtOpenGL
+from .meshlayer_abstract_tool import *
+
+
+
+
+
 import math
 import numpy
 import numpy.linalg as linalg
-import OpenGL
-OpenGL.ERROR_CHECKING = True
-from OpenGL.GL import *
-from OpenGL.GLU import *
+
 
 import numpy as np
 
-import PIL
+try:
+    import PIL
+except:
+    pass
 
 import sys
 
@@ -63,6 +100,8 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'OpenGLTo
 
 
 class OpenGLTool(AbstractMeshLayerTool,FORM_CLASS):
+
+    NAME = 'OPENGLTOOL'
 
 
     def __init__(self, meshlayer,dialog):
@@ -96,10 +135,10 @@ class OpenGLTool(AbstractMeshLayerTool,FORM_CLASS):
 FORM_CLASS2, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'OpenGLTool_widget.ui'))
         
 #class AbstractMeshLayerTool(QtGui.QWidget, FORM_CLASS):
-class OpenGLDialog(QtGui.QDialog,FORM_CLASS2):
+class OpenGLDialog(QDialog,FORM_CLASS2):
 
     def __init__(self, meshlayer = None, parent = None):
-        super(QtGui.QDialog, self).__init__(parent)
+        super(QDialog, self).__init__(parent)
         self.setupUi(self)
         self.meshlayer = meshlayer
         self.verticalz = self.spinBox_z.value()
@@ -109,7 +148,7 @@ class OpenGLDialog(QtGui.QDialog,FORM_CLASS2):
         else:
             self.openglwidget = PyGLWidget(self,self.meshlayer)
         
-        layout = QtGui.QVBoxLayout()
+        layout = QVBoxLayout()
         layout.addWidget(self.openglwidget)
         
         self.frame_qglwidget.setLayout(layout)
@@ -208,60 +247,62 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         
         
         if self.texture:
-            if True:
-                self.im = PIL.Image.open(os.path.join(os.path.dirname(__file__) ,'textures','grassbis.png') )
-                #self.im = PIL.Image.open(os.path.join(os.path.dirname(__file__) ,'textures','grass2.jpg') )
-                #print self.im.mode
-                try: #older version of pil
-                    if self.im.mode == 'RGBA':
-                        self.ix, self.iy, self.image = self.im.size[0], self.im.size[1], self.im.tostring("raw", "RGBA", 0, -1) 
-                    elif self.im.mode == 'RGB' :
-                        self.ix, self.iy, self.image = self.im.size[0], self.im.size[1], self.im.tostring("raw", "RGBX", 0, -1)
-                    #except SystemError: 
-                except Exception, e:
-                    #print 'grass ' + str(e)
-                    #self.ix, self.iy, self.image = self.im.size[0], self.im.size[1], self.im.tobytes("raw", "RGBX", 0, -1)
-                    if self.im.mode == 'RGBA':
-                        self.ix, self.iy, self.image = self.im.size[0], self.im.size[1], self.im.tobytes('raw', "RGBA",0,-1)   #works on unbuntu witj .jpg
-                    elif self.im.mode == 'RGB' :
-                        self.ix, self.iy, self.image = self.im.size[0], self.im.size[1], self.im.tobytes('raw', "RGBX",0,-1)   #works on unbuntu witj .jpg
-                    #self.ix, self.iy, self.image = self.im.size[0], self.im.size[1],  numpy.array(list(self.im.getdata()), numpy.int8)  #works on win witj .png
-            if False:
-                glActiveTexture(GL_TEXTURE0)
-                ID = glGenTextures(1)
-                glBindTexture(GL_TEXTURE_2D, ID) 
-                glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-                
-                glTexImage2D( GL_TEXTURE_2D, 0, 3, self.ix, self.iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image )
-                #glTexImage2D( GL_TEXTURE_2D, 0, 3, 100.0/self.ratioxy , 100*self.iy/self.ix/self.ratioxy , 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image )
-                
-                glBindTexture(GL_TEXTURE_2D, ID)
-                
+            try:
+                if True:
+                    self.im = PIL.Image.open(os.path.join(os.path.dirname(__file__) ,'textures','grassbis.png') )
+                    #self.im = PIL.Image.open(os.path.join(os.path.dirname(__file__) ,'textures','grass2.jpg') )
+                    #print self.im.mode
+                    try: #older version of pil
+                        if self.im.mode == 'RGBA':
+                            self.ix, self.iy, self.image = self.im.size[0], self.im.size[1], self.im.tostring("raw", "RGBA", 0, -1) 
+                        elif self.im.mode == 'RGB' :
+                            self.ix, self.iy, self.image = self.im.size[0], self.im.size[1], self.im.tostring("raw", "RGBX", 0, -1)
+                        #except SystemError: 
+                    except Exception as e:
+                        #print 'grass ' + str(e)
+                        #self.ix, self.iy, self.image = self.im.size[0], self.im.size[1], self.im.tobytes("raw", "RGBX", 0, -1)
+                        if self.im.mode == 'RGBA':
+                            self.ix, self.iy, self.image = self.im.size[0], self.im.size[1], self.im.tobytes('raw', "RGBA",0,-1)   #works on unbuntu witj .jpg
+                        elif self.im.mode == 'RGB' :
+                            self.ix, self.iy, self.image = self.im.size[0], self.im.size[1], self.im.tobytes('raw', "RGBX",0,-1)   #works on unbuntu witj .jpg
+                        #self.ix, self.iy, self.image = self.im.size[0], self.im.size[1],  numpy.array(list(self.im.getdata()), numpy.int8)  #works on win witj .png
+                if False:
+                    glActiveTexture(GL_TEXTURE0)
+                    ID = glGenTextures(1)
+                    glBindTexture(GL_TEXTURE_2D, ID) 
+                    glPixelStorei(GL_UNPACK_ALIGNMENT,1)
                     
-            if True:
-                self.im2 = PIL.Image.open(os.path.join(os.path.dirname(__file__) ,'textures','water3.png') )
-                #self.im2 = PIL.Image.open(os.path.join(os.path.dirname(__file__) ,'textures','water3.jpg') )
-                #print self.im2.mode
-                try: 
-                    if self.im2.mode == 'RGBA':
-                        self.ix2, self.iy2, self.image2 = self.im2.size[0], self.im2.size[1], self.im2.tostring("raw", "RGBA", 0, -1) 
-                    elif self.im2.mode == 'RGB' :
-                        self.ix2, self.iy2, self.image2 = self.im2.size[0], self.im2.size[1], self.im2.tostring("raw", "RGBX", 0, -1) 
-                    #except SystemError: 
-                except Exception, e:
-                    #print 'water ' + str(e)
+                    glTexImage2D( GL_TEXTURE_2D, 0, 3, self.ix, self.iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image )
+                    #glTexImage2D( GL_TEXTURE_2D, 0, 3, 100.0/self.ratioxy , 100*self.iy/self.ix/self.ratioxy , 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image )
+                    
+                    glBindTexture(GL_TEXTURE_2D, ID)
+                    
                         
-                    self.ix2, self.iy2, self.image2 = self.im2.size[0], self.im2.size[1], self.im2.tobytes("raw", "RGBX", 0, -1)      #works on unbuntu witj .jpg
-                    #self.ix2, self.iy2, self.image2 = self.im2.size[0], self.im2.size[1], numpy.array(list(self.im2.getdata()), numpy.int8)
-            if False:
-                glActiveTexture(GL_TEXTURE1)
-                ID = glGenTextures(1)
-                glBindTexture(GL_TEXTURE_2D, ID) 
-                glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-                
-                glTexImage2D( GL_TEXTURE_2D, 0, 3, self.ix2, self.iy2, 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image2 )
-                glBindTexture(GL_TEXTURE_2D, ID)
-            
+                if True:
+                    self.im2 = PIL.Image.open(os.path.join(os.path.dirname(__file__) ,'textures','water3.png') )
+                    #self.im2 = PIL.Image.open(os.path.join(os.path.dirname(__file__) ,'textures','water3.jpg') )
+                    #print self.im2.mode
+                    try: 
+                        if self.im2.mode == 'RGBA':
+                            self.ix2, self.iy2, self.image2 = self.im2.size[0], self.im2.size[1], self.im2.tostring("raw", "RGBA", 0, -1) 
+                        elif self.im2.mode == 'RGB' :
+                            self.ix2, self.iy2, self.image2 = self.im2.size[0], self.im2.size[1], self.im2.tostring("raw", "RGBX", 0, -1) 
+                        #except SystemError: 
+                    except Exception as e:
+                        #print 'water ' + str(e)
+                            
+                        self.ix2, self.iy2, self.image2 = self.im2.size[0], self.im2.size[1], self.im2.tobytes("raw", "RGBX", 0, -1)      #works on unbuntu witj .jpg
+                        #self.ix2, self.iy2, self.image2 = self.im2.size[0], self.im2.size[1], numpy.array(list(self.im2.getdata()), numpy.int8)
+                if False:
+                    glActiveTexture(GL_TEXTURE1)
+                    ID = glGenTextures(1)
+                    glBindTexture(GL_TEXTURE_2D, ID) 
+                    glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+                    
+                    glTexImage2D( GL_TEXTURE_2D, 0, 3, self.ix2, self.iy2, 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image2 )
+                    glBindTexture(GL_TEXTURE_2D, ID)
+            except:
+                pass
                                     
         # connections
         #self.signalGLMatrixChanged.connect(self.printModelViewMatrix)
@@ -293,7 +334,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         
         
     def play(self):
-        print 'click ' + str(self.dialog.playing)
+        print( 'click ' + str(self.dialog.playing) )
         if self.dialog.playing == False:
             self.dialog.playing == True
             self.paintdone.connect(self.play2)
@@ -306,32 +347,38 @@ class PyGLWidget(QtOpenGL.QGLWidget):
             time.sleep(1)
             self.time += 1
             self.changeFreeSurfaceVertex(self.time)
-            print 'before' + str(self.time)
+            print( 'before' + str(self.time) )
             
             self.updateGL()
-            print 'after'
+            print( 'after' )
             time.sleep(1)
             
     def loadVertexes(self):
-        self.meshx, self.meshy = self.parser.getMesh()
-        
+        #self.meshx, self.meshy = self.parser.getMesh()
+        self.meshx, self.meshy = self.parser.getFacesNodes()
+        """
         self.vtxtodraw = ( np.stack((self.meshx, 
                                 self.meshy, 
                                 self.parser.getRawValues(0)[self.parser.parambottom]*self.dialog.verticalz )  , 
+                                axis=-1)   ) /self.ratioxy
+        """
+        self.vtxtodraw = ( np.stack((self.meshx, 
+                                self.meshy, 
+                                self.parser.getValues(0)[self.parser.parambottom]*self.dialog.verticalz )  , 
                                 axis=-1)   ) /self.ratioxy
                                 
         self.centermesh = np.array([( max(self.meshx) + min(self.meshx) ) / 2 ,( max(self.meshy) + min(self.meshy) ) / 2 ,0.0]) /self.ratioxy
                                 
         norm = np.zeros( self.vtxtodraw.shape, dtype=self.vtxtodraw.dtype )
-        tris = self.vtxtodraw[self.parser.getIkle()]
+        tris = self.vtxtodraw[self.parser.getElemFaces()]
         
         n = np.cross( tris[::,1 ] - tris[::,0]  , tris[::,2 ] - tris[::,0] )
         self.normalize_v3(n)
         self.nomrtemp = n
                                 
-        norm[ self.parser.getIkle()[:,0] ] += n
-        norm[ self.parser.getIkle()[:,1] ] += n
-        norm[ self.parser.getIkle()[:,2] ] += n
+        norm[ self.parser.getElemFaces()[:,0] ] += n
+        norm[ self.parser.getElemFaces()[:,1] ] += n
+        norm[ self.parser.getElemFaces()[:,2] ] += n
         self.normalize_v3(norm)
         self.norm = norm
         
@@ -347,7 +394,8 @@ class PyGLWidget(QtOpenGL.QGLWidget):
             
             indexzvalue = np.where(zvalue>= 0.05)
             
-            ikle = self.parser.getIkle()
+            #ikle = self.parser.getIkle()
+            ikle = self.parser.getElemFaces()
             
             ikle1D= ikle.ravel()
             temp  =  np.in1d(ikle1D, indexzvalue)
@@ -367,12 +415,18 @@ class PyGLWidget(QtOpenGL.QGLWidget):
             #print 'iklewater \n' + str( iklewater )
             #print 'iklewater shape\n' + str( iklewater.shape )
 
-        
+            """
             self.vtxtodrawwater = np.stack((self.meshx, 
                                     self.meshy, 
                                     self.parser.getRawValues(time)[self.parser.paramfreesurface]*self.dialog.verticalz )  , 
                                     axis=-1)  /self.ratioxy  
-                                    
+            """
+            self.vtxtodrawwater = np.stack((self.meshx, 
+                                    self.meshy, 
+                                    self.parser.getValues(time)[self.parser.paramfreesurface]*self.dialog.verticalz )  , 
+                                    axis=-1)  /self.ratioxy  
+            
+            
             self.iklewater = iklewater
         
     
@@ -392,7 +446,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
 
     @QtCore.pyqtSlot()
     def printModelViewMatrix(self):
-        print self.modelview_matrix_
+        print( self.modelview_matrix_ )
 
     def initializeGL(self):
         # OpenGL state
@@ -445,7 +499,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                     glVertexPointerf(self.vtxtodraw)
                     #glVertexPointer(3, self.precision, 0, self.vtxtodraw)
                     #glTexCoordPointer(1, GL_FLOAT, 0, val)
-                    glDrawElementsui(GL_TRIANGLES, self.parser.getIkle())
+                    glDrawElementsui(GL_TRIANGLES, self.parser.getElemFaces())
                     
                     glPolygonMode(GL_FRONT, GL_FILL)
                     glPolygonMode(GL_BACK, GL_FILL)
@@ -515,12 +569,16 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                 if True:
                     if self.texture:
                         if True:
-                            ID = glGenTextures(1)
-                            #glBindTexture(GL_TEXTURE_2D, ID) 
-                            glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+                            try:
+                                ID = glGenTextures(1)
+                                #glBindTexture(GL_TEXTURE_2D, ID) 
+                                glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+                                
+                                glTexImage2D( GL_TEXTURE_2D, 0, 3, self.ix, self.iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image )
+                                #glTexImage2D( GL_TEXTURE_2D, 0, 3, 100.0/self.ratioxy , 100*self.iy/self.ix/self.ratioxy , 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image )
                             
-                            glTexImage2D( GL_TEXTURE_2D, 0, 3, self.ix, self.iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image )
-                            #glTexImage2D( GL_TEXTURE_2D, 0, 3, 100.0/self.ratioxy , 100*self.iy/self.ix/self.ratioxy , 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image )
+                            except:
+                                pass
                             
                         if True:
                             
@@ -552,13 +610,13 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                     
                     
                     if True :
-                        no = self.norm[ self.parser.getIkle() ] 
+                        no = self.norm[ self.parser.getElemFaces() ] 
                         #glNormalPointerf(no)
                         glNormalPointerf(self.norm )
                         #glNormalPointer(self.precision, 0, self.norm)
                         #glNormalPointerf(self.nomrtemp)
                     #glTexCoordPointer(1, GL_FLOAT, 0, val)
-                    glDrawElementsui(GL_TRIANGLES, self.parser.getIkle())   
+                    glDrawElementsui(GL_TRIANGLES, self.parser.getElemFaces())   
                     
                 
                 
@@ -567,11 +625,14 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                 if True :
                     if self.texture:
                         if True:
-                            ID = glGenTextures(1)
-                            #glBindTexture(GL_TEXTURE_2D, ID) 
-                            glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-                            
-                            glTexImage2D( GL_TEXTURE_2D, 0, 3, self.ix2, self.iy2, 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image2 )
+                            try:
+                                ID = glGenTextures(1)
+                                #glBindTexture(GL_TEXTURE_2D, ID) 
+                                glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+                                
+                                glTexImage2D( GL_TEXTURE_2D, 0, 3, self.ix2, self.iy2, 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image2 )
+                            except:
+                                pass
                         if True:
                             glEnable(GL_TEXTURE_2D) 
                             #glActiveTexture(GL_TEXTURE1)
@@ -594,7 +655,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                     glVertexPointerf(self.vtxtodrawwater)
                     
                     if False :
-                        no = self.normwater[ self.parser.getIkle() ] 
+                        no = self.normwater[ self.parser.getElemFaces() ] 
                         #glNormalPointerf(no)
                         glNormalPointerf(self.normwater )
                         #glNormalPointerf(self.nomrtemp)
@@ -724,14 +785,14 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         t =  -np.dot(np.transpose(  np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )  )   , np.array([ self.center_[0], self.center_[1], self.center_[2],1.0    ] ) )
         
         if False:
-            print max( ( max(self.vtxtodraw[:,0]) - min(self.vtxtodraw[:,0]) ) / 2 ,( max(self.vtxtodraw[:,1]) - min(self.vtxtodraw[:,1]) ) / 2 )
-            print math.atan(self.fovy_/180*math.pi)
-            print self.radius_
+            print( max( ( max(self.vtxtodraw[:,0]) - min(self.vtxtodraw[:,0]) ) / 2 ,( max(self.vtxtodraw[:,1]) - min(self.vtxtodraw[:,1]) ) / 2 ) )
+            print( math.atan(self.fovy_/180*math.pi) )
+            print( self.radius_ )
             
             eye,ray_eye = self.getRay(0,0)
             meshpoint =  self.getNearestPointFromRay(eye,ray_eye)
             
-            print eye
+            print( eye )
         
         t[2] = t[2] - self.radius_ 
         #print t
@@ -771,7 +832,10 @@ class PyGLWidget(QtOpenGL.QGLWidget):
         
         dist = np.linalg.norm(eye - meshpoint)
         
-        d =  float(_event.delta())/200 * dist / 2
+        try:
+            d =  float(_event.delta())/200 * dist / 2
+        except:
+            d =  float(_event.angleDelta().y())/200 * dist / 2
         
         
         vect = ( np.array( meshpoint ) - np.array(eye) ) /dist * d 
@@ -855,7 +919,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                         
                         
                         #ray_eye = np.dot(numpy.linalg.inv ( np.transpose( np.array(glGetDoublev( GL_PROJECTION_MATRIX) )  ) ) , ray_nds )
-                    except Exception, e:
+                    except Exception as e:
                         self.printDialog('ray eye 2 ' + str(e))
                         ray_eye = ray_nds
                         
@@ -870,7 +934,7 @@ class PyGLWidget(QtOpenGL.QGLWidget):
 
             #self.printDialog('ray_eye final \n' + str(eye)+'\n'+str(ray_eye))
             return (eye,ray_eye )
-        except Exception, e:
+        except Exception as e:
             self.printDialog('ray eye ' + str(e))
             return (self.centermesh, np.array( [ 0, 0, -1 ,1 ] ) )
         
@@ -977,35 +1041,35 @@ class PyGLWidget(QtOpenGL.QGLWidget):
                     #axis[1] = 0.0
                     self.rotate(axis, angle)
                 if False:
-                    print 'axis  \n' + str( axis )
+                    print( 'axis  \n' + str( axis ) )
                     axis =    [ axis[0] , axis[1], axis[2] ,0 ] 
                     axismodel =  np.dot(numpy.linalg.inv ( np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )  ) , axis )
                     #axismodel =  np.dot(numpy.linalg.inv ( np.array(glGetDoublev(GL_PROJECTION_MATRIX) )  ) , axis )
                     #axismodel =  np.dot(numpy.linalg.inv ( np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )  ) , axismodel )
                     #GL_PROJECTION_MATRIX
-                    print 'axis model \n' + str( axismodel )
+                    print( 'axis model \n' + str( axismodel ) )
                     axismodel[1] = 0.0
-                    print 'axis model2 \n' + str( axismodel )
+                    print( 'axis model2 \n' + str( axismodel ) )
                     axismodif = np.dot( np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )   , axismodel )
                     #axismodif = np.dot( np.array(glGetDoublev(GL_PROJECTION_MATRIX) )   , axismodel )
-                    print 'axis modif \n' + str(axismodif)
+                    print( 'axis modif \n' + str(axismodif) )
                     
                     axisfinal =    [ axismodif[0] , axismodif[1], axismodif[2]  ] 
                     #print axis
                     self.rotate(axisfinal, angle)
                 if False:
                     axis =    [ axis[0] , axis[1], axis[2], 0.0   ]   
-                    print axis
+                    print( axis )
                     axistemp = np.dot(numpy.linalg.inv ( np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )  ) , axis )
                     axistemp = np.array([ axistemp[0], axistemp[1], 0, 0    ])
                     axistemp =  np.dot(( np.array(glGetDoublev(GL_MODELVIEW_MATRIX) )  ) , axistemp )
-                    print 'axistemp \n ' + str( axistemp )
+                    print( 'axistemp \n ' + str( axistemp ) )
                     self.rotate(np.array([axistemp[0], axistemp[1], axistemp[2]    ]), angle)
                 
             #print 'modelview rotation \n ' + str( self.modelview_matrix_ )
             
         elif (_event.buttons() == QtCore.Qt.RightButton):
-            print 'right moved'
+            print( 'right moved' )
             
 
         # remember this point

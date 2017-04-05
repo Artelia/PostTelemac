@@ -24,7 +24,7 @@ Versions :
 import numpy as np
 import gdal
 import subprocess
-from posttelemac_abstract_parser import PostTelemacAbstractParser
+from .posttelemac_abstract_parser import PostTelemacAbstractParser
 
 
 MESHX = 'x'
@@ -37,12 +37,16 @@ TYPENDVAR = 1 #0 for 1d array 1 for ReadAsArray
 
 
 class PostTelemacSWWParser(PostTelemacAbstractParser):
+    
+    SOFTWARE = 'ANUGA'
+    EXTENSION=['sww']
 
     def __init__(self,layer1 = None):
         super(PostTelemacSWWParser, self).__init__(layer1)
         self.varnames=None
         self.ikle = None
         self.time = None
+        self.facesindex == None
         self.onedvar = {}
 
     
@@ -55,56 +59,176 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
         indexyllcorner = names.index('yllcorner')
         self.translatex = float( dump[indexxllcorner][1] )
         self.translatey = float( dump[indexyllcorner][1] )
+    
+    
+    if False:
+    
+        def getRawValues(self,time1):
+            """
+            return array : 
+            array[param number][node value for param number]
+            """
+            result=[]
+            for var in self.varnames:
+                if var[1] == 1 :
+                    result.append( self.get1DVar(var[0]) )
+                elif var[1] == 2 :
+                    if TYPENDVAR:
+                        result.append(np.array( var[2].ReadAsArray() )[::-1,:][time1])
+                    else:
+                        result.append(  np.array(self.getNDVar(var[0])).reshape((-1,self.pointcount))[time1]       )
+                        
+                        
+                        
+            return np.array(result)
+            
+            
+        def getRawTimeSerie(self,arraynumpoint,arrayparam,layerparametres = None):
+            """
+            Warning : point index begin at 1
+            [..., param[numpts[values]], ... ]
+            """
+            result = []
+            for param in arrayparam:
+                if self.varnames[param][1] == 1 :
+                    tt1 =  np.array( self.get1DVar(self.varnames[param][0]) )
+                    tt2 = tt1[np.array(arraynumpoint)-1]
+                    tt3 = [[ [tt4] * (self.itertimecount +1) ] for tt4 in tt2 ]
+                    result.append(np.array(tt3[0]))
+                elif self.varnames[param][1] == 2 :
+                    tt1 = np.array(self.getNDVar(self.varnames[param][0]))
+                    tt1 = np.transpose(tt1)
+                    tt2 = tt1[np.array(arraynumpoint)-1]
+                    result.append(tt2[::-1,:])
+            return np.array(result)
+            
+            
+            
+        def getMesh(self):
+            #tranlsation info        
+            return (np.array(self.get1DVar(MESHX)) + self.translatex , np.array(self.get1DVar(MESHY)) + self.translatey )
+            
+            
+        def getVarnames(self):
+            """
+            return [...[varname, dimension],...]
+            """
+            #self.hydraufile = gdal.Open('NETCDF:"'+self.path+'"')
+            
+            if self.varnames == None:
+                dump = self.getNcDumpVar()[2]
+                varnames=[]
+                for str1 in dump:
+                    if len(str1[2]) == 1:
+                        if str1[1] != MESHX and str1[1] != MESHY and str1[1] != TIME:
+                            if len( self.get1DVar(str1[1]) ) == self.pointcount:
+                                varnames.append([str1[1],1,None])
+                    
+                    elif len(str1[2]) == 2:
+                        if str1[1] != IKLE:
+                            if TYPENDVAR :
+                                temp = self.getNDVar(str1[1])[0]
+                            else:
+                                temp = np.array(self.getNDVar(str1[1])).reshape((self.pointcount,-1))
+                            
+                            if len( temp ) == self.pointcount:
+                                varnames.append([str1[1],2])
+                                if True:
+                                    u = self.hydraufile.GetSubDatasets()
+                                    int1 = 0
+                                    for i, arr in enumerate(u):
+                                        layer1 = arr[0].split(':')[-1]
+                                        if layer1 == str1[1]:
+                                            file1 = gdal.Open(arr[0])
+                                            break
+                                    varnames[-1].append(file1)
+            
+                self.varnames = varnames
+            
+            #self.hydraufile = None
+            return [var[0] for var in self.varnames]
         
-    def getRawValues(self,time1):
-        """
-        return array : 
-        array[param number][node value for param number]
-        """
-        result=[]
-        for var in self.varnames:
-            if var[1] == 1 :
-                result.append( self.get1DVar(var[0]) )
-            elif var[1] == 2 :
-                if TYPENDVAR:
-                    result.append(np.array( var[2].ReadAsArray() )[::-1,:][time1])
+        def getIkle(self):
+            if self.ikle == None:
+                if  TYPENDVAR :
+                    self.ikle = self.getNDVar(IKLE)
                 else:
-                    result.append(  np.array(self.getNDVar(var[0])).reshape((-1,self.pointcount))[time1]       )
-                    
-                    
-                    
-        return np.array(result)
+                    temp = np.array(self.getNDVar(IKLE))
+                    self.ikle = np.reshape(temp,(-1,3)).astype(int)
+            return self.ikle
         
         
-    def getRawTimeSerie(self,arraynumpoint,arrayparam,layerparametres = None):
+        
+        
+        
+        
+        
+        
+        
+    def getTimes(self):
+        if self.time == None:
+            self.time = np.array( self.get1DVar(TIME) )
+        
+        return self.time
+        
+        
+        
+    #****************************************************************************************
+    #****************************************************************************************
+    #****************************************************************************************
+    
+    
+    def getVarNames(self):
         """
-        Warning : point index begin at 1
-        [..., param[numpts[values]], ... ]
+        return np.array[varname, typevar (0 : elem, 1 : facenode, 2 : face)]
+        
+        self.varnames : array[..[name, timedependant or not, ?, typevar]]
+        
         """
-        result = []
-        for param in arrayparam:
-            if self.varnames[param][1] == 1 :
-                tt1 =  np.array( self.get1DVar(self.varnames[param][0]) )
-                tt2 = tt1[np.array(arraynumpoint)-1]
-                tt3 = [[ [tt4] * (self.itertimecount +1) ] for tt4 in tt2 ]
-                result.append(np.array(tt3[0]))
-            elif self.varnames[param][1] == 2 :
-                tt1 = np.array(self.getNDVar(self.varnames[param][0]))
-                tt1 = np.transpose(tt1)
-                tt2 = tt1[np.array(arraynumpoint)-1]
-                result.append(tt2[::-1,:])
-        return np.array(result)
+        #self.hydraufile = gdal.Open('NETCDF:"'+self.path+'"')
         
+        if self.varnames == None:
+            dump = self.getNcDumpVar()[2]
+            varnames=[]
+            for str1 in dump:
+                if len(str1[2]) == 1:
+                    if str1[1] != MESHX and str1[1] != MESHY and str1[1] != TIME:
+                        if len( self.get1DVar(str1[1]) ) == self.facesnodescount:
+                            varnames.append([str1[1],1,None,1])
+                
+                elif len(str1[2]) == 2:
+                    if str1[1] != IKLE:
+                        if TYPENDVAR :
+                            temp = self.getNDVar(str1[1])[0]
+                        else:
+                            temp = np.array(self.getNDVar(str1[1])).reshape((self.facesnodescount,-1))
+                        
+                        if len( temp ) == self.facesnodescount:
+                            varnames.append([str1[1],2])
+                            if True:
+                                u = self.hydraufile.GetSubDatasets()
+                                int1 = 0
+                                for i, arr in enumerate(u):
+                                    layer1 = arr[0].split(':')[-1]
+                                    if layer1 == str1[1]:
+                                        file1 = gdal.Open(arr[0])
+                                        break
+                                varnames[-1].append(file1)
+                                varnames[-1].append(1)
         
+            self.varnames = varnames
         
-    def getMesh(self):
-        #tranlsation info        
-        return (np.array(self.get1DVar(MESHX)) + self.translatex , np.array(self.get1DVar(MESHY)) + self.translatey )
-        
-        
-    def getVarnames(self):
+        #self.hydraufile = None
+        return [[var[0], var[3]] for var in self.varnames]
+    
+    
+    
+    def getVarNames2(self):
         """
-        return [...[varname, dimension],...]
+        return np.array[varname, typevar (0 : elem, 1 : facenode, 2 : face)]
+        
+        self.varnames : array[..[name, timedependant or not, ?, typevar]]
+        
         """
         #self.hydraufile = gdal.Open('NETCDF:"'+self.path+'"')
         
@@ -115,7 +239,7 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
                 if len(str1[2]) == 1:
                     if str1[1] != MESHX and str1[1] != MESHY and str1[1] != TIME:
                         if len( self.get1DVar(str1[1]) ) == self.pointcount:
-                            varnames.append([str1[1],1,None])
+                            varnames.append([str1[1],1,None,1])
                 
                 elif len(str1[2]) == 2:
                     if str1[1] != IKLE:
@@ -135,13 +259,67 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
                                         file1 = gdal.Open(arr[0])
                                         break
                                 varnames[-1].append(file1)
+                                varnames[-1].append(1)
         
             self.varnames = varnames
         
         #self.hydraufile = None
-        return [var[0] for var in self.varnames]
+        return [[var[0], var[3]] for var in self.varnames]
     
-    def getIkle(self):
+    #*********** Elems
+    
+    def getElemNodes(self):
+        """
+        xyz
+        3T : /
+        hec : Cells_Center_Coordinate
+        
+        return (np.array(x), np.array(y) )
+        """
+        return ( np.array([]),np.array([]) )
+    
+    
+    def getElemRawValue(self, time1):
+        """
+        3T : /
+        hec : value
+        
+        return np.array[param number][node value for param number]
+        
+        """
+        return np.array([])
+        
+    def getElemRawTimeSerie(self,arraynumelemnode,arrayparam,layerparametres = None):
+        """
+        
+        return np.array[param][numelem][value for time t]
+        
+        """
+        return np.array([])
+        
+
+    
+    
+    #*********** Face Node
+    
+    def getFacesNodes(self):
+        """
+        3T : xyz
+        hec : FacePoints_Coordinate
+        
+        return (np.array(x), np.array(y) )
+        
+        """
+        return (np.array(self.get1DVar(MESHX)) + self.translatex , np.array(self.get1DVar(MESHY)) + self.translatey )
+        
+    def getElemFaces(self):
+        """
+        It's the mesh
+        3T : ikle
+        hec : Faces_FacePoint_Indexes
+        
+        return np.array([facenodeindex linked with the elem ])
+        """
         if self.ikle == None:
             if  TYPENDVAR :
                 self.ikle = self.getNDVar(IKLE)
@@ -150,11 +328,111 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
                 self.ikle = np.reshape(temp,(-1,3)).astype(int)
         return self.ikle
         
-    def getTimes(self):
-        if self.time == None:
-            self.time = np.array( self.get1DVar(TIME) )
         
-        return self.time
+        
+    def getFacesNodesRawValues(self, time1):
+        """
+        3T : getvalues
+        
+        return np.array[param number][node value for param number]
+        
+        """
+        result=[]
+        for var in self.varnames:
+            if var[1] == 1 :
+                result.append( self.get1DVar(var[0]) )
+            elif var[1] == 2 :
+                if TYPENDVAR:
+                    result.append(np.array( var[2].ReadAsArray() )[::-1,:][time1])
+                else:
+                    result.append(  np.array(self.getNDVar(var[0])).reshape((-1,self.pointcount))[time1]       )
+                    
+                    
+                    
+        return np.array(result)
+        
+    def getFacesNodesRawTimeSeries(self,arraynumelemnode,arrayparam,layerparametres = None):
+        """
+        3T : getvalues
+        
+        return np.array[param][numelem][value for time t]
+        
+        """
+        result = []
+        for param in arrayparam:
+            if self.varnames[param][1] == 1 :
+                tt1 =  np.array( self.get1DVar(self.varnames[param][0]) )
+                tt2 = tt1[np.array(arraynumelemnode)]
+                tt3 = [[ [tt4] * (self.itertimecount +1) ] for tt4 in tt2 ]
+                result.append(np.array(tt3[0]))
+            elif self.varnames[param][1] == 2 :
+                tt1 = np.array(self.getNDVar(self.varnames[param][0]))
+                tt1 = np.transpose(tt1)
+                tt2 = tt1[np.array(arraynumelemnode)]
+                result.append(tt2[::-1,:])
+        return np.array(result)
+        
+    #*********** Face
+        
+    def getFaces(self):
+        """
+        return np.array([facenodeindex linked with the face ])
+        """
+        """
+        if self.facesindex == None :
+            try:
+                self.facesindex = np.array([(edge[0],edge[1]) for edge in self.triangulation.edges])
+                return self.facesindex
+            except Exception as e:
+                return np.array([])
+        else:
+            return self.facesindex
+        """
+        """
+        return np.array([facenodeindex linked with the face ])
+        """
+        if self.facesindex == None :
+            if False:
+                try:
+                    self.facesindex = np.array([(edge[0],edge[1]) for edge in self.triangulation.edges])
+                    return self.facesindex
+                except Exception as e:
+                    return np.array([])
+            if True:
+                ikle = self.getElemFaces()
+                faceindex=[]
+                for tri in ikle:
+                    faceindex.append([tri[0], tri[1]])
+                    faceindex.append([tri[1], tri[2]])
+                    faceindex.append([tri[2], tri[0]])
+                faceindex = np.array(faceindex)
+                self.facesindex = np.unique(faceindex.view(np.dtype((np.void, faceindex.dtype.itemsize*faceindex.shape[1])))).view(faceindex.dtype).reshape(-1, faceindex.shape[1])
+                return self.facesindex
+                
+        else:
+            return self.facesindex
+    
+    
+    def getFacesRawValues(self, time1):
+        """
+        3T : /
+        hec : velocity
+        return np.array[param number][node value for param number]
+        
+        """
+        return np.array([])
+    
+    def getFacesRawTimeSeries(self,arraynumelemnode,arrayparam,layerparametres = None):
+        """
+        3T : /
+        hec : velocity
+        
+        return np.array[param][numelem][value for time t]
+        
+        """
+        return np.array([])
+        
+        
     
     
     def getNcDumpVar(self):

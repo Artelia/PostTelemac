@@ -22,13 +22,19 @@ Impl
 """
 #unicode behaviour
 from __future__ import unicode_literals
-from PyQt4 import uic, QtGui
+#import Qt
+from qgis.PyQt import uic, QtCore, QtGui
+try:    #qt4
+    from qgis.PyQt.QtGui import QDialog
+except: #qt5
+    from qgis.PyQt.QtWidgets import QDialog
+
 import os
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__),'..', 'ui', 'about.ui'))
 
-class aboutDialog(QtGui.QDialog, FORM_CLASS):
+class aboutDialog(QDialog, FORM_CLASS):
 
     def __init__(self, parent=None):
         """Constructor."""

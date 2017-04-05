@@ -24,8 +24,9 @@ Versions :
 """
 
 
-from PyQt4 import uic, QtCore, QtGui
-from meshlayer_abstract_tool import *
+#from PyQt4 import uic, QtCore, QtGui
+from qgis.PyQt import uic, QtCore, QtGui
+from .meshlayer_abstract_tool import *
 import qgis
 import time
 import numpy as np
@@ -40,6 +41,8 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'RasterTo
 
 
 class RasterTool(AbstractMeshLayerTool,FORM_CLASS):
+
+    NAME = 'RASTERTOOL'
 
 
     def __init__(self, meshlayer,dialog):
@@ -78,7 +81,12 @@ class RasterTool(AbstractMeshLayerTool,FORM_CLASS):
     def rasterCreationFinished(self,strpath):
         if strpath != None:
             rlayer = qgis.core.QgsRasterLayer(strpath, os.path.basename(strpath).split('.')[0])
-            qgis.core.QgsMapLayerRegistry.instance().addMapLayer(rlayer)
+            
+            try:    #qgis2
+                qgis.core.QgsMapLayerRegistry.instance().addMapLayer(rlayer)
+            except: #qgis3
+                qgis.core.QgsProject.instance().addMapLayer(rlayer)
+            
             self.propertiesdialog.normalMessage(str(os.path.basename(strpath).split('.')[0]) + self.tr(" created"))
             
             
@@ -106,7 +114,9 @@ class rasterize(QtCore.QObject):
             #grid creation
             xmin,xmax,ymin,ymax = [int(rect.xMinimum()), int(rect.xMaximum()), int(rect.yMinimum()), int(rect.yMaximum()) ]
             
-            self.selafinlayer.initTriinterpolator()
+            #self.selafinlayer.initTriinterpolator()
+            success = self.selafinlayer.hydrauparser.updateInterpolator(self.selafinlayer.time_displayed)
+            
             paramindex = self.tool.comboBox_parametreschooser_2.currentIndex()
             
             if False:
@@ -123,11 +133,14 @@ class rasterize(QtCore.QObject):
             else:
                 try:
                     xi, yi = np.meshgrid(np.arange(xmin, xmax, res), np.arange(ymin, ymax, res))
-                except Exception, e:
-                    self.status.emit('Error ' + str(e))
-                    self.finished.emit(None)
 
-                zi = self.selafinlayer.triinterp[paramindex](xi, yi)
+
+                    #zi = self.selafinlayer.triinterp[paramindex](xi, yi)
+                    zi = self.selafinlayer.hydrauparser.interpolator[paramindex](xi, yi)
+                
+                except Exception as e:
+                    self.status.emit('Raster Tool - Interpolation error ' + str(e))
+                    self.finished.emit(None)
 
             nrows,ncols = np.shape(zi)
             self.status.emit('Raster creation - nrows : ' + str(nrows)+' - ncols : ' + str(ncols))
@@ -148,6 +161,7 @@ class rasterize(QtCore.QObject):
                     #output_raster = gdal.GetDriverByName('GTiff').Create(raster_ut,ncols, nrows, 1 ,gdal.GDT_Float32,['TFW=YES', 'COMPRESS=PACKBITS'])  # Open the file, see here for information about compression: http://gis.stackexchange.com/questions/1104/should-gdal-be-set-to-produce-geotiff-files-with-compression-which-algorithm-sh
                     output_raster = gdal.GetDriverByName(str('GTiff')).Create(raster_ut,ncols, nrows, 1 ,gdal.GDT_Float32,['TFW=YES'])  # Open the file, see here for information about compression: http://gis.stackexchange.com/questions/1104/should-gdal-be-set-to-produce-geotiff-files-with-compression-which-algorithm-sh
                     output_raster.SetGeoTransform(geotransform)  # Specify its coordinates
+                    #self.status.emit('raster created')
                     srs = osr.SpatialReference()                 # Establish its coordinate encoding
                     crstemp = self.selafinlayer.crs().authid()
                     if crstemp.startswith('EPSG:'):
@@ -158,8 +172,9 @@ class rasterize(QtCore.QObject):
                         
                     srs.ImportFromEPSG(crsnumber)                     # This one specifies SWEREF99 16 30
                     output_raster.SetProjection( srs.ExportToWkt() )   # Exports the coordinate system to the file
+                    #self.status.emit('Projection set')
                     output_raster.GetRasterBand(1).WriteArray(zi)   # Writes my array to the raster
-                except Exception, e:
+                except Exception as e:
                     self.status.emit('Error ' + str(e))
                     self.finished.emit(None)
                     
@@ -192,7 +207,7 @@ class rasterize(QtCore.QObject):
                     try:
                         np.savetxt(f, zi[::-1], fmt="%1.2f")
                         f.close()
-                    except Exception, e:
+                    except Exception as e:
                         self.status.emit(str(e))
                         f.close()
                         self.finished.emit(None)
@@ -203,9 +218,11 @@ class rasterize(QtCore.QObject):
                 
                 
             self.finished.emit(raster_ut)
-        except Exception, e:
-            self.status.emit(str(e))
+        
+        except Exception as e:
+            self.status.emit('Raster tool - createRaster : '+ str(e))
             self.finished.emit(None)
+        
 
     progress = QtCore.pyqtSignal(int)
     status = QtCore.pyqtSignal(str)
@@ -255,7 +272,7 @@ class InitRasterize(QtCore.QObject):
         elif self.processtype in [1,2,3]:
             raise GeoAlgorithmExecutionException(str)
         elif self.processtype == 4:
-            print str
+            print( str )
             sys.exit(0)
             
     def writeOutput(self,str1):

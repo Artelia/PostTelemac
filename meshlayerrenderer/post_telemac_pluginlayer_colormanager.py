@@ -23,10 +23,20 @@ Versions :
 #unicode behaviour
 from __future__ import unicode_literals
 
-import matplotlib.colors
+try:
+    import matplotlib.colors
+    MATPLOTLIBOK = True
+except:
+    MATPLOTLIBOK = False
 import os
-from PyQt4 import  QtGui,  QtCore 
+#from PyQt4 import  QtGui,  QtCore 
+from qgis.PyQt import QtGui,  QtCore 
 import numpy as np
+
+try:
+    from qgis.PyQt.QtGui import  QApplication
+except:
+    from qgis.PyQt.QtWidgets import  QApplication
 
 
 class PostTelemacColorManager():
@@ -40,7 +50,7 @@ class PostTelemacColorManager():
     def qgsvectorgradientcolorrampv2ToColumncolor(self,temp1,inverse):
     
     
-        if str(temp1.__class__.__name__) == 'QgsVectorGradientColorRampV2':
+        if str(temp1.__class__.__name__) == 'QgsVectorGradientColorRampV2' or str(temp1.__class__.__name__) == 'QgsGradientColorRamp' :
         
             firstcol = temp1.properties()['color1']
             lastcol=temp1.properties()['color2']
@@ -59,7 +69,7 @@ class PostTelemacColorManager():
             try:
                 otherscoltemp=temp1.properties()['stops'].split(":")
                 bool_stops = True
-            except Exception, e :
+            except Exception as e :
                 bool_stops = False
                 
             if bool_stops:
@@ -101,7 +111,7 @@ class PostTelemacColorManager():
             try:
                 otherscoltemp=temp1.properties()['stops'].split(":")
                 bool_stops = True
-            except Exception, e :
+            except Exception as e :
                 bool_stops = False
                 
             if bool_stops:
@@ -132,11 +142,11 @@ class PostTelemacColorManager():
     
     
     def arrayStepRGBAToCmap(self,temp1):
-        if str(temp1.__class__.__name__) == 'list':
+        if MATPLOTLIBOK and str(temp1.__class__.__name__) == 'list':
             #arrange it to fit dict of matplotlib:
-            """
-            http://matplotlib.org/examples/pylab_examples/custom_cmap.html
-            """
+            #
+            #http://matplotlib.org/examples/pylab_examples/custom_cmap.html
+            #
             otherscol = temp1
             dict={}
             identcolors=['red','green','blue','alpha']
@@ -152,8 +162,10 @@ class PostTelemacColorManager():
                 
             cmap = matplotlib.colors.LinearSegmentedColormap('temp', dict)
             return cmap
+
         else:
             return None
+    
             
     #*********************** layer symbology generator ******************************************************
         
@@ -177,7 +189,7 @@ class PostTelemacColorManager():
                 return lst
             else:
                 return []
-        except Exception, e:
+        except Exception as e:
             return []
             
             
@@ -202,7 +214,8 @@ class PostTelemacColorManager():
                 return lst
             else:
                 return []
-        except Exception, e:
+        except Exception as e:
+            self.meshlayer.propertiesdialog.errorMessage('colormanager - generateSymbologyItems : ' + str(e))
             return []
             
     #*********************** .Clr sparser ******************************************************
@@ -244,11 +257,11 @@ class PostTelemacColorManager():
         f.write(str(';'.join(str(lvl) for lvl in levels))+"\n")
         f.close()
         
-        
+
     def changeColorMap(self,cm,levels1):
     
         
-        if len(levels1)>=2:
+        if MATPLOTLIBOK and len(levels1)>=2:
             lvls=levels1
             tab1 = []
             max1=256
@@ -262,13 +275,15 @@ class PostTelemacColorManager():
             return (cmap_mpl, norm_mpl, color_mpl_contour)
         else :
             return None,None,None
-            
+
             
             
     def fromColorrampAndLevels(self,levels,arraycolorrampraw):
         try:
             debug = False
-        
+            
+            if debug : print( str(levels) + ' ' +str(arraycolorrampraw)  )
+            
             levelclasscount = len(levels)-2
             
             
@@ -290,15 +305,16 @@ class PostTelemacColorManager():
                 #linear interpolate color
                 
                 colortemp = np.array(arraycolorrampraw[j-1][1:5]) + (normalizedvalue - arraycolorrampraw[j-1][0])/(arraycolorrampraw[j][0] - arraycolorrampraw[j-1][0])*(np.array(arraycolorrampraw[j][1:5]) - np.array(arraycolorrampraw[j-1][1:5]) )
-                if debug : print str(normalizedvalue) + ' ' +str(arraycolorrampraw[j-1]) +' / ' + str(arraycolorrampraw[j]) + '\n' + str(colortemp)
+                if debug : print( str(normalizedvalue) + ' ' +str(arraycolorrampraw[j-1]) +' / ' + str(arraycolorrampraw[j]) + '\n' + str(colortemp) )
                 arraycolorresult.append( (colortemp/255.0).tolist() )
                 
             #last value unchanged
             arraycolorresult.append((np.array(arraycolorrampraw[-1][1:5])/255.0).tolist())
             
             return arraycolorresult
-        except Exception, e:
-            print 'error cmap ' + str(e)
+        except Exception as e:
+            #print( 'error cmap ' + str(e) )
+            self.meshlayer.propertiesdialog.errorMessage('colormanager - fromColorrampAndLevels : ' + str(e))
             return [[0.0,0.0,0.0,0.0]]*(levelclasscount+1)
         
     #****************************************************************************************************
@@ -309,4 +325,4 @@ class PostTelemacColorManager():
     
     def tr(self, message):  
         """Used for translation"""
-        return QtCore.QCoreApplication.translate('PostTelemacColorManager', message, None, QtGui.QApplication.UnicodeUTF8)
+        return QtCore.QCoreApplication.translate('PostTelemacColorManager', message, None, QApplication.UnicodeUTF8)

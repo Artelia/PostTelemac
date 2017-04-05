@@ -8,8 +8,8 @@ from qgis.utils import *
 try:
     from processing.core.GeoAlgorithmExecutionException import  GeoAlgorithmExecutionException
     from processing.tools.vector import VectorWriter
-except Exception, e :
-    print str(e)
+except Exception as e :
+    print( str(e) )
 #import numpy
 import numpy as np
 #import matplotlib
@@ -17,10 +17,15 @@ from matplotlib.path import Path
 import matplotlib.pyplot as plt
 from matplotlib import tri
 #import PyQT
+"""
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4.QtCore import SIGNAL, Qt
 from PyQt4 import QtCore, QtGui
+"""
+from qgis.PyQt.QtCore import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt import QtCore, QtGui
 
 #imports divers
 import threading
@@ -132,21 +137,28 @@ class SelafinContour2Shp(QtCore.QObject):
         self.slf_y = slf.MESHY
         self.slf_mesh = np.array(slf.IKLE3)
         """
-        self.slf_x, self.slf_y  = self.parserhydrau.getMesh()
+        #self.slf_x, self.slf_y  = self.parserhydrau.getMesh()
+        self.slf_x, self.slf_y  = self.parserhydrau.getFacesNodes()
         self.slf_x = self.slf_x + translatex
         self.slf_y = self.slf_y + translatey
         
-        self.slf_mesh  = np.array( self.parserhydrau.getIkle() )
+        #self.slf_mesh  = np.array( self.parserhydrau.getIkle() )
+        self.slf_mesh  = np.array( self.parserhydrau.getElemFaces() )
         
         
         #slf_time = [time,slf.tags["times"][time]]
         #slf_time = [time,slf.tags["times"][time]]
         slf_time = [time,self.parserhydrau.getTimes()[time]]
-            
+        
+        #print('parameter',parameter)
+        
         if parameter is not None:
             #self.slf_param = [parameter,slf.VARNAMES[parameter]]
             #self.slf_value = slf.getVALUES(slf_time[0])[self.slf_param[0]]
-            self.slf_param = [parameter,self.parserhydrau.getVarnames()[parameter]]
+            
+            #print('param',parameter, self.parserhydrau.getVarNames())
+            
+            self.slf_param = [parameter,self.parserhydrau.getVarNames()[parameter]]
             self.slf_value = slf.getVALUES(slf_time[0])[self.slf_param[0]]
         else : 
             self.slf_value = None
@@ -207,7 +219,7 @@ class SelafinContour2Shp(QtCore.QObject):
                                                             QGis.WKBMultiPolygon, 
                                                             QgsCoordinateReferenceSystem(str(self.slf_shpcrs ) ), 
                                                             "ESRI Shapefile")
-        except Exception, e:
+        except Exception as e:
             pass
         
 
@@ -309,7 +321,7 @@ class SelafinContour2Shp(QtCore.QObject):
     def writeOutput(self,str1):
         if self.processtype in [0,1,2,3]: 
             self.status.emit(str(str1))
-        elif self.processtype ==4 : print str1
+        elif self.processtype ==4 : print(str1)
         
     def raiseError(self,str1):
         self.error.emit(str(str1))
@@ -380,7 +392,8 @@ class InitSelafinMesh2Shp(QtCore.QObject):
             
         if parameter is not None:
             #parameters=[str(slf.VARNAMES[i]).strip() for i in range(len(slf.VARNAMES))]
-            parameters=[str(parserhydrau.getVarnames()[i]).strip() for i in range(len(parserhydrau.getVarnames()))]
+            #parameters=[str(parserhydrau.getVarNames()[i]).strip() for i in range(len(parserhydrau.getVarNames()))]
+            parameters=[param[0] for param in parserhydrau.getVarNames()]
             if not parameter.isdigit():
                 if parameter in parameters:
                     #self.slf_param = [parameters.index(parameter), parameter ]
@@ -431,7 +444,7 @@ class InitSelafinMesh2Shp(QtCore.QObject):
         elif self.processtype in [1,2,3]:
             raise GeoAlgorithmExecutionException(str)
         elif self.processtype == 4:
-            print str
+            print(str)
             sys.exit(0)
             
     def writeOutput(self,str1):
@@ -453,7 +466,7 @@ if __name__ == '__main__':
     app = QgsApplication([], True)
     QgsApplication.setPrefixPath(qgishome, True)
     QgsApplication.initQgis() 
-    print len(sys.argv[1:])
+    print(len(sys.argv[1:]))
     
     initclass=InitSelafinContour2Shp()
     

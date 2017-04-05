@@ -24,35 +24,43 @@ Versions :
 """
 
 
-from PyQt4 import uic, QtCore, QtGui
-from meshlayer_abstract_tool import *
-import qgis
-
-import scipy
-import processing
-import shapely
-import math
-"""
-from matplotlib import *
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+#Qt
+from qgis.PyQt import uic, QtCore, QtGui
 try:
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-except :
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-"""
-
-import matplotlib
+    from qgis.PyQt.QtGui import QVBoxLayout
+except:
+    from qgis.PyQt.QtWidgets import QVBoxLayout
+    
+try:
+    import shapely
+except:
+    pass
+import math
+import qgis
 import numpy as np
 
-from ..meshlayerlibs.mpldatacursor import datacursor
 
-from ..meshlayerparsers.libs_telemac.samplers.meshes import *
+import matplotlib
+
+
+#local import
+from .meshlayer_abstract_tool import *
+
+from ..meshlayerlibs import pyqtgraph as pg
+pg.setConfigOption('background', 'w')
+
+try:
+    from ..meshlayerparsers.libs_telemac.samplers.meshes import *
+except:
+    pass
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'FlowTool.ui'))
 
 
 
 class FlowTool(AbstractMeshLayerTool,FORM_CLASS):
+
+    NAME = 'FLOWTOOL'
 
     def __init__(self, meshlayer,dialog):
         AbstractMeshLayerTool.__init__(self,meshlayer,dialog)
@@ -66,7 +74,7 @@ class FlowTool(AbstractMeshLayerTool,FORM_CLASS):
         self.iconpath = os.path.join(os.path.dirname(__file__),'..','icons','tools','Line_Graph_48x48.png' )
         
         #self.clickTool = qgis.gui.QgsMapToolEmitPoint(self.propertiesdialog.canvas)
-        self.rubberband = None
+        #self.rubberband = None
         self.graphtempactive = False
         self.graphtempdatac = []
         self.vectorlayerflowids = None
@@ -74,60 +82,66 @@ class FlowTool(AbstractMeshLayerTool,FORM_CLASS):
         self.pointstoDraw = []
         
         
-        self.rubberbandpoint = qgis.gui.QgsRubberBand(self.meshlayer.canvas, qgis.core.QGis.Point)
+        #self.rubberbandpoint = qgis.gui.QgsRubberBand(self.meshlayer.canvas, qgis.core.QGis.Point)
         #self.rubberbandpoint.setWidth(2)
-        self.rubberbandpoint.setColor(QtGui.QColor(QtCore.Qt.red))
-        
+        #self.rubberbandpoint.setColor(QtGui.QColor(QtCore.Qt.red))
+        self.meshlayer.rubberband.createRubberbandFace()
+        self.meshlayer.rubberband.createRubberbandFaceNode()
         
         #Tools tab - temporal graph
-        self.figure1 = matplotlib.pyplot.figure(self.meshlayer.instancecount + 3)
-        font = {'family' : 'arial', 'weight' : 'normal', 'size'   : 12}
-        matplotlib.rc('font', **font)
-        self.canvas1 = matplotlib.backends.backend_qt4agg.FigureCanvasQTAgg(self.figure1)
-        self.ax = self.figure1.add_subplot(111)
-        layout = QtGui.QVBoxLayout()
-        try:
-            self.toolbar = matplotlib.backends.backend_qt4agg.NavigationToolbar2QTAgg(self.canvas1, self.frame,True)
-            layout.addWidget(self.toolbar)
-        except Exception, e:
-            pass
-        layout.addWidget(self.canvas1)
-        self.canvas1.draw()
+        self.pyqtgraphwdg = pg.PlotWidget()
+        layout = QVBoxLayout()
+        layout.addWidget(self.pyqtgraphwdg)
+        self.vb = self.pyqtgraphwdg.getViewBox()
         self.frame.setLayout(layout)
         #Signals connection
-        """
-        self.comboBox_2.currentIndexChanged.connect(self.activateMapTool)
-        self.pushButton_limni.clicked.connect(self.computeGraphTemp)
-        self.pushButton_graphtemp_pressepapier.clicked.connect(self.copygraphclipboard)
-        """
-        #self.propertiesdialog.updateparamsignal.connect(self.updateParams)
-        """
-        self.comboBox_volumemethod.currentIndexChanged.connect(self.volumemethodchanged)
-        
-        self.comboBox_3.currentIndexChanged.connect(self.activateMapTool)
-        self.pushButton_5.clicked.connect(self.copygraphclipboard)
-        self.pushButton_flow.clicked.connect(self.computeVolume)
-        """
-        
-        #self.comboBox_3.currentIndexChanged.connect(self.mapToolChooser)
         self.comboBox_3.currentIndexChanged.connect(self.activateMapTool)
         self.pushButton_4.clicked.connect(self.copygraphclipboard)
         self.pushButton_flow.clicked.connect(self.computeFlow)
         
         self.propertiesdialog.meshlayerschangedsignal.connect(self.layerChanged)
+        self.plotitem = []
+        
+        self.timeline = pg.InfiniteLine(0, pen=pg.mkPen('b',  width=2) )
+        self.pyqtgraphwdg.addItem(self.timeline)
+        
+        self.datavline = pg.InfiniteLine(0, angle=90 ,pen=pg.mkPen('r',  width=1)  )
+        self.datahline = pg.InfiniteLine(0, angle=0 , pen=pg.mkPen('r',  width=1) )
+        
+        self.appendCursor()
+        
         
 
     def onActivation(self):
         """Click on temopral graph + temporary point selection method"""            
         self.activateMapTool()
         
+        self.timeChanged(self.meshlayer.time_displayed)
+        self.meshlayer.timechanged.connect(self.timeChanged)
+        
     def onDesactivation(self):
-        if self.rubberband:
+        if False and self.rubberband:
             self.rubberband.reset(qgis.core.QGis.Point)
+        self.meshlayer.rubberband.reset()
+        try:
+            self.meshlayer.timechanged.connect(self.timeChanged)
+        except:
+            pass
             
 #*********************************************************************************************
 #***************Behaviour functions  **********************************************************
 #********************************************************************************************
+
+
+    def appendCursor(self):
+
+        self.pyqtgraphwdg.addItem(self.datavline)
+        self.pyqtgraphwdg.addItem(self.datahline)
+        
+    def removeCursor(self):
+        self.pyqtgraphwdg.removeItem(self.datavline)
+        self.pyqtgraphwdg.removeItem(self.datahline)
+
 
     def layerChanged(self):
         #enable  flow if depth, veolocuty are present in parser params 
@@ -146,18 +160,10 @@ class FlowTool(AbstractMeshLayerTool,FORM_CLASS):
             self.pushButton_flow.setEnabled(True)
             try:
                 self.deactivateTool()
-            except Exception, e:
+            except Exception as e:
                 pass
-    
-    """
-    def updateParams(self):
 
-        self.comboBox_volumeparam.clear()
-        for i in range(len(self.meshlayer.hydrauparser.parametres)):
-            temp1 = [str(self.meshlayer.hydrauparser.parametres[i][0])+" : "+str(self.meshlayer.hydrauparser.parametres[i][1])]
-            self.comboBox_volumeparam.addItems(temp1)
     """
-            
     def createRubberband(self):
         self.rubberband = qgis.gui.QgsRubberBand(self.meshlayer.canvas, qgis.core.QGis.Line)
         self.rubberband.setWidth(2)
@@ -166,7 +172,7 @@ class FlowTool(AbstractMeshLayerTool,FORM_CLASS):
     def resetRubberband(self):
         if self.rubberband:
             self.rubberband.reset(qgis.core.QGis.Point)
-            
+    """
             
 #*********************************************************************************************
 #***************Main functions  **********************************************************
@@ -178,8 +184,13 @@ class FlowTool(AbstractMeshLayerTool,FORM_CLASS):
         """
         Activated with flow graph tool
         """
+        
+        
+        
+        """
         if not self.rubberband:
             self.createRubberband()
+        """
         self.dblclktemp = None
         self.textquit0 = "Click for polyline and double click to end (right click to cancel then quit)"
         self.textquit1 = "Select the polyline in a vector layer (Right click to quit)"
@@ -196,7 +207,8 @@ class FlowTool(AbstractMeshLayerTool,FORM_CLASS):
             #init the mouse listener comportement and save the classic to restore it on quit
             self.meshlayer.canvas.setMapTool(self.maptool)
             #init the temp layer where the polyline is draw
-            self.rubberband.reset(qgis.core.QGis.Line)
+            #self.rubberband.reset(qgis.core.QGis.Line)
+            self.meshlayer.rubberband.reset()
             #init the table where is saved the poyline
             self.pointstoDraw = []
             self.pointstoCal = []
@@ -250,33 +262,38 @@ class FlowTool(AbstractMeshLayerTool,FORM_CLASS):
         self.initclass.emitprogressbar.connect(self.updateProgressBar)
         self.initclass.finished1.connect(self.workerFinished)
         
-        self.rubberbandpoint.reset(qgis.core.QGis.Point)
+        #self.rubberbandpoint.reset(qgis.core.QGis.Point)
+        
+        self.meshlayer.rubberband.reset()
+        """
         if self.comboBox_flowmethod.currentIndex()==0:
             self.rubberband.reset(qgis.core.QGis.Line)
         elif self.comboBox_flowmethod.currentIndex()==1:
             self.rubberband.reset(qgis.core.QGis.Point)
+        """
         #self.selafinlayer.propertiesdialog.textBrowser_main.append(str(ctime() + ' - Computing flow'))
         self.propertiesdialog.normalMessage('Start computing flow')
-        self.initclass.start(self.meshlayer,self,geom)
+        #self.initclass.start(self.meshlayer,self,geom)
+        self.initclass.start(self.meshlayer,self.comboBox_flowmethod.currentIndex(),geom)
+        
         self.pushButton_flow.setEnabled(False)
         
     def workerFinished(self,list1,list2,list3 = None):
         
-        ax = self.ax
+        #ax = self.ax
         if not self.checkBox.isChecked():
-            ax.cla()
-            if  len(self.graphtempdatac)>0:
-                for datacu in self.graphtempdatac:
-                    datacu.hide()
-                    datacu.disable()
-                self.graphtempdatac = []
+            if len(self.plotitem)>0:
+                for plot in self.plotitem:
+                    self.pyqtgraphwdg.removeItem(plot[0])
+            self.plotitem = []
 
         maxtemp=None
         mintemp = None
+        self.pyqtgraphwdg.showGrid(True,True,0.5)
 
-        grid2 = ax.grid(color='0.5', linestyle='-', linewidth=0.5)
         for i in range(len(list1)):
-            test2 = ax.plot(list1[i], list2[i], linewidth = 3, visible = True)
+
+            self.plotitem.append([self.pyqtgraphwdg.plot(list1[i], list2[i], pen=pg.mkPen('b',  width=2) ),list1[i], list2[i] ] )
             if not maxtemp:
                 maxtemp = max(np.array(list2[i]))
             else:
@@ -288,59 +305,100 @@ class FlowTool(AbstractMeshLayerTool,FORM_CLASS):
                 if min(np.array(list2[i]))<mintemp:
                     mintemp = min(np.array(list2[i]))
 
-        self.graphtempdatac.append(datacursor(test2,formatter="temps:{x:.0f}\nparametre:{y:.2f}".format,bbox=dict(fc='white'),arrowprops=dict(arrowstyle='->', fc='white', alpha=0.5)))
-        self.label_flow_resultmax.setText('Max : ' + str('{:,}'.format(maxtemp).replace(',', ' ') ))
-        self.label__flow_resultmin.setText('Min : ' + str('{:,}'.format(mintemp).replace(',', ' ') ))
-        self.canvas1.draw()
+        
+        if False:
+            self.label_flow_resultmax.setText('Max : ' + str('{:,}'.format(maxtemp).replace(',', ' ') ))
+            self.label__flow_resultmin.setText('Min : ' + str('{:,}'.format(mintemp).replace(',', ' ') ))
+        if True:
+            self.label_flow_resultmax.setText('Max : ' + str(round(maxtemp,3)))
+            self.label__flow_resultmin.setText('Min : ' + str(round(mintemp,3)))
+        
         self.propertiesdialog.normalMessage('Computing volume finished')
         if self.comboBox_3.currentIndex() != 0:
             self.pushButton_flow.setEnabled(True)
 
                 
         self.propertiesdialog.progressBar.reset()
+        
+        self.pyqtgraphwdg.scene().sigMouseMoved.connect(self.mouseMoved)
             
+    
+    
+    def mouseMoved(self, pos): # si connexion directe du signal "mouseMoved" : la fonction reçoit le point courant
+
+            if self.pyqtgraphwdg.sceneBoundingRect().contains(pos): # si le point est dans la zone courante
+                    mousePoint = self.vb.mapSceneToView(pos) # récupère le point souris à partir ViewBox
+                    datax = self.plotitem[-1][1]
+                    datay = self.plotitem[-1][2]
+                    nearestindex = np.argmin( abs(np.array(datax)-mousePoint.x()) )
+                    x = datax[nearestindex]
+                    y = datay[nearestindex]
+                    if True:
+                        self.datavline.setPos(x)
+                        self.datahline.setPos(y)
+                    if True:
+                        self.label_X.setText(str(round(x,3)))
+                        self.label_Y.setText(str(round(y,3)))
+                    
+                    
+    def timeChanged(self,nb):
+            
+        self.timeline.setPos(self.meshlayer.hydrauparser.getTimes()[nb])
     
     def copygraphclipboard(self):
 
-        ax = self.ax
+        #ax = self.ax
         
-        self.clipboard = QtGui.QApplication.clipboard()
+        self.clipboard = QApplication.clipboard()
         strtemp=''
         datatemp=[]
         max=0
-        for line in ax.get_lines():
-            data = line.get_xydata()
+        
+        for plotitem in self.plotitem:
+            datax = plotitem[1]
+            datay = plotitem[2]
+            data = np.array([[datax[i],datay[i]] for i in range(len(datax))   ] )
+            
             if len(data)>0:
                 datatemp.append(data)
                 maxtemp = len(data)
                 if maxtemp>max:
                     max = maxtemp
+                    
         if self.vectorlayerflowids:
             for flowid in self.vectorlayerflowids:
                 strtemp = strtemp + 'id : '+str(flowid)+ "\t"+ "\t"
-            strtemp += "\n"
+                
         for i in range(maxtemp):
             for j in range(len(datatemp)):
                 strtemp += str(datatemp[j][i][0])+ "\t" +str(datatemp[j][i][1])+"\t"
             strtemp += "\n"
+                
+
         self.clipboard.setText(strtemp)
-        
+    
+    
+    
     def addPointRubberband(self,x,y):
-        
+
         if isinstance(x,list):
             points = []
             if len(x)>1:
                 for i in range(len(x)):
                     points.append(self.meshlayer.xform.transform(qgis.core.QgsPoint(x[i],y[i])))
-                self.rubberband.addGeometry(qgis.core.QgsGeometry.fromPolygon([points]), None)
+                #self.rubberband.addGeometry(qgis.core.QgsGeometry.fromPolygon([points]), None)
+                self.meshlayer.rubberband.rubberbandface.addGeometry(qgis.core.QgsGeometry.fromPolygon([points]), None)
             else:
                 qgspoint = self.meshlayer.xform.transform(qgis.core.QgsPoint(x[0],y[0]))
-                self.rubberband.addPoint(qgspoint)
-                self.rubberbandpoint.addPoint(qgspoint)
+                #self.rubberband.addPoint(qgspoint)
+                #self.rubberbandpoint.addPoint(qgspoint)
                 #self.rubberband.addGeometry(qgis.core.QgsGeometry.fromPolygon([[qgspoint]]), None)
+                self.meshlayer.rubberband.rubberbandface.addPoint(qgspoint)
+                self.meshlayer.rubberband.rubberbandfacenode.addPoint(qgspoint)
         else:
             qgspoint = self.meshlayer.xform.transform(qgis.core.QgsPoint(x,y))
-            self.rubberband.addPoint(qgspoint)
+            #self.rubberband.addPoint(qgspoint)
+            self.meshlayer.rubberband.rubberbandface.addPoint(qgspoint)
             
     def updateProgressBar(self,float1):
         self.propertiesdialog.progressBar.setValue(int(float1))
@@ -351,17 +409,32 @@ class FlowTool(AbstractMeshLayerTool,FORM_CLASS):
 #********************************************************************************************
         
     def connectTool(self):
-        QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("moved"), self.moved)
-        QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("rightClicked"), self.rightClicked)
-        QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("leftClicked"), self.leftClicked)
-        QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("doubleClicked"), self.doubleClicked)
-        QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("deactivate"), self.deactivateTool)
+        if False:
+            QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("moved"), self.moved)
+            QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("rightClicked"), self.rightClicked)
+            QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("leftClicked"), self.leftClicked)
+            QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("doubleClicked"), self.doubleClicked)
+            QtCore.QObject.connect(self.maptool, QtCore.SIGNAL("deactivate"), self.deactivateTool)
+        self.maptool.moved.connect(self.moved)
+        self.maptool.rightClicked.connect(self.rightClicked)
+        self.maptool.leftClicked.connect(self.leftClicked)
+        self.maptool.doubleClicked.connect(self.doubleClicked)
+        self.maptool.desactivate.connect(self.deactivateTool)
 
     def deactivateTool(self):		#enable clean exit of the plugin
-        QtCore.QObject.disconnect(self.maptool, QtCore.SIGNAL("moved"), self.moved)
-        QtCore.QObject.disconnect(self.maptool, QtCore.SIGNAL("leftClicked"), self.leftClicked)
-        QtCore.QObject.disconnect(self.maptool, QtCore.SIGNAL("rightClicked"), self.rightClicked)
-        QtCore.QObject.disconnect(self.maptool, QtCore.SIGNAL("doubleClicked"), self.doubleClicked)
+        if False:
+            QtCore.QObject.disconnect(self.maptool, QtCore.SIGNAL("moved"), self.moved)
+            QtCore.QObject.disconnect(self.maptool, QtCore.SIGNAL("leftClicked"), self.leftClicked)
+            QtCore.QObject.disconnect(self.maptool, QtCore.SIGNAL("rightClicked"), self.rightClicked)
+            QtCore.QObject.disconnect(self.maptool, QtCore.SIGNAL("doubleClicked"), self.doubleClicked)
+            
+        self.maptool.moved.disconnect(self.moved)
+        self.maptool.rightClicked.disconnect(self.rightClicked)
+        self.maptool.leftClicked.disconnect(self.leftClicked)
+        self.maptool.doubleClicked.disconnect(self.doubleClicked)
+        self.maptool.desactivate.disconnect(self.deactivateTool)
+        
+        
 
     def moved(self,position):			#draw the polyline on the temp layer (rubberband)
         if self.selectionmethod == 0:
@@ -369,10 +442,13 @@ class FlowTool(AbstractMeshLayerTool,FORM_CLASS):
                 #Get mouse coords
                 mapPos = self.meshlayer.canvas.getCoordinateTransform().toMapCoordinates(position["x"],position["y"])
                 #Draw on temp layer
-                self.rubberband.reset(qgis.core.QGis.Line)
+                #self.rubberband.reset(qgis.core.QGis.Line)
+                self.meshlayer.rubberband.reset()
                 for i in range(0,len(self.pointstoDraw)):
-                    self.rubberband.addPoint(qgis.core.QgsPoint(self.pointstoDraw[i][0],self.pointstoDraw[i][1]))
-                self.rubberband.addPoint(qgis.core.QgsPoint(mapPos.x(),mapPos.y()))
+                    #self.rubberband.addPoint(qgis.core.QgsPoint(self.pointstoDraw[i][0],self.pointstoDraw[i][1]))
+                    self.meshlayer.rubberband.rubberbandface.addPoint(qgis.core.QgsPoint(self.pointstoDraw[i][0],self.pointstoDraw[i][1]))
+                #self.rubberband.addPoint(qgis.core.QgsPoint(mapPos.x(),mapPos.y()))
+                self.meshlayer.rubberband.rubberbandface.addPoint(qgis.core.QgsPoint(mapPos.x(),mapPos.y()))
         """
         if self.selectionmethod == 1:
             return
@@ -386,7 +462,8 @@ class FlowTool(AbstractMeshLayerTool,FORM_CLASS):
             if len(self.pointstoDraw) > 0:
                 self.pointstoDraw = []
                 self.pointstoCal = []
-                self.rubberband.reset(qgis.core.QGis.Line)
+                #self.rubberband.reset(qgis.core.QGis.Line)
+                self.meshlayer.rubberband.reset()
             else:
                 self.cleaning()
         """
@@ -410,7 +487,8 @@ class FlowTool(AbstractMeshLayerTool,FORM_CLASS):
                 #return
             else :
                 if len(self.pointstoDraw) == 0:
-                    self.rubberband.reset(qgis.core.QGis.Line)
+                    #self.rubberband.reset(qgis.core.QGis.Line)
+                    self.meshlayer.rubberband.reset()
                     #self.rubberbandpoint.reset(qgis.core.QGis.Point)
                 self.pointstoDraw += newPoints
         """
@@ -465,17 +543,20 @@ class FlowMapTool(qgis.gui.QgsMapTool):
         self.button = button
 
     def canvasMoveEvent(self,event):
-        self.emit( QtCore.SIGNAL("moved"), {'x': event.pos().x(), 'y': event.pos().y()} )
-
+        #self.emit( QtCore.SIGNAL("moved"), {'x': event.pos().x(), 'y': event.pos().y()} )
+        self.moved.emit( {'x': event.pos().x(), 'y': event.pos().y()} )
 
     def canvasReleaseEvent(self,event):
         if event.button() == QtCore.Qt.RightButton:
-            self.emit( QtCore.SIGNAL("rightClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+            #self.emit( QtCore.SIGNAL("rightClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+            self.rightClicked.emit( {'x': event.pos().x(), 'y': event.pos().y()} )
         else:
-            self.emit( QtCore.SIGNAL("leftClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+            #self.emit( QtCore.SIGNAL("leftClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+            self.leftClicked.emit( {'x': event.pos().x(), 'y': event.pos().y()} )
 
     def canvasDoubleClickEvent(self,event):
-        self.emit( QtCore.SIGNAL("doubleClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+        #self.emit( QtCore.SIGNAL("doubleClicked"), {'x': event.pos().x(), 'y': event.pos().y()} )
+        self.doubleClicked.emit( {'x': event.pos().x(), 'y': event.pos().y()} )
 
     def activate(self):
         qgis.gui.QgsMapTool.activate(self)
@@ -488,7 +569,8 @@ class FlowMapTool(qgis.gui.QgsMapTool):
 
 
     def deactivate(self):
-        self.emit( QtCore.SIGNAL("deactivate") )
+        #self.emit( QtCore.SIGNAL("deactivate") )
+        self.desactivate.emit()
         #self.button.setCheckable(False)
         #self.button.setEnabled(True)
         #print  'deactivate'
@@ -497,6 +579,12 @@ class FlowMapTool(qgis.gui.QgsMapTool):
 
     def setCursor(self,cursor):
         self.cursor = QtGui.QCursor(cursor)
+        
+    moved = QtCore.pyqtSignal(dict)
+    rightClicked = QtCore.pyqtSignal(dict)
+    leftClicked = QtCore.pyqtSignal(dict)
+    doubleClicked = QtCore.pyqtSignal(dict)
+    desactivate = QtCore.pyqtSignal()
         
         
 #*********************************************************************************************
@@ -508,14 +596,15 @@ class FlowMapTool(qgis.gui.QgsMapTool):
 class computeFlow(QtCore.QObject):
 
     def __init__(self,                
-                selafin,tool,line):
+                selafin,method,line):
         
         QtCore.QObject.__init__(self)
         self.selafinlayer = selafin
         self.polyline = line
         #self.fig = matplotlib.pyplot.figure(0)
         self.fig = matplotlib.pyplot.figure(self.selafinlayer.instancecount +4)
-        self.tool = tool
+        #self.tool = tool
+        self.method = method
         
         
     def computeFlowMain(self):
@@ -523,13 +612,21 @@ class computeFlow(QtCore.QObject):
         Main method
         
         """
+        
+        DEBUG = False
+        
         list1 = []
         list2 = []
         list3 = []
-        METHOD = self.tool.comboBox_flowmethod.currentIndex()
+        #METHOD = self.tool.comboBox_flowmethod.currentIndex()
+        METHOD = self.method
+        
+        if DEBUG : self.status.emit('polyline raw '+str(self.polyline))
+        
         try:
             for lineelement in self.polyline:
                 temp3 = self.getLines(lineelement,METHOD)
+                self.status.emit('temp3 : ' + str(temp3))
                 result=[]
                 parameterh = self.selafinlayer.hydrauparser.parametreh
                 parameteruv = self.selafinlayer.hydrauparser.parametrevx
@@ -539,12 +636,12 @@ class computeFlow(QtCore.QObject):
                 if METHOD == 0 :
                     if self.selafinlayer.hydrauparser.networkxgraph == None:
                         self.selafinlayer.hydrauparser.createNetworkxGraph()
-                    G = self.selafinlayer.hydrauparser.networkxgraph
+                    #G = self.selafinlayer.hydrauparser.networkxgraph
                     
-                
+                """
                 if isinstance(temp3,shapely.geometry.linestring.LineString):
                     temp3 = [temp3]
-                
+                """
 
                     
                 if METHOD == 0:         #Method0 : shortest path and vector computation
@@ -552,29 +649,34 @@ class computeFlow(QtCore.QObject):
                     shortests = []       #list of shortests path
                     
                     for line in temp3:
-                        linetemp = np.array([[point[0],point[1]] for point in line.coords ])
+                        #linetemp = np.array([[point[0],point[1]] for point in line.coords ])
+                        linetemp = line
                         resulttemp=[]
+                        self.status.emit('line : ' + str(linetemp))
                 
                         #find shortests path
                         for points in range(len(linetemp)-1):
                             try:
-                                triangle = self.selafinlayer.hydrauparser.trifind.__call__(linetemp[points][0],linetemp[points][1])
+                                #triangle = self.selafinlayer.hydrauparser.trifind.__call__(linetemp[points][0],linetemp[points][1])
+                                triangle = self.selafinlayer.hydrauparser.triangulation.get_trifinder().__call__(linetemp[points][0],linetemp[points][1])
                                 if triangle != -1:
                                     enumpointdebut = self.getNearestPointEdge(linetemp[points][0],linetemp[points][1],triangle)
-                                triangle = self.selafinlayer.hydrauparser.trifind.__call__(linetemp[points + 1][0],linetemp[points + 1][1])
+                                #triangle = self.selafinlayer.hydrauparser.trifind.__call__(linetemp[points + 1][0],linetemp[points + 1][1])
+                                triangle = self.selafinlayer.hydrauparser.triangulation.get_trifinder().__call__(linetemp[points + 1][0],linetemp[points + 1][1])
                                 if triangle != -1:
                                     enumpointfin = self.getNearestPointEdge(linetemp[points + 1][0],linetemp[points + 1][1],triangle)
 
                                 #shortest = nx.shortest_path(G, enumpointdebut, enumpointfin)
+                                #self.status.emit('enumpointdebut : ' + str(enumpointdebut)+ ' ' + 'enumpointfin : ' + str(enumpointfin))
                                 shortests.append( self.selafinlayer.hydrauparser.getShortestPath(enumpointdebut, enumpointfin) )
                                 
-                            except Exception , e :
+                            except Exception as e :
                                 self.status.emit('method 0 : ' + str(e))
                         
                     totalpointsonshortest = len(sum(shortests,[]))
                     compteur1 = 0
                     
-                    
+                    self.status.emit('shortests : ' + str(shortests))
                     
                     for shortest in shortests:
                         flow = None
@@ -586,28 +688,30 @@ class computeFlow(QtCore.QObject):
                                 if True:
                                     if i==0:    #init
                                         try:
-                                            h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.hydrauparser.parametres)[0][0])
-                                        except Exception , e :
+                                            h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem ],[parameterh],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                        except Exception as e :
                                             self.status.emit('method 011 : ' + str(e))
-                                        uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                        uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem ],[parameteruv],self.selafinlayer.hydrauparser.parametres)[0][0])
                                         uv2 = np.array([[value,0.0] for value in uv2])
-                                        vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                        vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem ],[parametervv],self.selafinlayer.hydrauparser.parametres)[0][0])
                                         vv2 = np.array([[0.0,value] for value in vv2])
                                         v2vect = uv2 + vv2
                                         #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
-                                        xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
+                                        #xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
+                                        xy2 = list( self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([elem])[0] )
                                     else:
                                         h1 = h2
                                         v1vect = v2vect
                                         xy1 = xy2
-                                        h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameterh],self.selafinlayer.hydrauparser.parametres)[0][0])
-                                        uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parameteruv],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                        h2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem ],[parameterh],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                        uv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem ],[parameteruv],self.selafinlayer.hydrauparser.parametres)[0][0])
                                         uv2 = np.array([[value,0.0] for value in uv2])
-                                        vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem + 1],[parametervv],self.selafinlayer.hydrauparser.parametres)[0][0])
+                                        vv2 = np.array(self.selafinlayer.hydrauparser.getTimeSerie([elem ],[parametervv],self.selafinlayer.hydrauparser.parametres)[0][0])
                                         vv2 = np.array([[0.0,value] for value in vv2])
                                         v2vect = uv2 + vv2
                                         #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
-                                        xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
+                                        #xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
+                                        xy2 = list( self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([elem])[0] )
                                         if flow != None:
                                             flow = flow + self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
                                         else:
@@ -619,7 +723,8 @@ class computeFlow(QtCore.QObject):
                                             uv2 = np.array([[value,0.0] for value in results[1,i]])
                                             vv2 = np.array([[0.0,value] for value in results[2,i]])
                                             v2vect = uv2 + vv2
-                                            xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
+                                            #xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
+                                            xy2 = list( self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([elem])[0] )
                                         else:
                                             h1 = h2
                                             v1vect = v2vect
@@ -628,20 +733,22 @@ class computeFlow(QtCore.QObject):
                                             uv2 = np.array([[value,0.0] for value in results[1,i]])
                                             vv2 = np.array([[0.0,value] for value in results[2,i]])
                                             v2vect = uv2 + vv2
-                                            xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
+                                            #xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
+                                            xy2 = list( self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([elem])[0] )
                                             if flow != None:
                                                 flow = flow + self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
                                             else:
                                                 flow = self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
-                                    except Exception , e :
+                                    except Exception as e :
                                         self.status.emit('method 011 : ' + str(e))
                                     
                                     
                                     
                                     
-                            except Exception , e :
+                            except Exception as e :
                                 self.status.emit('method 01 : ' + str(e))
-                            x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0]
+                            #x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0]
+                            x,y  =  self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([elem])[0] 
                             self.emitpoint.emit(x,y)
 
                             #result.append([line,flow])
@@ -671,9 +778,11 @@ class computeFlow(QtCore.QObject):
                                 self.emitpoint.emit(self.selafinlayer.slf.MESHX[temp_edges[i][0]],self.selafinlayer.slf.MESHY[temp_edges[i][0]])
                                 self.emitpoint.emit(self.selafinlayer.slf.MESHX[temp_edges[i][1]],self.selafinlayer.slf.MESHY[temp_edges[i][1]])
                                 """
-                                x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([temp_edges[i][0]])[0] 
+                                #x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([temp_edges[i][0]])[0] 
+                                x,y = self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([temp_edges[i][0]])[0] 
                                 self.emitpoint.emit( x,y )
-                                x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([temp_edges[i][1]])[0]
+                                #x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([temp_edges[i][1]])[0]
+                                x,y = self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([temp_edges[i][1]])[0] 
                                 self.emitpoint.emit( x,y )
                                 
                             else:
@@ -699,9 +808,11 @@ class computeFlow(QtCore.QObject):
                                     self.emitpoint.emit(self.selafinlayer.slf.MESHX[temp_edges[i][0]],self.selafinlayer.slf.MESHY[temp_edges[i][0]])
                                     self.emitpoint.emit(self.selafinlayer.slf.MESHX[temp_edges[i][1]],self.selafinlayer.slf.MESHY[temp_edges[i][1]])
                                     """
-                                    x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([temp_edges[i][0]])[0] 
+                                    #x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([temp_edges[i][0]])[0] 
+                                    x,y = self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([temp_edges[i][0]])[0] 
                                     self.emitpoint.emit( x,y )
-                                    x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([temp_edges[i][1]])[0]
+                                    #x,y = self.selafinlayer.hydrauparser.getXYFromNumPoint([temp_edges[i][1]])[0]
+                                    x,y = self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([temp_edges[i][1]])[0]
                                     self.emitpoint.emit( x,y )
                                     
                         result.append([line,flow])
@@ -722,7 +833,7 @@ class computeFlow(QtCore.QObject):
                 list2.append( flow.tolist() )
                 list3.append( result )
                 
-        except Exception, e :
+        except Exception as e :
             self.error.emit('flow calculation error : ' + str(e))
                 
                 
@@ -737,6 +848,8 @@ class computeFlow(QtCore.QObject):
     emitprogressbar = QtCore.pyqtSignal(float)
     
     
+
+    
          
     def getLines(self,polyline1,METHOD):
         """
@@ -744,13 +857,129 @@ class computeFlow(QtCore.QObject):
         Method0 : line slighlty inside the area of modelisation
         Method1 : line slighlty outside
         """
+        DEBUG = False
+        
+        
+        templine2 = qgis.core.QgsGeometry.fromPolyline([ qgis.core.QgsPoint(i[0],i[1])  for i in polyline1[:-1] ])
+        
+        if DEBUG : self.status.emit('templine2' +str(templine2.asPolyline()))
+        
+        temp3_in = []
+        temp3_out = []
+        
+        meshx,meshy = self.selafinlayer.hydrauparser.getFacesNodes()
+        ikle = self.selafinlayer.hydrauparser.getElemFaces()
+        triplotcontourf = self.fig.gca().tricontourf(meshx,meshy,ikle,self.selafinlayer.value,[-1.0E20,1.0E20])
+        
+        if METHOD==0 : buffervalue = 0.05
+        elif METHOD == 1 : buffervalue = -0.05
+        
+        for collection in triplotcontourf.collections:
+            for path in collection.get_paths():
+                for polygon in path.to_polygons(): 
+                    polygons2 = qgis.core.QgsGeometry.fromPolygon([[ qgis.core.QgsPoint(i[0],i[1])  for i in polygon]])
+                    #if DEBUG : self.status.emit('polygons2' +str(polygons2.asPolygon()))
+                    
+                    if templine2.intersects(polygons2):
+                        if  ( np.cross(polygon, np.roll(polygon, -1, axis=0)).sum() / 2.0 >0 ):     #outer polygon
+                            inter = templine2.intersection(polygons2.buffer(-buffervalue,12))
+                            if DEBUG : self.status.emit('inter' +str(inter.asMultiPolyline()))
+                            if DEBUG : self.status.emit('inter' +str(inter.asPolyline()))
+                            if DEBUG : self.status.emit('inter' +str(type( inter.asPolyline())) )
+                            if DEBUG : self.status.emit('inter' +str(inter.type()))
+                            if inter.type() == 1 :
+                                if len(inter.asMultiPolyline()) == 0:
+                                    temp3_out.append(inter)
+                                else:
+                                    for line3 in  inter.asMultiPolyline():      
+                                        temp3_out.append(qgis.core.QgsGeometry.fromPolyline([ qgis.core.QgsPoint(i[0],i[1])  for i in line3 ]))
+
+                        else:                                                                        #inner polygon
+                            inter = templine2.intersection(polygons2.buffer(buffervalue,12))
+                            if DEBUG : self.status.emit('inter' +str(inter.asMultiPolyline()))
+                            if DEBUG : self.status.emit('inter' +str(inter.asPolyline()))
+                            if DEBUG : self.status.emit('inter' +str(inter.type()))
+                            if inter.type() == 1 :
+                                if len(inter.asMultiPolyline()) == 0:
+                                    temp3_out.append(inter)
+                                else:
+                                    for line3 in  inter.asMultiPolyline():      
+                                        temp3_out.append(qgis.core.QgsGeometry.fromPolyline([ qgis.core.QgsPoint(i[0],i[1])  for i in line3 ]))
+                                
+
+            
+        temp3out_line = temp3_out
+        temp3in_line = temp3_in
+        
+        
+        if DEBUG : self.status.emit('temp3out_line' +str([line.asPolyline() for line in temp3out_line]))
+        if DEBUG : self.status.emit('temp3in_line' +str([line.asPolyline() for line in temp3in_line]))
+        
+        linefinal2 = []    
+        
+        
+        for lineout in temp3out_line:
+            templine = lineout
+            for linein in temp3in_line:
+                linein  = linein
+                if lineout.length() > linein.length() and lineout.intersects(linein.buffer(0.01,12)):
+                    templine = templine.difference(linein.buffer(0.02,12))
+            if templine.type() == 1 :
+                if len(templine.asMultiPolyline()) == 0:
+                    linefinal2.append(templine)
+                else:
+                    for line3 in  templine.asMultiPolyline():      
+                        linefinal2.append(qgis.core.QgsGeometry.fromPolyline([ qgis.core.QgsPoint(i[0],i[1])  for i in line3 ]))
+
+                        
+        if DEBUG : self.status.emit('linefinal2' +str([line.asPolyline() for line in linefinal2]))
+
+        #to keep line direction qgis
+        geomtemp=[ [ qgis.core.QgsPoint(i[0],i[1]) for i in line.asPolyline() ] for line in linefinal2    ]
+        
+        multitemp = qgis.core.QgsGeometry.fromMultiPolyline(geomtemp)
+        multidef2 =  templine2.intersection(multitemp.buffer(0.01,12))
+        
+        if DEBUG : self.status.emit('multidef2' +str(multidef2))
+        
+        
+        #qgis
+        if len(multidef2.asMultiPolyline()) == 0:
+            result = np.array([multidef2.asPolyline()])
+        else:
+            result = np.array(multidef2.asMultiPolyline())
+        
+
+        return result
+    
+    
+    
+    
+         
+    def getLines2(self,polyline1,METHOD):
+        """
+        Line input traitment in order to be only in the area of the modelisation
+        Method0 : line slighlty inside the area of modelisation
+        Method1 : line slighlty outside
+        """
+        
+        DEBUG = True
+        
+        if DEBUG : self.status.emit('getLines - polylin : ' + str(polyline1))
         templine1 = shapely.geometry.linestring.LineString([(i[0],i[1]) for i in polyline1[:-1]])
+        
+        templine2 = qgis.core.QgsGeometry.fromPolyline([ qgis.core.QgsPoint(i[0],i[1])  for i in polyline1[:-1] ])
+        
         temp2_in = []
         temp2_out = []
-        meshx,meshy = self.selafinlayer.hydrauparser.getMesh()
-        ikle = self.selafinlayer.hydrauparser.getIkle()
+        
+        temp3_in = []
+        temp3_out = []
+        
+        meshx,meshy = self.selafinlayer.hydrauparser.getFacesNodes()
+        ikle = self.selafinlayer.hydrauparser.getElemFaces()
         triplotcontourf = self.fig.gca().tricontourf(meshx,meshy,ikle,self.selafinlayer.value,[-1.0E20,1.0E20])
-
+        
         if METHOD==0 : buffervalue = 0.05
         elif METHOD == 1 : buffervalue = -0.05
         
@@ -759,6 +988,10 @@ class computeFlow(QtCore.QObject):
                 for polygon in path.to_polygons(): 
                     tuplepoly = [(i[0],i[1]) for i in polygon]
                     polygons = shapely.geometry.polygon.Polygon(tuplepoly)
+                    polygons2 = qgis.core.QgsGeometry.fromPolygon([[ qgis.core.QgsPoint(i[0],i[1])  for i in polygon]])
+                    
+                    #shapely
+                    
                     if templine1.intersects(polygons):
                         if  ( np.cross(polygon, np.roll(polygon, -1, axis=0)).sum() / 2.0 >0 ):     #outer polygon
                             inter = templine1.intersection(polygons.buffer(-buffervalue))
@@ -774,11 +1007,55 @@ class computeFlow(QtCore.QObject):
                             else:
                                 for line3 in   inter:      
                                     temp2_in.append(line3)
+                                    
+                    #qgis
+                    
+                    if templine2.intersects(polygons2):
+                        if  ( np.cross(polygon, np.roll(polygon, -1, axis=0)).sum() / 2.0 >0 ):     #outer polygon
+                            inter = templine2.intersection(polygons2.buffer(-buffervalue,12))
+                            if True:
+                                if inter.type() == 1 :
+                                    if len(inter.asMultiPolyline()) == 1:
+                                        temp3_out.append(inter)
+                                    else:
+                                        for line3 in   inter.asMultiPolyline():      
+                                            temp3_out.append(line3)
+                        else:                                                                        #inner polygon
+                            inter = templine2.intersection(polygons2.buffer(buffervalue,12))
+                            if True:
+                                if inter.type() == 1 :
+                                    if len(inter.asMultiPolyline()) == 1:
+                                        temp3_in.append(inter)
+                                    else:
+                                        for line3 in   inter.asMultiPolyline():      
+                                            temp3_in.append(line3)
+                                    
+                                    
+                                    
+                                    
         
         temp2out_line = shapely.geometry.multilinestring.MultiLineString(temp2_out)
         temp2in_line = shapely.geometry.multilinestring.MultiLineString(temp2_in)
 
-        linefinal = []        
+
+        temp3out_line = [qgis.core.QgsGeometry.fromMultiPolyline([[ qgis.core.QgsPoint(i[0],i[1])  for i in line ]]) for line in temp3_out ]
+        temp3in_line = [qgis.core.QgsGeometry.fromMultiPolyline([[ qgis.core.QgsPoint(i[0],i[1])  for i in line ]]) for line in temp3_in ]
+        
+        if False:
+            self.status.emit('temp2out_line : ' + str(temp2out_line))
+            self.status.emit('temp3out_line : ' + str([line.asMultiPolyline() for line in temp3out_line]))
+            
+            self.status.emit('temp2in_line : ' + str(temp2in_line))
+            self.status.emit('temp3in_line : ' + str([line.asMultiPolyline() for line in temp3in_line]))
+            
+            
+        
+
+        linefinal = []    
+        linefinal2 = []    
+        
+        #shapely
+        
         for lineout in temp2out_line:
             templine = lineout
             for linein in temp2in_line:
@@ -789,12 +1066,65 @@ class computeFlow(QtCore.QObject):
             else:
                 for line3 in   templine:      
                     linefinal.append(line3)
+                    
+        #qgis
+        
+        for lineout in temp3out_line:
+            templine = lineout
+            for linein in temp3in_line:
+                linein  = linein
+                if lineout.length() > linein.length() and lineout.intersects(linein.buffer(0.01,12)):
+                    templine = templine.difference(linein.buffer(0.02,12))
+            if templine.type() == 1 :
+                if len(templine.asMultiPolyline()) == 1:
+                    linefinal2.append(templine)
+                else:
+                    for line3 in   templine.asMultiPolyline():      
+                        linefinal2.append(line3)
+                    
+        
+        if True:
+            self.status.emit('linefinal : ' + str(linefinal))
+            self.status.emit('linefinal2 : ' + str([line.asMultiPolyline() for line in linefinal2]))
 
-        #to keep line direction
+        #to keep line direction shapely
         multitemp = shapely.geometry.multilinestring.MultiLineString(linefinal)
         multidef =  templine1.intersection(multitemp.buffer(0.01))
+        
+        #to keep line direction qgis
+        geomtemp=[]
+        for multiline in linefinal2:
+            for line    in multiline.asMultiPolyline():
+                geomtemp.append([ qgis.core.QgsPoint(i[0],i[1]) for i in line ])
+        
+        multitemp = qgis.core.QgsGeometry.fromMultiPolyline(geomtemp)
+        multidef2 =  templine2.intersection(multitemp.buffer(0.01,12))
+        
+        
+        self.status.emit(str(multidef))
+        self.status.emit(str(multidef2.asMultiPolyline()))
+        
+        
+        #shapely
+        
+        if isinstance(multidef,shapely.geometry.linestring.LineString):
+            multidef = [multidef]
+        
+        result=[]
+        for line in multidef:
+            result.append(np.array([[point[0],point[1]] for point in line.coords ]))
+        result = np.array(result)
+        
+        
+        #qgis
+        result2 = np.array(multidef2.asMultiPolyline())
+        
+        
+        self.status.emit('result '+str(result))
+        self.status.emit('result2 '+str(result2))
+        
 
-        return multidef
+        return result
         
     def getCalcPointsSlice(self,line):
         linetemp = np.array([[point[0],point[1]] for point in line.coords ])
@@ -806,8 +1136,8 @@ class computeFlow(QtCore.QObject):
             resulttemp=[]
             lintemp1=np.array([[linetemp[i][0],linetemp[i][1]],[linetemp[i+1][0],linetemp[i+1][1]]])
             lintemp1shapely=shapely.geometry.linestring.LineString([(linetemp[i][0],linetemp[i][1]),(linetemp[i+1][0],linetemp[i+1][1])])
-            meshx,meshy = self.selafinlayer.hydrauparser.getMesh()
-            ikle = self.selafinlayer.hydrauparser.getIkle()
+            meshx,meshy = self.selafinlayer.hydrauparser.getFacesNodes()
+            ikle = self.selafinlayer.hydrauparser.getElemFaces()
             
             quoi = sliceMesh(lintemp1,np.asarray(ikle),np.asarray(meshx),np.asarray(meshy))
             """
@@ -824,8 +1154,13 @@ class computeFlow(QtCore.QObject):
             
             for i, edgestemp in enumerate(quoi[0][1]):  #slicemesh - quoi[0][1] is list of egdes intersected by line
                 #line4 : line of edge
+                """
                 x1,y1 = self.selafinlayer.hydrauparser.getXYFromNumPoint([edgestemp[0]])[0]
                 x2,y2 = self.selafinlayer.hydrauparser.getXYFromNumPoint([edgestemp[1]])[0]
+                """
+                x1,y1 = self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([edgestemp[0]])[0]
+                x2,y2 = self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([edgestemp[1]])[0]
+                
                 #line4 = LineString([(self.selafinlayer.slf.MESHX[edgestemp[0]],self.selafinlayer.slf.MESHY[edgestemp[0]]),(self.selafinlayer.slf.MESHX[edgestemp[1]],self.selafinlayer.slf.MESHY[edgestemp[1]])])
                 line4 = shapely.geometry.linestring.LineString([(x1,y1),(x2,y2)])
                 if line4.crosses(lintemp1shapely):
@@ -916,8 +1251,12 @@ class computeFlow(QtCore.QObject):
         e1 = np.array([self.selafinlayer.slf.MESHX[edges[0]],self.selafinlayer.slf.MESHY[edges[0]]])
         e2 = np.array([self.selafinlayer.slf.MESHX[edges[1]],self.selafinlayer.slf.MESHY[edges[1]]])
         """
+        """
         e1 = np.array(self.selafinlayer.hydrauparser.getXYFromNumPoint([edges[0]]))
         e2 = np.array(self.selafinlayer.hydrauparser.getXYFromNumPoint([edges[1]]))
+        """
+        e1 = np.array(self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([edges[0]]))
+        e2 = np.array(self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([edges[1]]))
         
         rap=np.linalg.norm(xytemp-e1)/np.linalg.norm(e2-e1)
         return (1.0-rap)*h11 + (rap)*h12
@@ -926,8 +1265,8 @@ class computeFlow(QtCore.QObject):
     def getNearest(self,x,y,triangle):
         numfinal=None
         distfinal = None
-        meshx, meshy = self.selafinlayer.hydrauparser.getMesh()
-        ikle = self.selafinlayer.hydrauparser.getIkle()
+        meshx, meshy = self.selafinlayer.hydrauparser.getFacesNodes()
+        ikle = self.selafinlayer.hydrauparser.getElemFaces()
         for num in np.array(ikle)[triangle]:
             dist = math.pow(math.pow(float(meshx[num])-float(x),2)+math.pow(float(meshy[num])-float(y),2),0.5)
             if distfinal:
@@ -944,8 +1283,8 @@ class computeFlow(QtCore.QObject):
         trianglepoints=[]
         point = np.array([x,y])
         distedge = None
-        meshx, meshy = self.selafinlayer.hydrauparser.getMesh()
-        ikle = self.selafinlayer.hydrauparser.getIkle()
+        meshx, meshy = self.selafinlayer.hydrauparser.getFacesNodes()
+        ikle = self.selafinlayer.hydrauparser.getElemFaces()
         for num in np.array(ikle)[triangle]:
             trianglepoints.append(np.array([np.array([meshx[num],meshy[num]]),num]))
         num1 = np.array(ikle)[triangle][0]
@@ -995,10 +1334,10 @@ class InitComputeFlow(QtCore.QObject):
         self.processtype = 0
 
     def start(self,                 
-                 selafin,tool,
+                 selafin,method,
                  line):
         #Launch worker
-        self.worker = computeFlow(selafin,tool,line)
+        self.worker = computeFlow(selafin,method,line)
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.computeFlowMain)
         self.worker.status.connect(self.writeOutput)
@@ -1019,7 +1358,7 @@ class InitComputeFlow(QtCore.QObject):
         elif self.processtype in [1,2,3]:
             raise GeoAlgorithmExecutionException(str)
         elif self.processtype == 4:
-            print str
+            print(str)
             sys.exit(0)
             
     def writeOutput(self,str1):

@@ -24,8 +24,9 @@ Versions :
 """
 
 
-from PyQt4 import uic, QtCore, QtGui
-from meshlayer_abstract_tool import *
+#from PyQt4 import uic, QtCore, QtGui
+from qgis.PyQt import uic, QtCore, QtGui
+from .meshlayer_abstract_tool import *
 import qgis
 
 import numpy as np
@@ -38,6 +39,8 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ExtractM
 
 
 class ExtractMaxTool(AbstractMeshLayerTool,FORM_CLASS):
+
+    NAME = 'EXTRACTMACTOOL'
 
 
     def __init__(self, meshlayer,dialog):
@@ -67,7 +70,10 @@ class ExtractMaxTool(AbstractMeshLayerTool,FORM_CLASS):
     def calculMaxRes(self):
 
         self.initclass=initRunGetMax()
-        self.initclass.status.connect(self.propertiesdialog.textBrowser_2.append)
+        #self.initclass.status.connect(self.propertiesdialog.textBrowser_2.append)
+        self.initclass.status.connect(self.propertiesdialog.logMessage)
+        
+        
         self.initclass.finished1.connect(self.chargerSelafin)
         self.initclass.start(self.meshlayer,
                              self,
@@ -85,7 +91,7 @@ class ExtractMaxTool(AbstractMeshLayerTool,FORM_CLASS):
             slf = qgis.core.QgsPluginLayerRegistry.instance().pluginLayerType('selafin_viewer').createLayer()
             #slf.setRealCrs(iface.mapCanvas().mapSettings().destinationCrs()) 
             slf.setRealCrs(self.meshlayer.crs())
-            slf.load_selafin(path)
+            slf.load_selafin(path,'TELEMAC')
             qgis.core.QgsMapLayerRegistry.instance().addMapLayer(slf)
 
             
@@ -139,8 +145,11 @@ class runGetMax(QtCore.QObject):
 
             ## On ajoute les deux nouvelles variables, pour cela il faut modifier la variable
             ## nbvar et nomvar (le nom de la variable ne doit pas depasser 72 caracteres
+            print('params',self.selafinlayer.hydrauparser.parametres)
+            
             for param in self.selafinlayer.hydrauparser.parametres:
-                if param[2]:        #for virtual parameter
+                #if param[2]:        #for virtual parameter
+                if param[4]:        #for virtual parameter
                     resout.nbvar += 1
                     resout.nomvar.append(str(param[1]))
             if self.intensite:
@@ -155,7 +164,9 @@ class runGetMax(QtCore.QObject):
             if self.duree > -1  and self.selafinlayer.hydrauparser.parametreh != None :
                 resout.nbvar += 1
                 resout.nomvar.append('duree')
-
+                
+            print('resout.nomvar',resout.nomvar)
+            
             ## Ecriture de l'entete dans le fichier de sortie
             resout.write_header()
 
@@ -202,11 +213,13 @@ class runGetMax(QtCore.QObject):
                     #var_max = resin.read(time)
                     var_max = self.selafinlayer.hydrauparser.getValues(num_time)
                     if self.submersion > -1 and self.selafinlayer.hydrauparser.parametreh != None:
-                        var_sub = np.array([np.nan]*self.selafinlayer.hydrauparser.pointcount)
+                        #var_sub = np.array([np.nan]*self.selafinlayer.hydrauparser.pointcount)
+                        var_sub = np.array([np.nan]*self.selafinlayer.hydrauparser.facesnodescount)
                         pos_sub = np.where(var_max[self.selafinlayer.hydrauparser.parametreh] >= 0.05)[0]  #la ou h est sup a 0.05 m
                         var_sub[pos_sub] = timeslf
                     if self.duree > -1 and self.selafinlayer.hydrauparser.parametreh != None:
-                        var_dur = np.array([0.0]*self.selafinlayer.hydrauparser.pointcount)
+                        #var_dur = np.array([0.0]*self.selafinlayer.hydrauparser.pointcount)
+                        var_dur = np.array([0.0]*self.selafinlayer.hydrauparser.facesnodescount)
                         previoustime = timeslf
                         """
                         pos_dur = np.where(var_max[self.selafinlayer.parametreh] >= 0.05)[0]  #la ou h est sup a 0.05 m
@@ -254,7 +267,7 @@ class runGetMax(QtCore.QObject):
             except Exception, e:
                 self.status.emit('getmax error : ' + str(e))
             """
-        except Exception, e:
+        except Exception as e:
             self.status.emit(str(e))
             self.finished.emit('')
         
