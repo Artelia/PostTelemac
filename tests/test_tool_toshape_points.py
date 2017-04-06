@@ -36,7 +36,8 @@ def testToshapeTool():
     path = os.path.normpath('C://00_Bureau//data2//SMEAG_REF_Q100.res')
     slf = SelafinPluginLayer()
     print('slf created')
-    slf.load_selafin(path,'TELEMAC')
+#    slf.load_selafin(path,'TELEMAC')
+    slf.load_selafin(path)
     print('slf loaded')
     
     slf.propertiesdialog.debugtoprint = True

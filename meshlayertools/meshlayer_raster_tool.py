@@ -43,7 +43,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'RasterTo
 class RasterTool(AbstractMeshLayerTool,FORM_CLASS):
 
     NAME = 'RASTERTOOL'
-
+    SOFTWARE = ['TELEMAC','ANUGA']
 
     def __init__(self, meshlayer,dialog):
         AbstractMeshLayerTool.__init__(self,meshlayer,dialog)

@@ -181,6 +181,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
                 except Exception as e:
                     pass
         
+        self.parsers.append([None,'Other extension', '*'])
 
     def extent(self):
         """ 
@@ -218,7 +219,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
     #Initialise methods *********************************************************************
     #****************************************************************************************************
 
-    def load_selafin(self,hydraufilepath=None,fileype = None):
+    def load_selafin(self,hydraufilepath=None,filetype = None):
         """
         Handler called when 'choose file' is clicked
         Load Selafin file and initialize properties dialog
@@ -236,13 +237,24 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
             self.setLayerName(nom)
         except: #qgis3
             self.setName(nom)
-        
         #Set parser
-        for i, elem in enumerate(self.parsers):
-            if elem[1] == fileype:
-                self.hydrauparser = elem[0](self.parametrestoload)
-                break
+        if (not filetype is None) and (filetype in [elem[1] for elem in self.parsers]):
+            for i, elem in enumerate(self.parsers):
+                if elem[1] == filetype:
+                    self.hydrauparser = elem[0](self.parametrestoload)
+                    break
+        else:
+            self.propertiesdialog.combodialog.loadValues([pars[1] for pars in self.parsers])
+            self.propertiesdialog.combodialog.label.setText('File type not found - please tell me what type of file you are loading : ')
+            if self.propertiesdialog.combodialog.exec_() :
+                self.hydrauparser = self.parsers[self.propertiesdialog.combodialog.combobox.currentIndex()][0](self.parametrestoload)
+                filetype = self.parsers[self.propertiesdialog.combodialog.combobox.currentIndex()][1]
+            else:
+                return False
+            
         self.hydrauparser.loadHydrauFile(self.hydraufilepath)
+        self.propertiesdialog.groupBox_Title.setTitle(filetype + ' file')
+        self.propertiesdialog.loadTools(filetype)
         
         self.propertiesdialog.updateWithParserParamsIdentified()
         self.hydrauparser.emitMessage.connect(self.propertiesdialog.errorMessage)
@@ -296,7 +308,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
             
         qgis.utils.iface.mapCanvas().setExtent(self.extent())
         
-    
+        return True
     
     def clearParameters(self):
         self.param_displayed = None
@@ -665,6 +677,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
             #self.propertiesdialog.postutils.rubberband.reset()
             #self.propertiesdialog.postutils.rubberbandpoint.reset()
             #closing properties dialog
+            self.propertiesdialog.unloadTools()
             self.propertiesdialog.close()
             del self.propertiesdialog
             #closing some stuff - do not succeed in retrieving what does not release memory...

@@ -40,6 +40,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'CompareT
 class CompareTool(AbstractMeshLayerTool,FORM_CLASS):
 
     NAME = 'COMPARETOOL'
+    SOFTWARE = ['TELEMAC']
 
     def __init__(self, meshlayer,dialog):
         AbstractMeshLayerTool.__init__(self,meshlayer,dialog)

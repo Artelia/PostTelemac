@@ -39,6 +39,8 @@ import os
 #class AbstractMeshLayerTool(QtGui.QWidget, FORM_CLASS):
 class AbstractMeshLayerTool(QWidget):
 
+    SOFTWARE = []
+
     def __init__(self, meshlayer,dialog, parent=None):
         super(AbstractMeshLayerTool, self).__init__(parent)
         #self.setupUi(self)

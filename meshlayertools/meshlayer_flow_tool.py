@@ -61,6 +61,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'FlowTool
 class FlowTool(AbstractMeshLayerTool,FORM_CLASS):
 
     NAME = 'FLOWTOOL'
+    SOFTWARE = ['TELEMAC','ANUGA']
 
     def __init__(self, meshlayer,dialog):
         AbstractMeshLayerTool.__init__(self,meshlayer,dialog)

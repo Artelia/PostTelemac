@@ -41,7 +41,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ExtractM
 class ExtractMaxTool(AbstractMeshLayerTool,FORM_CLASS):
 
     NAME = 'EXTRACTMACTOOL'
-
+    SOFTWARE = ['TELEMAC']
 
     def __init__(self, meshlayer,dialog):
         AbstractMeshLayerTool.__init__(self,meshlayer,dialog)

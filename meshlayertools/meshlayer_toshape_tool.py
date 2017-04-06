@@ -42,7 +42,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ToshapeT
 class ToShapeTool(AbstractMeshLayerTool,FORM_CLASS):
 
     NAME = 'TOSHAPETOOL'
-
+    SOFTWARE = ['TELEMAC']
 
     def __init__(self, meshlayer,dialog):
         AbstractMeshLayerTool.__init__(self,meshlayer,dialog)

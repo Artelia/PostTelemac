@@ -102,7 +102,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'OpenGLTo
 class OpenGLTool(AbstractMeshLayerTool,FORM_CLASS):
 
     NAME = 'OPENGLTOOL'
-
+    SOFTWARE = ['TELEMAC','ANUGA']
 
     def __init__(self, meshlayer,dialog):
         AbstractMeshLayerTool.__init__(self,meshlayer,dialog)

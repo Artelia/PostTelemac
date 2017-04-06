@@ -48,6 +48,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'VolumeTo
 class VolumeTool(AbstractMeshLayerTool,FORM_CLASS):
 
     NAME = 'VOLUMETOOL'
+    SOFTWARE = ['TELEMAC','ANUGA']
 
     def __init__(self, meshlayer,dialog):
         AbstractMeshLayerTool.__init__(self,meshlayer,dialog)

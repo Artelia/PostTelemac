@@ -31,7 +31,7 @@ import string
 class PostTelemacSelafinParser(PostTelemacAbstractParser):
     
     SOFTWARE = 'TELEMAC'
-    EXTENSION=['res','slf','geo','init','*']
+    EXTENSION=['res','slf','geo','init']
     #TOOLS = ['VALUETOOL', 'TEMPORALGRAPHTOOL', 'FLOWTOOL', 'VOLUMETOOL', 'ANIMATIONTOOL', 'COMPARETOOL',  'EXTRACTMACTOOL', 'OPENGLTOOL', 'PROFILETOOL', 'RASTERTOOL', 'TOSHAPETOOL']
 
     def __init__(self,layer1 = None):

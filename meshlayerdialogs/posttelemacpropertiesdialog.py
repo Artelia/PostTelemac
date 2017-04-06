@@ -34,6 +34,7 @@ import os
 import time
 import shutil
 #local import
+from .posttelemac_dialog_combobox import postTelemacComboboxDialog
 from .posttelemacvirtualparameterdialog import *
 from .posttelemacusercolorrampdialog import *
 from .posttelemac_xytranslation import *
@@ -100,7 +101,7 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
             #os.makedirs(self.posttelemacdir)
             shutil.copytree(os.path.join(os.path.dirname(__file__),'..', 'config'), self.posttelemacdir)
             
-            
+        self.combodialog = postTelemacComboboxDialog()      #usefull for asking something
         
         #********* ********** ******************************************
         #********* Connecting ******************************************
@@ -188,72 +189,7 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
         
 
         self.tools = []
-        self.loadTools()
-        if False:
-            try:
-                from ..meshlayertools.meshlayer_value_tool import ValueTool
-                self.tools.append(   ValueTool(self.meshlayer,self)   )
-            except Exception as e :
-                self.errorMessage('ValueTool failed ' + str(e))
-            try:
-                from ..meshlayertools.meshlayer_temporalgraph_tool import TemporalGraphTool
-                self.tools.append(   TemporalGraphTool(self.meshlayer,self)   )
-            except Exception as e :
-                self.errorMessage('TemporalGraphTool failed ' + str(e))
-
-            try:
-                from ..meshlayertools.meshlayer_flow_tool import FlowTool
-                self.tools.append(   FlowTool(self.meshlayer,self)   )
-            except Exception as e :
-                self.errorMessage('FlowTool failed ' + str(e))
-            
-            try:
-                from ..meshlayertools.meshlayer_volume_tool import VolumeTool
-                self.tools.append(   VolumeTool(self.meshlayer,self)   )
-            except Exception as e :
-                self.errorMessage('VolumeTool failed ' + str(e))
-                
-            try:
-                from ..meshlayertools.meshlayer_profile_tool import ProfileTool
-                self.tools.append(   ProfileTool(self.meshlayer,self)   )
-            except Exception as e :
-                self.errorMessage('ProfileTool failed ' + str(e))
-                
-            try:
-                from ..meshlayertools.meshlayer_animation_tool import AnimationTool
-                self.tools.append(   AnimationTool(self.meshlayer,self)   )
-            except Exception as e :
-                self.errorMessage('AnimationTool failed ' + str(e))
-                
-            try:
-                from ..meshlayertools.meshlayer_compare_tool import CompareTool
-                self.tools.append(   CompareTool(self.meshlayer,self)   )
-            except Exception as e :
-                self.errorMessage('CompareTool failed ' + str(e))
-                
-            try:
-                from ..meshlayertools.meshlayer_extractmax_tool import ExtractMaxTool
-                self.tools.append(   ExtractMaxTool(self.meshlayer,self)   )
-            except Exception as e :
-                self.errorMessage('ExtractMaxTool failed ' + str(e))
-                
-            try:
-                from ..meshlayertools.meshlayer_toshape_tool import ToShapeTool
-                self.tools.append(   ToShapeTool(self.meshlayer,self)   )
-            except Exception as e :
-                self.errorMessage('ToShapeTool failed ' + str(e))
-                
-            try:
-                from ..meshlayertools.meshlayer_raster_tool import RasterTool
-                self.tools.append(   RasterTool(self.meshlayer,self)   )
-            except Exception as e :
-                self.errorMessage('RasterTool failed ' + str(e))
-                
-            try:
-                from ..meshlayertools.meshlayer_opengl_tool import OpenGLTool
-                self.tools.append(   OpenGLTool(self.meshlayer,self)   )
-            except Exception as e :
-                self.errorMessage('OpenGLTool failed ' + str(e))
+        #self.loadTools()
         
             
         self.treeWidget_utils.expandAll()
@@ -320,13 +256,16 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
             self.meshlayerschangedsignal.emit()
             #self.populateMinMaxSpinBox()
             
-    def loadTools(self):
+    def loadTools(self, filetype = None):
     
         import glob
         import sys, inspect
         import importlib
+        
+
+        self.unloadTools()
+        
         self.normalMessage('Loading tools')
-        self.tools = []
         path = os.path.join(os.path.dirname(__file__),'..','meshlayertools')
         modules = glob.glob(path+"/*.py")
         __all__ = [ os.path.basename(f)[:-3] for f in modules if os.path.isfile(f)]
@@ -335,16 +274,48 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
             try:
                 module = importlib.import_module('.'+ str(x), 'PostTelemac.meshlayertools' )
                 for name, obj in inspect.getmembers(module, inspect.isclass):
-                    try: 
-                        istool = obj.NAME
-                        try:
-                            self.tools.append(obj(self.meshlayer,self))
-                        except Exception as e :
-                            self.errorMessage(istool + ' : ' + str(e))
-                    except Exception as e:
-                        self.errorMessage('Error importing tool - ' + str(x) + ' : ' + str(e))
+                    if module.__name__ == obj.__module__:
+                        try: #case obj has NAME
+                            istool = obj.NAME
+                            if filetype is None:
+                                try:
+                                    self.tools.append(obj(self.meshlayer,self))
+                                except Exception as e :
+                                    self.errorMessage(istool + ' : ' + str(e))
+                            else:   #specific software tool
+                                try: #case obj has SOFTWARE
+                                    
+                                    if len(obj.SOFTWARE)>0 and filetype in obj.SOFTWARE :
+                                        try:
+                                            self.tools.append(obj(self.meshlayer,self))
+                                        except Exception as e :
+                                            self.errorMessage(istool + ' : ' + str(e))
+                                    elif len(obj.SOFTWARE) == 0 :
+                                        try:
+                                            self.tools.append(obj(self.meshlayer,self))
+                                        except Exception as e :
+                                            self.errorMessage(istool + ' : ' + str(e))
+                                        
+                                except:
+                                    pass
+
+                                    
+                        except Exception as e:
+                            pass
             except Exception as e:
                 self.errorMessage('Error importing tool - ' + str(x) + ' : ' + str(e))
+        self.normalMessage('Tools loaded')
+        
+    def unloadTools(self):
+        #clear tools tab    
+        try:
+            self.treeWidget_utils.clear()
+            for i in range(self.stackedWidget.count()):
+                widg = self.stackedWidget.widget(i)
+                self.stackedWidget.removeWidget(widg)
+            self.tools = []
+        except Exception as e:
+            self.errorMessage('Eror unloading tools : ',e)
             
 
     #*********************************************************************************
@@ -413,9 +384,10 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
             self.loaddirectory = os.path.dirname(tempname)
             QtCore.QSettings().setValue("posttelemac/lastdirectory", self.loaddirectory)
             self.meshlayer.clearParameters()
-            self.meshlayer.load_selafin(tempname,extension.split(' ')[0])
-            nom = os.path.basename(tempname).split('.')[0]
-            self.normalMessage(self.tr('File ') +  str(nom) +  self.tr(" loaded"))
+            success = self.meshlayer.load_selafin(tempname,extension.split(' ')[0])
+            if success:
+                nom = os.path.basename(tempname).split('.')[0]
+                self.normalMessage(self.tr('File ') +  str(nom) +  self.tr(" loaded"))
         else:
             if not self.meshlayer.hydraufilepath:
                 self.label_loadslf.setText(self.tr('No file selected'))

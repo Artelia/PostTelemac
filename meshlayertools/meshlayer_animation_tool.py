@@ -185,7 +185,7 @@ class PostTelemacAnimation(QtCore.QObject):
         self.tempdir = tempfile.mkdtemp()   #path to temp dir where png are stored
         dir = os.path.dirname(self.pluginlayer.hydraufilepath)  #dir of sl file where movie will be put"
         nameslf =  os.path.basename(self.pluginlayer.hydraufilepath).split('.')[0]
-        nameavi = os.path.join(dir,nameslf+'.avi')
+        nameavi = os.path.normpath( os.path.join(dir,nameslf+'.avi') )
 
         txt = time.ctime()+ ' - Film - creation du fichier ' + str(nameavi)
         if self.outputtype:self.pluginlayer.propertiesdialog.textBrowser_2.append(txt)

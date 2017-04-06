@@ -8,10 +8,11 @@
 
 [general]
 name=PostTelemac
-about= Post treatment of open Telemac results (and Anuga as experimental). Requires matplotlib, shapely, numpy, scipy and networkx libraries.
-qgisMinimumVersion=2.10.0
-description=Post Treatment for Telemac ( and Anuga - experimental)
-version=0.1.14
+about= Post treatment of open Telemac results (and Anuga , HECRAS 2D as experimental). Requires matplotlib, shapely, numpy, scipy, networkx and ffmpeg libraries.
+qgisMinimumVersion=2.14.0
+qgisMaximumVersion=3.99
+description=Post Treatment for Telemac (and Anuga , HECRAS 2D as experimental
+version=1.0.0
 author=Artelia Eau et Environnement
 email=patrice.verchere@arteliagroup.com
 
@@ -21,6 +22,7 @@ email=patrice.verchere@arteliagroup.com
 
 # Uncomment the following line and add your changelog:
 changelog= 
+    1.0.0 : rearrangement of code - HECRAS (hdf5) and ANUGA (netcdf) parsers - code adaptation for qgis 3
     0.1.14 : bug fix + opengl
     0.1.13 : bug fix (transparency)+ volume computation
     0.1.12 : bug fix + volume computation
