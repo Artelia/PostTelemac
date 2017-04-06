@@ -54,7 +54,7 @@ class postTelemacComboboxDialog(QDialog):
         self.layout = QVBoxLayout()
         self.label = QLabel()
         self.combobox = QComboBox()
-        self.dlgbuttonbox = QDialogButtonBox(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel)
+        self.dlgbuttonbox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         
         self.layout.addWidget(self.label)
         self.layout.addWidget(self.combobox)
