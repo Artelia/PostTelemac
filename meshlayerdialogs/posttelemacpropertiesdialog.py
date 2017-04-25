@@ -181,6 +181,9 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
         self.progressBar.reset()
         
         #rednertype
+        allitems = [self.comboBox_rendertype.itemText(i) for i in range(self.comboBox_rendertype.count())]
+        if QtCore.QSettings().value("posttelemac/renderlib") != None:
+            self.comboBox_rendertype.setCurrentIndex( allitems.index(QtCore.QSettings().value("posttelemac/renderlib"))    )
         self.comboBox_rendertype.currentIndexChanged.connect(self.changeMeshLayerRenderer)
         
         #********* ********** ******************************************
@@ -375,16 +378,35 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
             for extension in parser[2]:
                 str1 += ' *.' + extension
             str1 += ' );;'
+        
+        
+        if False:
+            """
+            if int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 4 :    #qgis2
+                tempname = self.qfiledlg.getOpenFileName(None,'Choose the file',self.loaddirectory, str1)
+            elif int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 5 :    #qgis3
+            """
+            #tempname,extension = self.qfiledlg.getOpenFileNameAndFilter(None,'Choose the file',self.loaddirectory, str1, options = QFileDialog.DontUseNativeDialog)
+            """
+            file_dialog.setNameFilters(["Text files (*.txt)", "Images (*.png *.jpg)"])
+            file_dialog.selectNameFilter("Images (*.png *.jpg)")
+            """
+        if False:
+            filters =[ (str(item[1])+ ' *.' + str(item[2]))  for item in self.meshlayer.parsers]
             
-            
-        """
-        if int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 4 :    #qgis2
-            tempname = self.qfiledlg.getOpenFileName(None,'Choose the file',self.loaddirectory, str1)
-        elif int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 5 :    #qgis3
-        """
-        tempname,extension = self.qfiledlg.getOpenFileNameAndFilter(None,'Choose the file',self.loaddirectory, str1, options = QFileDialog.DontUseNativeDialog)
-                
+            self.qfiledlg.setNameFilters(filters)
+            self.qfiledlg.selectNameFilter(filters[0])
+            self.qfiledlg.setDirectory(self.loaddirectory)
+            success = self.qfiledlg.exec_()
+        
+        if True:
+            tempname,extension = self.qfiledlg.getOpenFileNameAndFilter(None,'Choose the file',self.loaddirectory, str1, options = QFileDialog.DontUseNativeDialog)
+            #tempname,extension = self.qfiledlg.getOpenFileNameAndFilter(None,'Choose the file',self.loaddirectory, str1)
+        
+        #if tempname:
+        #if success :
         if tempname:
+            #tempname, extension = self.qfiledlg.selectedFiles(), self.qfiledlg.selectedNameFilter()
             self.loaddirectory = os.path.dirname(tempname)
             QtCore.QSettings().setValue("posttelemac/lastdirectory", self.loaddirectory)
             self.meshlayer.clearParameters()
@@ -423,6 +445,8 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
             if xtranslate != None and ytranslate != None:
                 self.meshlayer.hydrauparser.setXYTranslation(xtranslate,ytranslate )
                 self.meshlayer.meshrenderer.changeTriangulationCRS()
+                self.meshlayer.hydrauparser.createInterpolator()
+                
                 self.meshlayer.forcerefresh = True
                 self.meshlayer.triggerRepaint()
                 qgis.utils.iface.mapCanvas().setExtent(self.meshlayer.extent())
@@ -993,11 +1017,11 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
         if typerenderer == 0 : #openGL
             QtCore.QSettings().setValue("posttelemac/renderlib", 'OpenGL')
             if self.meshlayer.hydraufilepath != None:
-                self.meshlayer.load_selafin(self.meshlayer.hydraufilepath)
+                self.meshlayer.load_selafin(self.meshlayer.hydraufilepath, self.meshlayer.hydrauparser.SOFTWARE)
         elif  typerenderer == 1 : #matplotlib
             QtCore.QSettings().setValue("posttelemac/renderlib", 'MatPlotLib')
             if self.meshlayer.hydraufilepath != None:
-                self.meshlayer.load_selafin(self.meshlayer.hydraufilepath)
+                self.meshlayer.load_selafin(self.meshlayer.hydraufilepath, self.meshlayer.hydrauparser.SOFTWARE)
             
 
     #****************************************************************************************************

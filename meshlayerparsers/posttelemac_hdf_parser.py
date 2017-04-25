@@ -490,7 +490,6 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
         """
         if self.elemfacesindex == None:
             Cells_FacePoint_Indexes = []
-            
             hdf_ds = gdal.Open(self.path, gdal.GA_ReadOnly)
             #print hdf_ds.GetSubDatasets() 
             lensubdataset = len(hdf_ds.GetSubDatasets() )

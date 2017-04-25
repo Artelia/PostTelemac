@@ -43,20 +43,20 @@ from meshlayerparsers.posttelemac_anuga_parser import PostTelemacSWWParser
 
 def getParams():
         path = os.path.normpath('C://00_Bureau//data2//baldeagle_multi2d.hdf')
-        path =  os.path.normpath('C://00_Bureau//data2//test3.hdf')
-        parser = PostTelemacHDFParser()
-        parser.loadHydrauFile(path)
+#        path =  os.path.normpath('C://00_Bureau//data2//test3.hdf')
+#        parser = PostTelemacHDFParser()
+#        parser.loadHydrauFile(path)
         """
         self.elemcount = len(   self.getElemFaces() )
         self.facesnodescount = len(self.getFacesNodes()[0]   )
         self.facescount = len(   self.getFaces() )
         self.itertimecount = len(self.getTimes())-1
-        """
+        
         print parser.elemcount
         print parser.facesnodescount
         print parser.facescount
         print parser.itertimecount
-        
+        """
         hdf_ds = gdal.Open(path, gdal.GA_ReadOnly)
         #print hdf_ds.GetSubDatasets() 
         lensubdataset = len(hdf_ds.GetSubDatasets() )
@@ -532,10 +532,10 @@ def getTimeserie():
 
 #if __name__ == '__main__':
 #doThings()
-#getParams()
+getParams()
 #geValues()
 #getValues2()
 #getVars()
 #testimport()
 #getFace()
-getTimeserie()
+#getTimeserie()

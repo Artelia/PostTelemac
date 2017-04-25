@@ -77,7 +77,7 @@ class AbstractMeshRenderer(QtCore.QObject):
         self.previousdrawcmvelocity = None
         self.alreadypanned = False
         
-        self.debugtext = ''
+        self.debugtext = []
         
         
         

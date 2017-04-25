@@ -60,7 +60,7 @@ import sys
 import os
 from PyQt4 import uic, QtCore, QtGui
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+#sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from meshlayertools.meshlayer_opengl_tool import OpenGLDialog
 from meshlayerparsers.posttelemac_anuga_parser import PostTelemacSWWParser
 

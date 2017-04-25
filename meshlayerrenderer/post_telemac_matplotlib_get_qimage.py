@@ -135,7 +135,7 @@ class MeshRenderer(AbstractMeshRenderer):
             
     def CrsChanged(self):
         #ikle = self.meshlayer.hydrauparser.getIkle()
-        self.changeTriangulationCRS()
+        #self.changeTriangulationCRS()
         ikle = self.meshlayer.hydrauparser.getElemFaces()
         self.meshxreprojected, self.meshyreprojected = self.facenodereprojected
         self.triangulation = matplotlib.tri.Triangulation(self.meshxreprojected,self.meshyreprojected,np.array(ikle))
@@ -146,7 +146,9 @@ class MeshRenderer(AbstractMeshRenderer):
     
     def canvasPaned(self):
         
-        self.debugtext.append("deplacement")
+        DEBUG = False
+        
+        if DEBUG : self.debugtext.append("deplacement")
         
         if False:
             
@@ -214,8 +216,8 @@ class MeshRenderer(AbstractMeshRenderer):
         self.ax.set_xlim([self.rect[0],self.rect[1]])
 
         
-        self.debugtext.append("deplacement : "+str(round(time.clock()-self.timestart,3)))
-        self.debugtext.append("rect : "+str(self.rect))
+        if DEBUG : self.debugtext.append("deplacement : "+str(round(time.clock()-self.timestart,3)))
+        if DEBUG : self.debugtext.append("rect : "+str(self.rect))
         
         image_contour = self.saveImage(1,self.dpi)
         
@@ -224,8 +226,10 @@ class MeshRenderer(AbstractMeshRenderer):
         
     def canvasChangedWithSameBBox(self):
     
-        self.debugtext.append("nouveau meme taille")
-        self.debugtext.append("avant value : "+str(round(time.clock()-self.timestart,3)))
+        DEBUG = False
+    
+        if DEBUG : self.debugtext.append("nouveau meme taille")
+        if DEBUG : self.debugtext.append("avant value : "+str(round(time.clock()-self.timestart,3)))
         
         #Removing older graph
         ncollections = len(self.ax.collections)
@@ -249,7 +253,7 @@ class MeshRenderer(AbstractMeshRenderer):
             self.tritemp = matplotlib.tri.Triangulation(xMeshcanvas,yMeshcanvas,goodiklecanvas)
             
             
-            self.debugtext.append("tritemp : "+str(round(time.clock()-self.timestart,3)))
+            if DEBUG : self.debugtext.append("tritemp : "+str(round(time.clock()-self.timestart,3)))
             
         self.tricontourf1= self.ax.tricontourf(self.tritemp,
                                            self.meshlayer.value[self.goodpointindex],
@@ -263,7 +267,7 @@ class MeshRenderer(AbstractMeshRenderer):
                                            #rasterized=True
                                            )
 
-        self.debugtext.append("tricontourf : "+str(round(time.clock()-self.timestart,3)))
+        if DEBUG : self.debugtext.append("tricontourf : "+str(round(time.clock()-self.timestart,3)))
         
         
         if self.meshlayer.showvelocityparams['show']:
@@ -291,7 +295,7 @@ class MeshRenderer(AbstractMeshRenderer):
                                            scale_units='xy'
                                            )
                                            
-            self.debugtext.append("quiver : "+str(round(time.clock()-self.timestart,3)))
+            if DEBUG : self.debugtext.append("quiver : "+str(round(time.clock()-self.timestart,3)))
         
         self.ax.set_ylim([self.rect[2],self.rect[3]])
         self.ax.set_xlim([self.rect[0],self.rect[1]])
@@ -303,6 +307,8 @@ class MeshRenderer(AbstractMeshRenderer):
                 
         
     def canvasCreation(self):
+    
+        DEBUG = False
     
         if DEBUG : time1.append("nouveau")
 
@@ -321,7 +327,7 @@ class MeshRenderer(AbstractMeshRenderer):
                 
                 
         #graph 
-        self.debugtext.append("value : "+str(round(time.clock()-self.timestart,3)))
+        if DEBUG : self.debugtext.append("value : "+str(round(time.clock()-self.timestart,3)))
         
 
         self.tricontourf1 = self.ax.tricontourf(self.triangulation,
@@ -364,7 +370,7 @@ class MeshRenderer(AbstractMeshRenderer):
                                            scale_units='xy'
                                            )
 
-            self.debugtext.append("quiver : "+str(round(time.clock()-self.timestart,3)))
+            if DEBUG : self.debugtext.append("quiver : "+str(round(time.clock()-self.timestart,3)))
 
         
 

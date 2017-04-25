@@ -1411,7 +1411,7 @@ translation</string>
                      </item>
                      <item>
                       <property name="text">
-                       <string>Matplotlib</string>
+                       <string>MatPlotLib</string>
                       </property>
                      </item>
                     </widget>
