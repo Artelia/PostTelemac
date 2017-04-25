@@ -33,7 +33,6 @@ class PostTelemacPluginLayerRenderer(qgis.core.QgsMapLayerRenderer):
             painter.restore()
             return bool1
         except Exception as e:
-            #self.meshlayer.propertiesdialog.errorMessage('Rendering : ' + str(e))
             self.meshlayer.propertiesdialog.errorMessage('Renderer Error')
             return False
         

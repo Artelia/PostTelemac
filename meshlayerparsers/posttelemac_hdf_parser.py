@@ -40,9 +40,9 @@ TYPENDVAR = 1 #0 for 1d array 1 for ReadAsArray
 """
 try:
     #import h5py
-    from . import h5py
+    import h5py
 except Exception as e :
-    print('error h4py ' + str(e))
+    print('error h5py ' + str(e))
 """
 
 class PostTelemacHDFParser(PostTelemacAbstractParser):

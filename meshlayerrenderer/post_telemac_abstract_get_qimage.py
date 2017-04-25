@@ -114,28 +114,17 @@ class AbstractMeshRenderer(QtCore.QObject):
     #*****************************************************************
         
     def changeTriangulationCRS(self):
-        """
-        self.elemnodereprojected = (None,None)
-        self.facenodereprojected = (None,None)
-        """
+    
         try:
             if self.meshlayer != None and self.meshlayer.hydrauparser != None:
-                if False:
-                    meshx, meshy = self.meshlayer.hydrauparser.getMesh()
-                    #ikle = self.meshlayer.hydrauparser.getIkle()
-                    self.meshxreprojected, self.meshyreprojected = self.getTransformedCoords(meshx, meshy)
-                    self.meshxreprojected = np.array(self.meshxreprojected)
-                    self.meshyreprojected = np.array(self.meshyreprojected)
-                    #self.triangulation = matplotlib.tri.Triangulation(self.meshxreprojected,self.meshyreprojected,np.array(ikle))
-                if True:
-                    x,y =  self.meshlayer.hydrauparser.getElemNodes()
-                    if len(x)>0:
-                        xtemp,ytemp = self.getTransformedCoords(x, y)
-                        self.elemnodereprojected = (np.array(xtemp), np.array(ytemp))
-                    x,y =  self.meshlayer.hydrauparser.getFacesNodes()
-                    if len(x)>0:
-                        xtemp,ytemp = self.getTransformedCoords(x, y)
-                        self.facenodereprojected = (np.array(xtemp), np.array(ytemp))
+                x,y =  self.meshlayer.hydrauparser.getElemNodes()
+                if len(x)>0:
+                    xtemp,ytemp = self.getTransformedCoords(x, y)
+                    self.elemnodereprojected = (np.array(xtemp), np.array(ytemp))
+                x,y =  self.meshlayer.hydrauparser.getFacesNodes()
+                if len(x)>0:
+                    xtemp,ytemp = self.getTransformedCoords(x, y)
+                    self.facenodereprojected = (np.array(xtemp), np.array(ytemp))
                     
                     
                 self.__CRSChangeRequested.emit()
@@ -144,6 +133,7 @@ class AbstractMeshRenderer(QtCore.QObject):
             self.meshlayer.propertiesdialog.errorMessage('Abstract get image - changeTriangulationCRS : ' + str(e))
             
     def getTransformedCoords(self,xcoords,ycoords,direction = True):
+    
         coordinatesAsPoints = [ qgis.core.QgsPoint(xcoords[i], ycoords[i]) for i in range(len(xcoords))]
         if direction:
             transformedCoordinatesAsPoints = [self.meshlayer.xform.transform(point) for point in coordinatesAsPoints]

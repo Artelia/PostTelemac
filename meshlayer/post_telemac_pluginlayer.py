@@ -53,7 +53,6 @@ selafininstancecount + 1 for graph temp util,
 """
 selafininstancecount = 2
 
-debug = False
 
 
 class SelafinPluginLayer(qgis.core.QgsPluginLayer):
@@ -181,6 +180,12 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
                 except Exception as e:
                     pass
         
+        #reorder list for havin telemac in first
+        templistofsoftware = [par[1] for par in self.parsers]
+        telemacindex = templistofsoftware.index('TELEMAC')
+        self.parsers.insert(0, self.parsers.pop(telemacindex))
+        
+        
         self.parsers.append([None,'Other extension', '*'])
 
     def extent(self):
@@ -224,6 +229,9 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         Handler called when 'choose file' is clicked
         Load Selafin file and initialize properties dialog
         """
+        
+        DEBUG = False
+        
         try:
             self.hydrauparser.emitMessage.disconnect(self.propertiesdialog.errorMessage)
         except Exception as e:
@@ -237,6 +245,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
             self.setLayerName(nom)
         except: #qgis3
             self.setName(nom)
+        if DEBUG : print('load_selafin - path loaded' )
         #Set parser
         if (not filetype is None) and (filetype in [elem[1] for elem in self.parsers]):
             for i, elem in enumerate(self.parsers):
@@ -251,11 +260,12 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
                 filetype = self.parsers[self.propertiesdialog.combodialog.combobox.currentIndex()][1]
             else:
                 return False
-            
+        if DEBUG : print('load_selafin - parser loaded - type : ' ,filetype)
         self.hydrauparser.loadHydrauFile(self.hydraufilepath)
+        if DEBUG : print('load_selafin - file loaded with parser')
         self.propertiesdialog.groupBox_Title.setTitle(filetype + ' file')
         self.propertiesdialog.loadTools(filetype)
-        
+        if DEBUG : print('load_selafin - tools loaded')
         self.propertiesdialog.updateWithParserParamsIdentified()
         self.hydrauparser.emitMessage.connect(self.propertiesdialog.errorMessage)
         #create renderer
@@ -271,7 +281,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         else:
             from ..meshlayerrenderer.post_telemac_opengl_get_qimage import MeshRenderer
         self.meshrenderer = MeshRenderer(self,self.instancecount)
-        
+        if DEBUG : print('load_selafin - renderer loaded')
         #reinitialize layer's parameters
         if not self.param_displayed : self.param_displayed = 0
         if not self.meshrenderer.lvl_contour : self.meshrenderer.lvl_contour = self.levels[0]
@@ -282,15 +292,12 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         self.propertiesdialog.color_palette_changed( type = 'contour')  #initialize colors in renderer
         self.propertiesdialog.color_palette_changed( type = 'velocity') #initialize colors in renderer
         
-        #initialize parameters
-        #self.triinterp = None
         #change levels
         self.meshrenderer.change_lvl_contour(self.meshrenderer.lvl_contour)
         self.meshrenderer.change_lvl_vel(self.meshrenderer.lvl_vel)
         
         #initialise selafin crs
         if  self.crs().authid() == u'':
-            #self.setRealCrs(qgis.utils.iface.mapCanvas().mapRenderer().destinationCrs())
             self.setRealCrs( qgis.utils.iface.mapCanvas().mapSettings().destinationCrs() )
             
         self.xform = qgis.core.QgsCoordinateTransform(self.realCRS, qgis.utils.iface.mapCanvas().mapSettings().destinationCrs())

@@ -142,81 +142,38 @@ class MeshRenderer(AbstractMeshRenderer):
     #************************************************************************************
     
     def CrsChanged(self):
-        #ikle = self.meshlayer.hydrauparser.getIkle()
-        #mesh = self.meshlayer.hydrauparser.getElemFaces()
-        #nodecoords = np.array( [[self.meshxreprojected[i], self.meshyreprojected[i], 0.0]   for i in range(len(self.meshxreprojected))         ] )
-        #nodecoords = np.array( [[self.facenodereprojected[0][i], self.facenodereprojected[1][i], 0.0]   for i in range(len(self.facenodereprojected[0]))         ] )
         
         #reset : facenode elemnode
         self.resetFaceNodeCoord()
-        #self.resetIdx()
-        
         self.resetMesh()
         
     def resetFaceNodeCoord(self, vtx = None):
-        #__vtx
-        if False:
-            if vtx != None:
-                self.__vtxfacetotal = numpy.require(vtx, numpy.float32, 'F')
-                
-            else:
-                #self.__vtxfacetotal = np.array( [[self.meshxreprojected[i], self.meshyreprojected[i], 0.0]   for i in range(len(self.meshxreprojected))         ] )
-                self.__vtxfacetotal = np.array( [[self.facenodereprojected[0][i], self.facenodereprojected[1][i], 0.0]   for i in range(len(self.facenodereprojected[0]))         ] )
-        if True:
-            try:
-                self.__vtxfacetotal = np.array( [[self.facenodereprojected[0][i], self.facenodereprojected[1][i], 0.0]   for i in range(len(self.facenodereprojected[0]))         ] )
-                self.__idxfacetotal = self.meshlayer.hydrauparser.getElemFaces()
-                self.__idxfaceonlytotal = self.meshlayer.hydrauparser.getFaces()
-                #wherebegin polygon
-                self.__idxfacetotalcountidx = [0]
-                self.__idxfacetotalcountlen = []
-                
-                
-                
-                for elem in self.__idxfacetotal:
-                    self.__idxfacetotalcountidx.append((self.__idxfacetotalcountidx[-1] )+len(elem))
-                    #self.__idxfacetotalcountlen.append(len(elem))
-                self.__idxfacetotalcountidx = np.array(self.__idxfacetotalcountidx)
-                self.__idxfacetotalcountlen = np.array( [len(elem) for elem in self.__idxfacetotal ] )
-            except Exception as e:
-                print('resetFaceNodeCoord ' + str(e))
+
+        #try:
+        self.__vtxfacetotal = np.array( [[self.facenodereprojected[0][i], self.facenodereprojected[1][i], 0.0]   for i in range(len(self.facenodereprojected[0]))         ] )
+        self.__idxfacetotal = self.meshlayer.hydrauparser.getElemFaces()
+        self.__idxfaceonlytotal = self.meshlayer.hydrauparser.getFaces()
+        #wherebegin polygon
+        self.__idxfacetotalcountidx = [0]
+        self.__idxfacetotalcountlen = []
+        
+        
+        
+        for elem in self.__idxfacetotal:
+            self.__idxfacetotalcountidx.append((self.__idxfacetotalcountidx[-1] )+len(elem))
+            #self.__idxfacetotalcountlen.append(len(elem))
+        self.__idxfacetotalcountidx = np.array(self.__idxfacetotalcountidx)
+        self.__idxfacetotalcountlen = np.array( [len(elem) for elem in self.__idxfacetotal ] )
+        #except Exception as e:
+        #    print('resetFaceNodeCoord ' + str(e))
             
         self.__vtxfacetodraw = self.__vtxfacetotal
         self.__idxfacetodraw = self.__idxfacetotal 
         self.__idxfaceonlytodraw = self.__idxfaceonlytotal
-        if False:
-            self.__idxfacetodraw1Darray = np.concatenate(self.__idxfacetodraw)
-            self.__idxfaceonlytodraw1Darray = np.concatenate(self.__idxfaceonlytodraw)
-        if True:
-            """
-            self.__idxfacetodraw1Darray = self.__idxfacetodraw.ravel()
-            self.__idxfaceonlytodraw1Darray = self.__idxfaceonlytodraw.ravel()
-            print ( self.__idxfacetodraw1Darray)
-            """
-            self.__idxfacetodraw1Darray = np.array([idx for idxs in self.__idxfacetodraw for idx in idxs])
-            self.__idxfaceonlytodraw1Darray = np.array([idx for idxs in self.__idxfaceonlytodraw for idx in idxs])
+
+        self.__idxfacetodraw1Darray = np.array([idx for idxs in self.__idxfacetodraw for idx in idxs])
+        self.__idxfaceonlytodraw1Darray = np.array([idx for idxs in self.__idxfaceonlytodraw for idx in idxs])
         
-    if False:
-        def resetIdx(self,idx = None):
-            #__idx
-            if False:
-                if idx != None:
-                    if False:
-                        try:
-                            self.__idxfacetotal = numpy.require(idx, numpy.int32, 'F')
-                        except Exception as e :
-                            self.__idxfacetotal = idx
-                    else:
-                        self.__idxfacetotal = numpy.require(idx, numpy.int32, 'F')
-                else:
-                    #self.__idxfacetotal = self.meshlayer.hydrauparser.getIkle()
-                    self.__idxfacetotal = self.meshlayer.hydrauparser.getElemFaces()
-                    
-            if True:
-                self.__idxfacetotal = self.meshlayer.hydrauparser.getElemFaces()
-                self.__idxfacetotal = self.meshlayer.hydrauparser.getElemFaces()
-                
-            self.__idxfacetodraw = self.__idxfacetotal 
         
         
     def resetMesh(self):
@@ -225,13 +182,13 @@ class MeshRenderer(AbstractMeshRenderer):
         
         
     
-    
+    """
     def CrsChanged2(self):
         ikle = self.meshlayer.hydrauparser.getIkle()
         nodecoords = np.array( [[self.meshxreprojected[i], self.meshyreprojected[i], 0.0]   for i in range(len(self.meshxreprojected))         ] )
         self.resetFaceNodeCoord(nodecoords)
         self.resetIdx(ikle)
-        
+    """
             
     def change_cm_contour(self,cm_raw):
         """
@@ -449,11 +406,11 @@ class MeshRenderer(AbstractMeshRenderer):
             
     def __drawInMainThread(self):
         
-        #print rendererContext
+        self.__imageChangedMutex.lock()
         
         try:
         
-            self.__imageChangedMutex.lock()
+            #self.__imageChangedMutex.lock()
             
             includevel = True
             
@@ -488,12 +445,12 @@ class MeshRenderer(AbstractMeshRenderer):
                      self.rendererContext.mapToPixel().mapRotation())
 
                      
-            self.__imageChangedMutex.unlock()
+            #self.__imageChangedMutex.unlock()
                      
         except Exception as e:
             print( 'draw ' + str(e) )
 
-        
+        self.__imageChangedMutex.unlock()
         
     #************************************************************************************
     #*************************************** Secondary func  ******************************

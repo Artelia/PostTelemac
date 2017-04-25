@@ -80,9 +80,9 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
         #self.postutils = PostTelemacUtils(layer1)       #the utils class
         self.maptooloriginal = self.canvas.mapTool()        #Initial map tool (ie mouse behaviour)
         #self.clickTool = QgsMapToolEmitPoint(self.canvas)   #specific map tool (ie mouse behaviour)
-        try:    #qgis 2
+        if int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 4 :    #qgis2
             self.crsselector = qgis.gui.QgsGenericProjectionSelector()
-        except: #qgis 3
+        elif int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 5 :    #qgis3
             self.crsselector = qgis.gui.QgsProjectionSelectionDialog()
         self.playstep= None
         self.playactive = False
@@ -375,10 +375,14 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
             for extension in parser[2]:
                 str1 += ' *.' + extension
             str1 += ' );;'
-        try:
-            tempname,extension = self.qfiledlg.getOpenFileNameAndFilter(None,str1,self.loaddirectory, str1)
-        except:
-            tempname,extension = self.qfiledlg.getOpenFileName(None,str1,self.loaddirectory, str1)
+            
+            
+        """
+        if int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 4 :    #qgis2
+            tempname = self.qfiledlg.getOpenFileName(None,'Choose the file',self.loaddirectory, str1)
+        elif int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 5 :    #qgis3
+        """
+        tempname,extension = self.qfiledlg.getOpenFileNameAndFilter(None,'Choose the file',self.loaddirectory, str1, options = QFileDialog.DontUseNativeDialog)
                 
         if tempname:
             self.loaddirectory = os.path.dirname(tempname)
@@ -399,9 +403,9 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
         """
         source = self.sender()
         self.crsselector.exec_()
-        try:    #qgis2
+        if int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 4 :    #qgis2
             crs = self.crsselector.selectedAuthId()
-        except: #qgis3
+        elif int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 5 :    #qgis3
             crs = self.crsselector.crs().authid()
         if source == self.pushButton_crs:
             self.label_selafin_crs.setText(crs)
