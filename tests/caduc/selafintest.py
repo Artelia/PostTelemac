@@ -78,7 +78,9 @@ def testParser():
     
     parser.hydraufile.getSERIES([1],[0],False)
     
-    #print(parser.getElemFaces())
+    print(parser.getElemFaces())
+    
+    
         
 
 
@@ -99,11 +101,11 @@ def testboundary():
     rubberbandelem.addGeometry(bd, None)
     #print str(bd.asPolygon())
     
-    print 'ok'
+    print('ok')
 
 #testimport()
-#testParser()
+testParser()
 
 #testctpe()
 
-testboundary()
+#testboundary()

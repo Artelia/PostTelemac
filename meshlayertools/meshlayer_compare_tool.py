@@ -82,10 +82,17 @@ class CompareTool(AbstractMeshLayerTool,FORM_CLASS):
         str3 = self.tr("All files")  
         
         if isinstance(fname,bool) : #click on openfile connexion
-            try:
-                fname, extension = self.propertiesdialog.qfiledlg.getOpenFileName(None,str1,self.propertiesdialog.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
-            except:
-                fname, extension = self.propertiesdialog.qfiledlg.getOpenFileNameAndFilter(None,str1,self.propertiesdialog.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
+            if False:
+                try:
+                    fname, extension = self.propertiesdialog.qfiledlg.getOpenFileName(None,str1,self.propertiesdialog.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
+                except:
+                    fname, extension = self.propertiesdialog.qfiledlg.getOpenFileNameAndFilter(None,str1,self.propertiesdialog.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
+            if True:
+                if int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 4 :
+                    fname = self.propertiesdialog.qfiledlg.getOpenFileName(None,str1,self.propertiesdialog.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
+                elif int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 5 :
+                    fname, extension = self.propertiesdialog.qfiledlg.getOpenFileNameAndFilter(None,str1,self.propertiesdialog.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
+                
         #Things
         if fname:
             #update dialog
@@ -171,10 +178,17 @@ class CompareTool(AbstractMeshLayerTool,FORM_CLASS):
                 self.getCorrespondingParameters()
                 #change signals
                 try:
-                    self.meshlayer.updatevalue.disconnect(self.meshlayer.updateSelafinValues1)
-                    self.meshlayer.updatevalue.connect(self.compareprocess.updateSelafinValue)
+                    self.meshlayer.updatevalue.disconnect(self.meshlayer.updateSelafinValues)
+                    self.meshlayer.updatevalue.connect(self.compareprocess.updateSelafinValueCompare)
                 except Exception as e:
                     pass
+                    
+                try:
+                    self.meshlayer.hydrauparser.updateinterplator.disconnect(self.meshlayer.hydrauparser.updateInterpolator)
+                    self.meshlayer.hydrauparser.updateinterplator.connect(self.compareprocess.updateInterpolatorCompare)
+                except Exception as e:
+                    pass
+                    
                 #self.initclassgraphtemp.compare = True
                 self.meshlayer.triinterp = None
                 #desactive non matching parameters
@@ -183,22 +197,29 @@ class CompareTool(AbstractMeshLayerTool,FORM_CLASS):
                         self.propertiesdialog.treeWidget_parameters.topLevelItem(i).setFlags(Qt.ItemIsSelectable)
                 self.compareprocess.comparetime = None
                 self.meshlayer.forcerefresh = True
-                self.meshlayer.updateSelafinValues()
+                self.meshlayer.updateSelafinValuesEmit()
                 self.meshlayer.triggerRepaint()
             elif self.checkBox_6.checkState() == 0 :
                 #change signals
                 try:
-                    self.meshlayer.updatevalue.disconnect(self.compareprocess.updateSelafinValue)
-                    self.meshlayer.updatevalue.connect(self.meshlayer.updateSelafinValues1)
+                    self.meshlayer.updatevalue.disconnect(self.compareprocess.updateSelafinValueCompare)
+                    self.meshlayer.updatevalue.connect(self.meshlayer.updateSelafinValues)
                 except Exception as e:
                     pass
+                    
+                try:
+                    self.meshlayer.hydrauparser.updateinterplator.disconnect(self.compareprocess.updateInterpolatorCompare)
+                    self.meshlayer.hydrauparser.updateinterplator.connect(self.meshlayer.hydrauparser.updateInterpolator)
+                except Exception as e:
+                    pass
+                    
                 #self.initclassgraphtemp.compare = False
                 self.meshlayer.triinterp = None
                 self.meshlayer.forcerefresh = True
                 self.reinitCorrespondingParameters()
                 self.propertiesdialog.populatecombobox_param()
                 self.propertiesdialog.setTreeWidgetIndex(self.propertiesdialog.treeWidget_parameters,0,self.meshlayer.param_displayed)
-                self.meshlayer.updateSelafinValues()
+                self.meshlayer.updateSelafinValuesEmit()
                 self.meshlayer.triggerRepaint()
         except Exception as e:
             print( str(e) )
@@ -240,7 +261,17 @@ class getCompareValue(QtCore.QObject):
     def oppositeValues(self):
         self.values = -self.values
         
-    def updateSelafinValue(self,onlyparamtimeunchanged = -1):
+    def updateInterpolatorCompare(self, time1):
+        
+        if self.layer.hydrauparser.triangulationisvalid[0]:
+            #self.triinterp = [matplotlib.tri.LinearTriInterpolator(self.hydrauparser.triangulation, self.values[i]) for i in range(len(self.hydrauparser.parametres))]
+            values = self.layer.values
+            self.layer.hydrauparser.interpolator = [matplotlib.tri.LinearTriInterpolator(self.layer.hydrauparser.triangulation, values[i]) for i in range(len(self.layer.hydrauparser.parametres))]
+            return True
+        else:
+            return False
+        
+    def updateSelafinValueCompare(self,onlyparamtimeunchanged = -1):
         temp1 = []
         lenvarnames = len(self.layer.hydrauparser.parametres)
         #meshx1,meshy1 = self.layer.hydrauparser.getMesh()

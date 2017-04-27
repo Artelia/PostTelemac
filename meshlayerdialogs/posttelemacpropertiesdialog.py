@@ -372,41 +372,27 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
         Called when clicking on load selafin button
         """
 
-        str1=''
-        for parser in self.meshlayer.parsers:
-            str1 += parser[1] + ' ('
-            for extension in parser[2]:
-                str1 += ' *.' + extension
-            str1 += ' );;'
-        
-        
-        if False:
-            """
-            if int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 4 :    #qgis2
-                tempname = self.qfiledlg.getOpenFileName(None,'Choose the file',self.loaddirectory, str1)
-            elif int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 5 :    #qgis3
-            """
-            #tempname,extension = self.qfiledlg.getOpenFileNameAndFilter(None,'Choose the file',self.loaddirectory, str1, options = QFileDialog.DontUseNativeDialog)
-            """
-            file_dialog.setNameFilters(["Text files (*.txt)", "Images (*.png *.jpg)"])
-            file_dialog.selectNameFilter("Images (*.png *.jpg)")
-            """
-        if False:
-            filters =[ (str(item[1])+ ' *.' + str(item[2]))  for item in self.meshlayer.parsers]
-            
+        if True:
+            filters =[ (str(item[1]) +' (' +  ' '.join(['*.' + ite for ite in item[2]])  +')')  for item in self.meshlayer.parsers]
             self.qfiledlg.setNameFilters(filters)
             self.qfiledlg.selectNameFilter(filters[0])
             self.qfiledlg.setDirectory(self.loaddirectory)
             success = self.qfiledlg.exec_()
         
-        if True:
+        
+        
+        if False:
+            str1=''
+            for parser in self.meshlayer.parsers:
+                str1 += parser[1] + ' ('
+                for extension in parser[2]:
+                    str1 += ' *.' + extension
+                str1 += ' );;'
             tempname,extension = self.qfiledlg.getOpenFileNameAndFilter(None,'Choose the file',self.loaddirectory, str1, options = QFileDialog.DontUseNativeDialog)
             #tempname,extension = self.qfiledlg.getOpenFileNameAndFilter(None,'Choose the file',self.loaddirectory, str1)
         
-        #if tempname:
-        #if success :
-        if tempname:
-            #tempname, extension = self.qfiledlg.selectedFiles(), self.qfiledlg.selectedNameFilter()
+        if success:
+            tempname, extension = self.qfiledlg.selectedFiles()[0], self.qfiledlg.selectedNameFilter()
             self.loaddirectory = os.path.dirname(tempname)
             QtCore.QSettings().setValue("posttelemac/lastdirectory", self.loaddirectory)
             self.meshlayer.clearParameters()
@@ -579,12 +565,12 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
                                                                 new_var[1],
                                                                 None])
                 self.populatecombobox_param()
-                self.meshlayer.updateSelafinValues()
+                self.meshlayer.updateSelafinValuesEmit()
                 self.setTreeWidgetIndex(self.treeWidget_parameters,0,len(self.meshlayer.hydrauparser.parametres)-1)
             elif source == self.pushButton_param_edit:
                 self.meshlayer.hydrauparser.parametres[index] = [index,new_var[0],new_var[1]]
                 self.populatecombobox_param()
-                self.meshlayer.updateSelafinValues()
+                self.meshlayer.updateSelafinValuesEmit()
                 self.setTreeWidgetIndex(self.treeWidget_parameters,0,index)
                 
             
@@ -602,7 +588,7 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
             self.meshlayer.parametrevx = None
             self.meshlayer.parametrevy = None
             #update all
-            self.meshlayer.updateSelafinValues()
+            self.meshlayer.updateSelafinValuesEmit()
             self.populatecombobox_param()
             self.setTreeWidgetIndex(self.treeWidget_parameters,0,index-1)
         

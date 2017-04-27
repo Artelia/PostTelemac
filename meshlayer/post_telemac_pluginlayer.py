@@ -146,7 +146,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         except: #qgis3
             qgis.core.QgsProject.instance().layersWillBeRemoved["QStringList"].connect(self.RemoveScenario)  #to close properties dialog when layer deleted
             
-        self.updatevalue.connect(self.updateSelafinValues1)
+        self.updatevalue.connect(self.updateSelafinValues)
         
         #load parsers
         self.parsers=[]     #list of parser classes
@@ -303,7 +303,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         self.xform = qgis.core.QgsCoordinateTransform(self.realCRS, qgis.utils.iface.mapCanvas().mapSettings().destinationCrs())
         self.meshrenderer.changeTriangulationCRS()
         #update selafin values
-        self.updateSelafinValues()
+        self.updateSelafinValuesEmit()
         #Update propertiesdialog
         self.propertiesdialog.update()
         #final update
@@ -331,7 +331,8 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
     #Update method - selafin value - used with compare util  *********************************
     #****************************************************************************************************
             
-    def updateSelafinValues(self, onlyparamtimeunchanged = -1 ):
+    #def updateSelafinValues(self, onlyparamtimeunchanged = -1 ):
+    def updateSelafinValuesEmit(self, onlyparamtimeunchanged = -1 ):
         """
         Updates the values stored in self.values and self.value
         called when loading selafin file, or when selafin's time is changed
@@ -343,7 +344,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         
     
             
-    def updateSelafinValues1(self, onlyparamtimeunchanged = -1):
+    def updateSelafinValues(self, onlyparamtimeunchanged = -1):
         """
         Updates the values stored in self.values and self.value
         called when loading selfin file, or when selafin's time is changed
@@ -378,7 +379,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
     def changeTime(self,nb):
         """When changing time value to display"""
         self.time_displayed = nb
-        self.updateSelafinValues()
+        self.updateSelafinValuesEmit()
         #self.triinterp = None
         self.hydrauparser.interpolator = None
         self.timechanged.emit(nb)
@@ -389,7 +390,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
     def changeParam(self,int1):
         """When changing parameter value for display"""
         self.param_displayed = int1
-        self.updateSelafinValues(int1)
+        self.updateSelafinValuesEmit(int1)
         try:    #qgis2
             qgis.utils.iface.legendInterface().refreshLayerSymbology(self)
         except: #qgis3
@@ -498,7 +499,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         """
         qgspointfromcanvas= self.xform.transform(qgspointfromcanvas,qgis.core.QgsCoordinateTransform.ReverseTransform)
         if  self.hydrauparser.interpolator == None :
-            success = self.hydrauparser.updateInterpolator(self.time_displayed)
+            success = self.hydrauparser.updateInterpolatorEmit(self.time_displayed)
         else:
             success = True
             

@@ -114,8 +114,10 @@ class rasterize(QtCore.QObject):
             #grid creation
             xmin,xmax,ymin,ymax = [int(rect.xMinimum()), int(rect.xMaximum()), int(rect.yMinimum()), int(rect.yMaximum()) ]
             
-            #self.selafinlayer.initTriinterpolator()
-            success = self.selafinlayer.hydrauparser.updateInterpolator(self.selafinlayer.time_displayed)
+            #check interpolator
+            if self.selafinlayer.hydrauparser.interpolator is None:
+                self.selafinlayer.hydrauparser.createInterpolator()
+            success = self.selafinlayer.hydrauparser.updateInterpolatorEmit(self.selafinlayer.time_displayed)
             
             paramindex = self.tool.comboBox_parametreschooser_2.currentIndex()
             

@@ -42,6 +42,8 @@ def testCoreParserValue():
     print('params',slf.hydrauparser.getVarNames())
     
     print('done')
+    
+    slf.propertiesdialog.show()
       
     
 testCoreParserValue()

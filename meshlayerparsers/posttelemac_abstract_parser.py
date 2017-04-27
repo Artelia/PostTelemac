@@ -74,6 +74,7 @@ except:
 class PostTelemacAbstractParser(QtCore.QObject):
 
     emitMessage = QtCore.pyqtSignal(str)
+    updateinterplator = QtCore.pyqtSignal(int) 
 
     def __init__(self,virtualparamtoloadoninit = None):
         #QtCore.QObject.__init__(self)
@@ -116,6 +117,9 @@ class PostTelemacAbstractParser(QtCore.QObject):
         self.networkxgraph = None
         self.translatex = 0
         self.translatey = 0
+        
+        #connexion
+        self.updateinterplator.connect(self.updateInterpolator)
         
 
         
@@ -389,7 +393,7 @@ class PostTelemacAbstractParser(QtCore.QObject):
                 self.triangulationisvalid = [False,error]
                 self.emitMessage.emit('Duplicated points : ' + str( (self.triangulationisvalid[1] + 1).tolist()  ) + ' - Triangulation is invalid')
                 
-                
+    
                 
     def checkTriangul(self):
         import collections
@@ -422,6 +426,10 @@ class PostTelemacAbstractParser(QtCore.QObject):
         else:
             return True,None
                     
+                    
+    def updateInterpolatorEmit(self, time1):
+        self.updateinterplator.emit(time1)
+        
                     
     def updateInterpolator(self, time1):
         
