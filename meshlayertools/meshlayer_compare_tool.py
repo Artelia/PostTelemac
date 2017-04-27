@@ -91,7 +91,7 @@ class CompareTool(AbstractMeshLayerTool,FORM_CLASS):
                 if int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 4 :
                     fname = self.propertiesdialog.qfiledlg.getOpenFileName(None,str1,self.propertiesdialog.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
                 elif int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 5 :
-                    fname, extension = self.propertiesdialog.qfiledlg.getOpenFileNameAndFilter(None,str1,self.propertiesdialog.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
+                    fname, extension = self.propertiesdialog.qfiledlg.getOpenFileName(None,str1,self.propertiesdialog.loaddirectory, str2 + " (*.res *.geo *.init *.slf);;" + str3 + " (*)")
                 
         #Things
         if fname:

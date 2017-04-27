@@ -4,7 +4,7 @@ try:
 except:
     from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog
 
-if True:
+if False:
     filedlg = QFileDialog()
     filedlg.setNameFilters(["Text files (*.txt)", "Images (*.png *.jpg)"])
     filedlg.selectNameFilter("Images (*.png *.jpg)")
@@ -16,6 +16,11 @@ if True:
 
     print(temp,filedlg.selectedFiles(),filedlg.selectedNameFilter())
     
-if False:
+if True:
     filedlg = QFileDialog()
-    tempname,extension = self.qfiledlg.getOpenFileNameAndFilter(None,'Choose the file',self.loaddirectory, str1, options = QFileDialog.DontUseNativeDialog)
+    #tempname,extension = filedlg.getOpenFileName(None,'Choose the file',None, "Text files (*.txt) ;; Images (*.png *.jpg)", options = QFileDialog.DontUseNativeDialog)
+    tempname = filedlg.getOpenFileName(None,'Choose the file',None, "Text files (*.txt);; Images (*.png *.jpg)")
+    print('tempname',tempname)
+    print(filedlg.selectedNameFilter())
+    print(filedlg.selectedFilter () )
+    

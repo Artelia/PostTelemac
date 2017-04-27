@@ -371,32 +371,29 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
         """
         Called when clicking on load selafin button
         """
+        #filedialog
+        #create filter
+        str1=''
+        for parser in self.meshlayer.parsers:
+            str1 += parser[1] + ' ('
+            for extension in parser[2]:
+                str1 += ' *.' + extension
+            str1 += ' );;'
+        #show dialog
+        if int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 4 :
+            tempname,extension = self.qfiledlg.getOpenFileNameAndFilter(None,'Choose the file',self.loaddirectory, str1, str1.split(';;')[0])
+        elif int(qgis.PyQt.QtCore.QT_VERSION_STR[0]) == 5 :
+            tempname,extension = self.qfiledlg.getOpenFileName(None,'Choose the file',self.loaddirectory, str1)
+        
+        #something selected
+        if tempname:
+            if not extension is None:  
+                software = extension.split(' ')[0]
 
-        if True:
-            filters =[ (str(item[1]) +' (' +  ' '.join(['*.' + ite for ite in item[2]])  +')')  for item in self.meshlayer.parsers]
-            self.qfiledlg.setNameFilters(filters)
-            self.qfiledlg.selectNameFilter(filters[0])
-            self.qfiledlg.setDirectory(self.loaddirectory)
-            success = self.qfiledlg.exec_()
-        
-        
-        
-        if False:
-            str1=''
-            for parser in self.meshlayer.parsers:
-                str1 += parser[1] + ' ('
-                for extension in parser[2]:
-                    str1 += ' *.' + extension
-                str1 += ' );;'
-            tempname,extension = self.qfiledlg.getOpenFileNameAndFilter(None,'Choose the file',self.loaddirectory, str1, options = QFileDialog.DontUseNativeDialog)
-            #tempname,extension = self.qfiledlg.getOpenFileNameAndFilter(None,'Choose the file',self.loaddirectory, str1)
-        
-        if success:
-            tempname, extension = self.qfiledlg.selectedFiles()[0], self.qfiledlg.selectedNameFilter()
             self.loaddirectory = os.path.dirname(tempname)
             QtCore.QSettings().setValue("posttelemac/lastdirectory", self.loaddirectory)
             self.meshlayer.clearParameters()
-            success = self.meshlayer.load_selafin(tempname,extension.split(' ')[0])
+            success = self.meshlayer.load_selafin(tempname,software)
             if success:
                 nom = os.path.basename(tempname).split('.')[0]
                 self.normalMessage(self.tr('File ') +  str(nom) +  self.tr(" loaded"))
