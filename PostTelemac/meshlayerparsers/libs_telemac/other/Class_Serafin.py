@@ -9,6 +9,8 @@ import copy
 import matplotlib.tri as tri
 import mmap
 
+
+
 class Serafin:
     ## French
     nomvar2d = ['VITESSE U       M/S             ',\
@@ -191,6 +193,12 @@ class Serafin:
         self.nbvar2 = unpack('>i', self.file.read(4))[0] #nbvar2
         self.file.read(4) ## fin encadrement
 
+        #Python2/3
+        try:
+            xrange
+        except NameError:
+            xrange = range
+
         ##Lecture du nom des variables
         self.nomvar = []
         for j in xrange(self.nbvar):
@@ -291,6 +299,16 @@ class Serafin:
 
 
     def get_temps(self, pdt_variable = False):
+
+        #Python2/3
+        try:
+            xrange
+        except NameError:
+            xrange = range
+
+        if sys.version_info.major == 3:
+            self.nb_pdt = int(self.nb_pdt)
+
         if not pdt_variable:
             if self.nb_pdt < 3:
                 for num_time in xrange(self.nb_pdt):
@@ -322,6 +340,13 @@ class Serafin:
 ##  - La plus petite et la plus grande surface d'un elements
 ##  - La surface total du modele
     def get_info(self):
+
+        #Python2/3
+        try:
+            xrange
+        except NameError:
+            xrange = range
+
         ikle2 = np.reshape(self.ikle,(self.nelem,-1))
         for i in xrange(self.nelem):
             L1 = ((self.x[ikle2[i][0]-1]-self.x[ikle2[i][1]-1])**2+(self.y[ikle2[i][0]-1]-self.y[ikle2[i][1]-1])**2)**.5
@@ -369,9 +394,16 @@ class Serafin:
     
     def write_header(self):
 
+        if sys.version_info.major == 2:
+            spacetemp = ' '
+        elif sys.version_info.major == 3:
+            spacetemp = b' '
+
         ## Lecture du titre
         self.file.write(pack('>i',80)) ## debut encadrement
-        self.file.write(self.title+' '*(80-len(self.title)))
+
+        self.file.write(self.title + spacetemp * (80 - len(self.title)))
+
         self.file.write(pack('>i',80)) ## fin encadrement
 
         ## Lecture de nbvar et de nbvar2
@@ -380,10 +412,20 @@ class Serafin:
         self.file.write(pack('>i', self.nbvar2)) #nbvar2
         self.file.write(pack('>i',2*4)) ## fin encadrement
 
+        #Python2/3
+        try:
+            xrange
+        except NameError:
+            xrange = range
+
         ##Lecture du nom des variables
         for j in xrange(self.nbvar):
             self.file.write(pack('>i',32)) ## debut encadrement
-            self.file.write(self.nomvar[j]+' '*(32-len(self.nomvar[j])))
+            if sys.version_info.major == 3:
+                if isinstance(self.nomvar[j], str):
+                    self.nomvar[j] = self.nomvar[j].encode()
+
+            self.file.write(self.nomvar[j] + spacetemp*(32-len(self.nomvar[j])))
             self.file.write(pack('>i',32)) ## fin encadrement
         
         ## Verification si date dans resultat

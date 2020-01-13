@@ -79,8 +79,11 @@ class Test(QtCore.QObject):
             if True:
                 print('********* SELAFI created ***************************** ')
 
-                pathslf = os.path.join(os.path.dirname(__file__), 'telemac_files', 'SMEAG_R1_ARA01_Q10_MAX_PPR.res')
-                # pathslf = os.path.join(os.path.dirname(__file__), 'telemac_files', 'SMEAG_REF_Q10.res')
+
+                pathslf = os.path.join(os.path.dirname(__file__), 'telemac_files', 'res_pluie_2010_cn100_Max.res')
+                # pathslf = os.path.join(os.path.dirname(__file__), 'telemac_files', 'res_pluie_2010_Max.res')
+                pathslf = os.path.join(os.path.dirname(__file__), 'telemac_files', 'res_tempete.slf')
+
                 layer.load_selafin(pathslf,'TELEMAC')
 
 
