@@ -96,10 +96,11 @@ class ExtractMaxTool(AbstractMeshLayerTool,FORM_CLASS):
                 qgis.core.QgsMapLayerRegistry.instance().addMapLayer(slf)
             elif sys.version_info.major == 3:
                 # slf = qgis.core.QgsPluginLayerRegistry.pluginLayerType('selafin_viewer').createLayer()
-                slf = qgis.core.QgsApplication.instance().pluginLayerRegistry().pluginLayerType('selafin_viewer').createLayer()
-                slf.setRealCrs(self.meshlayer.crs())
-                slf.load_selafin(path,'TELEMAC')
-                qgis.core.QgsProject.instance().addMapLayer(slf)
+                if qgis.utils.iface is not None:
+                    slf = qgis.core.QgsApplication.instance().pluginLayerRegistry().pluginLayerType('selafin_viewer').createLayer()
+                    slf.setRealCrs(self.meshlayer.crs())
+                    slf.load_selafin(path,'TELEMAC')
+                    qgis.core.QgsProject.instance().addMapLayer(slf)
             
 
 
