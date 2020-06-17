@@ -788,3 +788,6 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
                 return message
         if True:
             return message
+			
+    def setTransformContext(self, transformContext):
+        pass

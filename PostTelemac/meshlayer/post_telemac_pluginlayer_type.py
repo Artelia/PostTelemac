@@ -26,4 +26,7 @@ class SelafinPluginLayerType(qgis.core.QgsPluginLayerType):
             QgsPluginLayerRegistry.instance().removePluginLayerType('selafin_viewer')
         self.pluginLayerType = self()
         QgsPluginLayerRegistry.instance().addPluginLayerType(self.pluginLayerType)
+		
+    def setTransformContext(self, transformContext):
+        pass
  

@@ -251,13 +251,13 @@ class SelafinContour2Pts(QtCore.QObject):
             self.writerw1  = QgsVectorFileWriter(self.pathshp, 
                                                                  None, 
                                                                  fields ,   
-                                                                 QGis.WKBPoint, QgsCoordinateReferenceSystem(str(self.crs) ), 
+                                                                 QgsWkbTypes.Point, QgsCoordinateReferenceSystem(str(self.crs) ), #QGis.WKBPoint
                                                                  "ESRI Shapefile")
         """                                                         
         if self.traitementarriereplan == 1 or self.traitementarriereplan == 2 :
             self.writerw2 = VectorWriter(donnees_d_entree['fichierdesortie_point'],
                                                       None , fields, 
-                                                      QGis.WKBMultiPoint, 
+                                                      QgsWkbTypes.WKBMultiPoint, 
                                                       QgsCoordinateReferenceSystem(str(self.crs) ))
                                                       
         """
@@ -305,7 +305,7 @@ class SelafinContour2Pts(QtCore.QObject):
                                 
 
                                 
-                            fet.setGeometry(QgsGeometry.fromPoint(QgsPoint(float(self.x[k]),float(self.y[k]))))
+                            fet.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(float(self.x[k]),float(self.y[k]))))
                             #self.writeOutput('temp1')
                             tabattr = []
                             if len(self.ztri)>0:
@@ -374,7 +374,7 @@ class SelafinContour2Pts(QtCore.QObject):
                                     self.writeOutput(strtxt)
                                     
                                 ytemp = float(ymin+y2*self.pasespace)
-                                fet.setGeometry(QgsGeometry.fromPoint(QgsPoint(xtemp,ytemp)))
+                                fet.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(xtemp,ytemp)))
                                 tabattr1 = []
                                 if str(float(lineartri[0].__call__(xtemp,ytemp))) == 'nan':
                                     continue
@@ -546,7 +546,7 @@ class InitSelafinMesh2Pts(QtCore.QObject):
             if processtype in [1]:
                 writercontour = VectorWriter(outputprocessing, 
                                                         None, champ, 
-                                                        QGis.WKBMultiPolygon, 
+                                                        QgsWkbTypes.MultiPolygon, 
                                                         QgsCoordinateReferenceSystem(str(selafincrs) ))
             self.thread.start()
         else :
@@ -696,7 +696,7 @@ class InitSelafinMesh2Pts2():
             champ = QgsFields()
             writercontour = VectorWriter(self.donnees_d_entree['fichierdesortie_point'], 
                                                        None, champ, 
-                                                       QGis.WKBMultiPoint, 
+                                                       QgsWkbTypes.MultiPoint, 
                                                        QgsCoordinateReferenceSystem(str(self.donnees_d_entree['crs']) ))
             self.thread.start()
         else :
