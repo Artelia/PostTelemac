@@ -582,7 +582,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
 
     
     
-    def readXml(self, node):
+    def readXml(self, node, context):
         """
         implementation of method from QgsMapLayer to load layer from qgsproject
         return True ifsuccessful
