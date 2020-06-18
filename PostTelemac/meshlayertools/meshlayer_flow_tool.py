@@ -702,7 +702,7 @@ class computeFlow(QtCore.QObject):
                     self.status.emit('shortests : ' + str(shortests))
                     
                     for shortest in shortests:
-                        flow = None
+                        #flow = None
                         if False:
                             results = np.array(self.selafinlayer.hydrauparser.getTimeSerie((np.array(shortest) +1).tolist(),[parameterh,parameteruv,parametervv],self.selafinlayer.hydrauparser.parametres) )
                         for i,elem in enumerate(shortest):
@@ -735,7 +735,7 @@ class computeFlow(QtCore.QObject):
                                         #xy2 = [self.slf.MESHX[elem],self.slf.MESHY[elem]]
                                         #xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
                                         xy2 = list( self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([elem])[0] )
-                                        if flow != None:
+                                        if 'flow' in locals():
                                             flow = flow + self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
                                         else:
                                             flow = self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
@@ -758,7 +758,7 @@ class computeFlow(QtCore.QObject):
                                             v2vect = uv2 + vv2
                                             #xy2 = list( self.selafinlayer.hydrauparser.getXYFromNumPoint([elem])[0] )
                                             xy2 = list( self.selafinlayer.hydrauparser.getFaceNodeXYFromNumPoint([elem])[0] )
-                                            if flow != None:
+                                            if 'flow' in locals():
                                                 flow = flow + self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
                                             else:
                                                 flow = self.computeFlowBetweenPoints(xy1,h1,v1vect,xy2,h2,v2vect)
