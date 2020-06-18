@@ -648,7 +648,7 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
         else:
             return False
 
-    def writeXml(self, node, doc):
+    def writeXml(self, node, doc, context):
         """
         implementation of method from QgsMapLayer to save layer in  qgsproject
         return True ifsuccessful
