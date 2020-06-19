@@ -146,6 +146,9 @@ class ToShapeTool(AbstractMeshLayerTool,FORM_CLASS):
             self.initclass.status.connect(print)
             self.initclass.error.connect(print)
         
+        self.initclass.finished1.connect(self.workershapePointFinished)
+        self.propertiesdialog.normalMessage(self.tr("2Shape - points creation launched - watch progress on log tab"))
+		
         self.initclass.start(                 
                              0,                 #0 : thread inside qgis (plugin) - 1 : thread processing - 2 : modeler (no thread) - 3 : modeler + shpouput - 4: outsideqgis
                              os.path.normpath(self.meshlayer.hydraufilepath),                 #path to selafin file
