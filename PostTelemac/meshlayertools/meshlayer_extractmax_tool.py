@@ -46,17 +46,11 @@ class ExtractMaxTool(AbstractMeshLayerTool,FORM_CLASS):
     def __init__(self, meshlayer,dialog):
         AbstractMeshLayerTool.__init__(self,meshlayer,dialog)
         self.pushButton_max_res.clicked.connect(self.calculMaxRes)
-        
+
     def initTool(self):
         self.setupUi(self)
         self.iconpath = os.path.join(os.path.dirname(__file__),'..','icons','tools','Wizard_48x48.png' )
-        
-        
 
-
-        
-
-        
     def onActivation(self):
         maxiter = self.meshlayer.hydrauparser.itertimecount
         self.spinBox_max_start.setMaximum(maxiter)
@@ -65,26 +59,22 @@ class ExtractMaxTool(AbstractMeshLayerTool,FORM_CLASS):
 
     def onDesactivation(self):
         pass
-        
-        
+
     def calculMaxRes(self):
 
         self.initclass=initRunGetMax()
         #self.initclass.status.connect(self.propertiesdialog.textBrowser_2.append)
         self.initclass.status.connect(self.propertiesdialog.logMessage)
         
-        
         self.initclass.finished1.connect(self.chargerSelafin)
+        self.propertiesdialog.normalMessage(self.tr("ExtractMax launched - watch progress on log tab"))
+        
         self.initclass.start(self.meshlayer,
                              self,
                              self.checkBox_11.isChecked(),
                              self.checkBox_11.isChecked(),
                              self.doubleSpinBox_4.value() if self.checkBox_9.isChecked() else -1,
                              self.doubleSpinBox_5.value() if self.checkBox_10.isChecked() else -1)
-
-        
-        
-        
 
     def chargerSelafin(self, path):
         if path and self.checkBox_8.isChecked():
@@ -101,8 +91,6 @@ class ExtractMaxTool(AbstractMeshLayerTool,FORM_CLASS):
                     slf.setRealCrs(self.meshlayer.crs())
                     slf.load_selafin(path,'TELEMAC')
                     qgis.core.QgsProject.instance().addMapLayer(slf)
-            
-
 
 class runGetMax(QtCore.QObject):
 

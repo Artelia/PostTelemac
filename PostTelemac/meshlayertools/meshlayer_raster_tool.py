@@ -81,10 +81,9 @@ class RasterTool(AbstractMeshLayerTool,FORM_CLASS):
     def rasterCreationFinished(self,strpath):
         if strpath != None:
             rlayer = qgis.core.QgsRasterLayer(strpath, os.path.basename(strpath).split('.')[0])
-            
-            try:    #qgis2
+            if sys.version_info.major == 2:
                 qgis.core.QgsMapLayerRegistry.instance().addMapLayer(rlayer)
-            except: #qgis3
+            elif sys.version_info.major == 3:
                 qgis.core.QgsProject.instance().addMapLayer(rlayer)
             
             self.propertiesdialog.normalMessage(str(os.path.basename(strpath).split('.')[0]) + self.tr(" created"))
