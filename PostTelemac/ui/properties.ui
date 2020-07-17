@@ -137,8 +137,8 @@
               </property>
               <property name="minimumSize">
                <size>
-                <width>40</width>
-                <height>40</height>
+                <width>30</width>
+                <height>30</height>
                </size>
               </property>
               <property name="font">
@@ -201,7 +201,7 @@
               <property name="minimumSize">
                <size>
                 <width>0</width>
-                <height>40</height>
+                <height>30</height>
                </size>
               </property>
               <property name="text">
@@ -223,8 +223,8 @@ translation</string>
               </property>
               <property name="minimumSize">
                <size>
-                <width>40</width>
-                <height>40</height>
+                <width>30</width>
+                <height>30</height>
                </size>
               </property>
               <property name="maximumSize">

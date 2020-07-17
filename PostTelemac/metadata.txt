@@ -8,11 +8,11 @@
 
 [general]
 name=PostTelemac
-about= Post treatment of open Telemac results (and Anuga , HECRAS 2D as experimental). Requires matplotlib, shapely, numpy, scipy, networkx and ffmpeg libraries.
-qgisMinimumVersion=2.14.0
+about= Post treatment of open Telemac results (and Anuga , HECRAS 2D as experimental). Requires matplotlib, shapely, numpy, scipy, networkx, ffmpeg and opengl libraries.
+qgisMinimumVersion=3.0
 qgisMaximumVersion=3.99
 description=Post Treatment for Telemac (and Anuga , HECRAS 2D as experimental)
-version=1.0.3
+version=1.1.0
 author=Artelia Eau et Environnement
 email=patrice.verchere@arteliagroup.com
 
@@ -22,6 +22,7 @@ email=patrice.verchere@arteliagroup.com
 
 # Uncomment the following line and add your changelog:
 changelog= 
+    1.1.0 : qgis 3 ! again !
 	1.0.3 : export max working
     1.0.2 : qgis 3 !
     1.0.1 : bug fix

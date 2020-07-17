@@ -741,13 +741,14 @@ class SelafinPluginLayer(qgis.core.QgsPluginLayer):
                 except Exception as e :
                     print('fig ' + str(e))
             """
+            if self.hydrauparser is not None:
+                self.hydrauparser.hydraufile = None
 
             if self.hydrauparser is None:
                 try:
                     self.hydrauparser.emitMessage.disconnect(self.propertiesdialog.errorMessage)
                 except Exception as e:
                     pass
-                self.hydrauparser.hydraufile = None
                 del self.hydrauparser
 
             if QtCore.QSettings().value("posttelemac/renderlib") is None:

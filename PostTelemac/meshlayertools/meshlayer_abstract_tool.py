@@ -144,16 +144,4 @@ class AbstractMeshLayerTool(QWidget):
                     self.onActivation()
             else:
                 self.onDesactivation()
-                
 
-        
-
-            
-        
-        
-        
-        
-
-        
-        
-        

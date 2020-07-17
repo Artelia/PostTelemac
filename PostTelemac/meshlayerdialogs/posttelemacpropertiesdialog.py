@@ -27,7 +27,7 @@ from qgis.PyQt import uic, QtCore
 try:
     from qgis.PyQt.QtGui import QDockWidget, QFileDialog, QTreeWidgetItem, QTableWidgetItem, QApplication
 except:
-    from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog, QTreeWidgetItem, QTableWidgetItem, QApplication
+    from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog, QTreeWidgetItem, QTableWidgetItem, QApplication, QMessageBox
 
 # other import
 import os
