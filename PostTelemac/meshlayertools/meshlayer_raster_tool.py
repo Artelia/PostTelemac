@@ -79,7 +79,7 @@ class RasterTool(AbstractMeshLayerTool,FORM_CLASS):
         self.initclass.start(self.meshlayer,self)
         
     def rasterCreationFinished(self,strpath):
-        if strpath != None:
+        if strpath != '':
             rlayer = qgis.core.QgsRasterLayer(strpath, os.path.basename(strpath).split('.')[0])
             if sys.version_info.major == 2:
                 qgis.core.QgsMapLayerRegistry.instance().addMapLayer(rlayer)
@@ -87,6 +87,8 @@ class RasterTool(AbstractMeshLayerTool,FORM_CLASS):
                 qgis.core.QgsProject.instance().addMapLayer(rlayer)
             
             self.propertiesdialog.normalMessage(str(os.path.basename(strpath).split('.')[0]) + self.tr(" created"))
+        else: #FIX IT
+            self.propertiesdialog.errorMessage('Unknown error, please retry... :\'(')
             
             
         
@@ -111,9 +113,10 @@ class rasterize(QtCore.QObject):
             #res 
             res = self.tool.spinBox_rastercellsize.value()
             #grid creation
-            xmin,xmax,ymin,ymax = [int(rect.xMinimum()), int(rect.xMaximum()), int(rect.yMinimum()), int(rect.yMaximum()) ]
+            xmin,xmax,ymin,ymax = [int(rect.xMinimum()), int(rect.xMaximum()), int(rect.yMinimum()), int(rect.yMaximum())]
             
             #check interpolator
+            #FIX IT : first click don't work...
             if self.selafinlayer.hydrauparser.interpolator is None:
                 self.selafinlayer.hydrauparser.createInterpolator()
             success = self.selafinlayer.hydrauparser.updateInterpolatorEmit(self.selafinlayer.time_displayed)
@@ -134,9 +137,6 @@ class rasterize(QtCore.QObject):
             else:
                 try:
                     xi, yi = np.meshgrid(np.arange(xmin, xmax, res), np.arange(ymin, ymax, res))
-
-
-                    #zi = self.selafinlayer.triinterp[paramindex](xi, yi)
                     zi = self.selafinlayer.hydrauparser.interpolator[paramindex](xi, yi)
                 
                 except Exception as e:
@@ -248,7 +248,6 @@ class InitRasterize(QtCore.QObject):
 
 
     def start(self, selafin,tool):
-                 
         #Launch worker
         self.thread = QtCore.QThread()
         self.worker = rasterize(selafin,tool)
