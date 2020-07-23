@@ -4,12 +4,15 @@ from .DockDrop import *
 from ..widgets.VerticalLabel import VerticalLabel
 from ..python2_3 import asUnicode
 
+
 class Dock(QtGui.QWidget, DockDrop):
-    
+
     sigStretchChanged = QtCore.Signal()
     sigClosed = QtCore.Signal(object)
-    
-    def __init__(self, name, area=None, size=(10, 10), widget=None, hideTitle=False, autoOrientation=True, closable=False):
+
+    def __init__(
+        self, name, area=None, size=(10, 10), widget=None, hideTitle=False, autoOrientation=True, closable=False
+    ):
         QtGui.QWidget.__init__(self)
         DockDrop.__init__(self)
         self._container = None
@@ -21,8 +24,8 @@ class Dock(QtGui.QWidget, DockDrop):
         self.labelHidden = False
         self.moveLabel = True  ## If false, the dock is no longer allowed to move the label.
         self.autoOrient = autoOrientation
-        self.orientation = 'horizontal'
-        #self.label.setAlignment(QtCore.Qt.AlignHCenter)
+        self.orientation = "horizontal"
+        # self.label.setAlignment(QtCore.Qt.AlignHCenter)
         self.topLayout = QtGui.QGridLayout()
         self.topLayout.setContentsMargins(0, 0, 0, 0)
         self.topLayout.setSpacing(0)
@@ -37,7 +40,7 @@ class Dock(QtGui.QWidget, DockDrop):
         self.widgetArea.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         self.widgets = []
         self.currentRow = 0
-        #self.titlePos = 'top'
+        # self.titlePos = 'top'
         self.raiseOverlay()
         self.hStyle = """
         Dock > QWidget {
@@ -67,9 +70,9 @@ class Dock(QtGui.QWidget, DockDrop):
         }"""
         self.setAutoFillBackground(False)
         self.widgetArea.setStyleSheet(self.hStyle)
-        
+
         self.setStretch(*size)
-        
+
         if widget is not None:
             self.addWidget(widget)
 
@@ -78,37 +81,37 @@ class Dock(QtGui.QWidget, DockDrop):
 
     def implements(self, name=None):
         if name is None:
-            return ['dock']
+            return ["dock"]
         else:
-            return name == 'dock'
-        
+            return name == "dock"
+
     def setStretch(self, x=None, y=None):
         """
         Set the 'target' size for this Dock.
         The actual size will be determined by comparing this Dock's
         stretch value to the rest of the docks it shares space with.
         """
-        #print "setStretch", self, x, y
-        #self._stretch = (x, y)
+        # print "setStretch", self, x, y
+        # self._stretch = (x, y)
         if x is None:
             x = 0
         if y is None:
             y = 0
-        #policy = self.sizePolicy()
-        #policy.setHorizontalStretch(x)
-        #policy.setVerticalStretch(y)
-        #self.setSizePolicy(policy)
+        # policy = self.sizePolicy()
+        # policy.setHorizontalStretch(x)
+        # policy.setVerticalStretch(y)
+        # self.setSizePolicy(policy)
         self._stretch = (x, y)
         self.sigStretchChanged.emit()
-        #print "setStretch", self, x, y, self.stretch()
-        
+        # print "setStretch", self, x, y, self.stretch()
+
     def stretch(self):
-        #policy = self.sizePolicy()
-        #return policy.horizontalStretch(), policy.verticalStretch()
+        # policy = self.sizePolicy()
+        # return policy.horizontalStretch(), policy.verticalStretch()
         return self._stretch
-        
-    #def stretch(self):
-        #return self._stretch
+
+    # def stretch(self):
+    # return self._stretch
 
     def hideTitleBar(self):
         """
@@ -117,17 +120,17 @@ class Dock(QtGui.QWidget, DockDrop):
         """
         self.label.hide()
         self.labelHidden = True
-        if 'center' in self.allowedAreas:
-            self.allowedAreas.remove('center')
+        if "center" in self.allowedAreas:
+            self.allowedAreas.remove("center")
         self.updateStyle()
-        
+
     def showTitleBar(self):
         """
         Show the title bar for this Dock.
         """
         self.label.show()
         self.labelHidden = False
-        self.allowedAreas.add('center')
+        self.allowedAreas.add("center")
         self.updateStyle()
 
     def title(self):
@@ -141,42 +144,42 @@ class Dock(QtGui.QWidget, DockDrop):
         Sets the text displayed in title bar for this Dock.
         """
         self.label.setText(text)
-        
-    def setOrientation(self, o='auto', force=False):
+
+    def setOrientation(self, o="auto", force=False):
         """
         Sets the orientation of the title bar for this Dock.
         Must be one of 'auto', 'horizontal', or 'vertical'.
         By default ('auto'), the orientation is determined
         based on the aspect ratio of the Dock.
         """
-        #print self.name(), "setOrientation", o, force
-        if o == 'auto' and self.autoOrient:
-            if self.container().type() == 'tab':
-                o = 'horizontal'
-            elif self.width() > self.height()*1.5:
-                o = 'vertical'
+        # print self.name(), "setOrientation", o, force
+        if o == "auto" and self.autoOrient:
+            if self.container().type() == "tab":
+                o = "horizontal"
+            elif self.width() > self.height() * 1.5:
+                o = "vertical"
             else:
-                o = 'horizontal'
+                o = "horizontal"
         if force or self.orientation != o:
             self.orientation = o
             self.label.setOrientation(o)
             self.updateStyle()
-        
+
     def updateStyle(self):
         ## updates orientation and appearance of title bar
-        #print self.name(), "update style:", self.orientation, self.moveLabel, self.label.isVisible()
+        # print self.name(), "update style:", self.orientation, self.moveLabel, self.label.isVisible()
         if self.labelHidden:
             self.widgetArea.setStyleSheet(self.nStyle)
-        elif self.orientation == 'vertical':
-            self.label.setOrientation('vertical')
+        elif self.orientation == "vertical":
+            self.label.setOrientation("vertical")
             if self.moveLabel:
-                #print self.name(), "reclaim label"
+                # print self.name(), "reclaim label"
                 self.topLayout.addWidget(self.label, 1, 0)
             self.widgetArea.setStyleSheet(self.vStyle)
         else:
-            self.label.setOrientation('horizontal')
+            self.label.setOrientation("horizontal")
             if self.moveLabel:
-                #print self.name(), "reclaim label"
+                # print self.name(), "reclaim label"
                 self.topLayout.addWidget(self.label, 0, 1)
             self.widgetArea.setStyleSheet(self.hStyle)
 
@@ -197,40 +200,38 @@ class Dock(QtGui.QWidget, DockDrop):
         """
         if row is None:
             row = self.currentRow
-        self.currentRow = max(row+1, self.currentRow)
+        self.currentRow = max(row + 1, self.currentRow)
         self.widgets.append(widget)
         self.layout.addWidget(widget, row, col, rowspan, colspan)
         self.raiseOverlay()
-        
-        
+
     def startDrag(self):
         self.drag = QtGui.QDrag(self)
         mime = QtCore.QMimeData()
-        #mime.setPlainText("asd")
+        # mime.setPlainText("asd")
         self.drag.setMimeData(mime)
         self.widgetArea.setStyleSheet(self.dragStyle)
         self.update()
         action = self.drag.exec_()
         self.updateStyle()
-        
+
     def float(self):
         self.area.floatDock(self)
-            
+
     def containerChanged(self, c):
-        #print self.name(), "container changed"
+        # print self.name(), "container changed"
         self._container = c
-        if c.type() != 'tab':
+        if c.type() != "tab":
             self.moveLabel = True
             self.label.setDim(False)
         else:
             self.moveLabel = False
-            
+
         self.setOrientation(force=True)
-        
+
     def raiseDock(self):
         """If this Dock is stacked underneath others, raise it to the top."""
         self.container().raiseDock(self)
-        
 
     def close(self):
         """Remove this dock from the DockArea it lives inside."""
@@ -259,15 +260,15 @@ class Dock(QtGui.QWidget, DockDrop):
 
 
 class DockLabel(VerticalLabel):
-    
+
     sigClicked = QtCore.Signal(object, object)
     sigCloseClicked = QtCore.Signal()
-    
+
     def __init__(self, text, dock, showCloseButton):
         self.dim = False
         self.fixedWidth = False
-        VerticalLabel.__init__(self, text, orientation='horizontal', forceWidth=False)
-        self.setAlignment(QtCore.Qt.AlignTop|QtCore.Qt.AlignHCenter)
+        VerticalLabel.__init__(self, text, orientation="horizontal", forceWidth=False)
+        self.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignHCenter)
         self.dock = dock
         self.updateStyle()
         self.setAutoFillBackground(False)
@@ -280,17 +281,17 @@ class DockLabel(VerticalLabel):
             self.closeButton.setIcon(QtGui.QApplication.style().standardIcon(QtGui.QStyle.SP_TitleBarCloseButton))
 
     def updateStyle(self):
-        r = '3px'
+        r = "3px"
         if self.dim:
-            fg = '#aaa'
-            bg = '#44a'
-            border = '#339'
+            fg = "#aaa"
+            bg = "#44a"
+            border = "#339"
         else:
-            fg = '#fff'
-            bg = '#66c'
-            border = '#55B'
-        
-        if self.orientation == 'vertical':
+            fg = "#fff"
+            bg = "#66c"
+            border = "#55B"
+
+        if self.orientation == "vertical":
             self.vStyle = """DockLabel {
                 background-color : %s;
                 color : %s;
@@ -302,7 +303,13 @@ class DockLabel(VerticalLabel):
                 border-right: 2px solid %s;
                 padding-top: 3px;
                 padding-bottom: 3px;
-            }""" % (bg, fg, r, r, border)
+            }""" % (
+                bg,
+                fg,
+                r,
+                r,
+                border,
+            )
             self.setStyleSheet(self.vStyle)
         else:
             self.hStyle = """DockLabel {
@@ -316,14 +323,20 @@ class DockLabel(VerticalLabel):
                 border-bottom: 2px solid %s;
                 padding-left: 3px;
                 padding-right: 3px;
-            }""" % (bg, fg, r, r, border)
+            }""" % (
+                bg,
+                fg,
+                r,
+                r,
+                border,
+            )
             self.setStyleSheet(self.hStyle)
 
     def setDim(self, d):
         if self.dim != d:
             self.dim = d
             self.updateStyle()
-    
+
     def setOrientation(self, o):
         VerticalLabel.setOrientation(self, o)
         self.updateStyle()
@@ -333,24 +346,27 @@ class DockLabel(VerticalLabel):
             self.pressPos = ev.pos()
             self.startedDrag = False
             ev.accept()
-        
+
     def mouseMoveEvent(self, ev):
-        if not self.startedDrag and (ev.pos() - self.pressPos).manhattanLength() > QtGui.QApplication.startDragDistance():
+        if (
+            not self.startedDrag
+            and (ev.pos() - self.pressPos).manhattanLength() > QtGui.QApplication.startDragDistance()
+        ):
             self.dock.startDrag()
         ev.accept()
-            
+
     def mouseReleaseEvent(self, ev):
         if not self.startedDrag:
             self.sigClicked.emit(self, ev)
         ev.accept()
-        
+
     def mouseDoubleClickEvent(self, ev):
         if ev.button() == QtCore.Qt.LeftButton:
             self.dock.float()
-            
-    def resizeEvent (self, ev):
+
+    def resizeEvent(self, ev):
         if self.closeButton:
-            if self.orientation == 'vertical':
+            if self.orientation == "vertical":
                 size = ev.size().width()
                 pos = QtCore.QPoint(0, 0)
             else:
@@ -358,4 +374,4 @@ class DockLabel(VerticalLabel):
                 pos = QtCore.QPoint(ev.size().width() - size, 0)
             self.closeButton.setFixedSize(QtCore.QSize(size, size))
             self.closeButton.move(pos)
-        super(DockLabel,self).resizeEvent(ev)
+        super(DockLabel, self).resizeEvent(ev)

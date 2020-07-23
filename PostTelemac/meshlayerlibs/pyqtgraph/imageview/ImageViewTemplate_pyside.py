@@ -9,6 +9,7 @@
 
 from PySide import QtCore, QtGui
 
+
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
@@ -99,18 +100,18 @@ class Ui_Form(object):
         self.normXBlurSpin.setObjectName("normXBlurSpin")
         self.gridLayout_2.addWidget(self.normXBlurSpin, 2, 2, 1, 1)
         self.label_8 = QtGui.QLabel(self.normGroup)
-        self.label_8.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_8.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.label_8.setObjectName("label_8")
         self.gridLayout_2.addWidget(self.label_8, 2, 1, 1, 1)
         self.label_9 = QtGui.QLabel(self.normGroup)
-        self.label_9.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_9.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.label_9.setObjectName("label_9")
         self.gridLayout_2.addWidget(self.label_9, 2, 3, 1, 1)
         self.normYBlurSpin = QtGui.QDoubleSpinBox(self.normGroup)
         self.normYBlurSpin.setObjectName("normYBlurSpin")
         self.gridLayout_2.addWidget(self.normYBlurSpin, 2, 4, 1, 1)
         self.label_10 = QtGui.QLabel(self.normGroup)
-        self.label_10.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_10.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.label_10.setObjectName("label_10")
         self.gridLayout_2.addWidget(self.label_10, 2, 5, 1, 1)
         self.normOffRadio = QtGui.QRadioButton(self.normGroup)
@@ -135,9 +136,15 @@ class Ui_Form(object):
         Form.setWindowTitle(QtGui.QApplication.translate("Form", "Form", None, QtGui.QApplication.UnicodeUTF8))
         self.roiBtn.setText(QtGui.QApplication.translate("Form", "ROI", None, QtGui.QApplication.UnicodeUTF8))
         self.menuBtn.setText(QtGui.QApplication.translate("Form", "Menu", None, QtGui.QApplication.UnicodeUTF8))
-        self.normGroup.setTitle(QtGui.QApplication.translate("Form", "Normalization", None, QtGui.QApplication.UnicodeUTF8))
-        self.normSubtractRadio.setText(QtGui.QApplication.translate("Form", "Subtract", None, QtGui.QApplication.UnicodeUTF8))
-        self.normDivideRadio.setText(QtGui.QApplication.translate("Form", "Divide", None, QtGui.QApplication.UnicodeUTF8))
+        self.normGroup.setTitle(
+            QtGui.QApplication.translate("Form", "Normalization", None, QtGui.QApplication.UnicodeUTF8)
+        )
+        self.normSubtractRadio.setText(
+            QtGui.QApplication.translate("Form", "Subtract", None, QtGui.QApplication.UnicodeUTF8)
+        )
+        self.normDivideRadio.setText(
+            QtGui.QApplication.translate("Form", "Divide", None, QtGui.QApplication.UnicodeUTF8)
+        )
         self.label_5.setText(QtGui.QApplication.translate("Form", "Operation:", None, QtGui.QApplication.UnicodeUTF8))
         self.label_3.setText(QtGui.QApplication.translate("Form", "Mean:", None, QtGui.QApplication.UnicodeUTF8))
         self.label_4.setText(QtGui.QApplication.translate("Form", "Blur:", None, QtGui.QApplication.UnicodeUTF8))
@@ -146,8 +153,11 @@ class Ui_Form(object):
         self.label_9.setText(QtGui.QApplication.translate("Form", "Y", None, QtGui.QApplication.UnicodeUTF8))
         self.label_10.setText(QtGui.QApplication.translate("Form", "T", None, QtGui.QApplication.UnicodeUTF8))
         self.normOffRadio.setText(QtGui.QApplication.translate("Form", "Off", None, QtGui.QApplication.UnicodeUTF8))
-        self.normTimeRangeCheck.setText(QtGui.QApplication.translate("Form", "Time range", None, QtGui.QApplication.UnicodeUTF8))
+        self.normTimeRangeCheck.setText(
+            QtGui.QApplication.translate("Form", "Time range", None, QtGui.QApplication.UnicodeUTF8)
+        )
         self.normFrameCheck.setText(QtGui.QApplication.translate("Form", "Frame", None, QtGui.QApplication.UnicodeUTF8))
+
 
 from ..widgets.HistogramLUTWidget import HistogramLUTWidget
 from ..widgets.GraphicsView import GraphicsView

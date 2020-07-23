@@ -9,6 +9,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
@@ -103,5 +104,6 @@ class Ui_Form(object):
         self.runSelectedFrameCheck.setText(_translate("Form", "Run commands in selected stack frame"))
         self.exceptionInfoLabel.setText(_translate("Form", "Exception Info"))
         self.clearExceptionBtn.setText(_translate("Form", "Clear Exception"))
+
 
 from .CmdInput import CmdInput

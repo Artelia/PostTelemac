@@ -3,7 +3,8 @@ from ..ptime import time
 from .. import functions as fn
 from functools import reduce
 
-__all__ = ['ValueLabel']
+__all__ = ["ValueLabel"]
+
 
 class ValueLabel(QtGui.QLabel):
     """
@@ -13,8 +14,8 @@ class ValueLabel(QtGui.QLabel):
     - displaying units with si prefix
     - built-in exponential averaging 
     """
-    
-    def __init__(self, parent=None, suffix='', siPrefix=False, averageTime=0, formatStr=None):
+
+    def __init__(self, parent=None, suffix="", siPrefix=False, averageTime=0, formatStr=None):
         """
         ==============      ==================================================================================
         **Arguments:**
@@ -31,13 +32,13 @@ class ValueLabel(QtGui.QLabel):
         """
         QtGui.QLabel.__init__(self, parent)
         self.values = []
-        self.averageTime = averageTime ## no averaging by default
+        self.averageTime = averageTime  ## no averaging by default
         self.suffix = suffix
         self.siPrefix = siPrefix
         if formatStr is None:
-            formatStr = '{avgValue:0.2g} {suffix}'
+            formatStr = "{avgValue:0.2g} {suffix}"
         self.formatStr = formatStr
-    
+
     def setValue(self, value):
         now = time()
         self.values.append((now, value))
@@ -45,29 +46,27 @@ class ValueLabel(QtGui.QLabel):
         while len(self.values) > 0 and self.values[0][0] < cutoff:
             self.values.pop(0)
         self.update()
-        
+
     def setFormatStr(self, text):
         self.formatStr = text
         self.update()
-        
+
     def setAverageTime(self, t):
         self.averageTime = t
-        
+
     def averageValue(self):
-        return reduce(lambda a,b: a+b, [v[1] for v in self.values]) / float(len(self.values))
-        
-        
+        return reduce(lambda a, b: a + b, [v[1] for v in self.values]) / float(len(self.values))
+
     def paintEvent(self, ev):
         self.setText(self.generateText())
         return QtGui.QLabel.paintEvent(self, ev)
-        
+
     def generateText(self):
         if len(self.values) == 0:
-            return ''
+            return ""
         avg = self.averageValue()
         val = self.values[-1][1]
         if self.siPrefix:
             return fn.siFormat(avg, suffix=self.suffix)
         else:
             return self.formatStr.format(value=val, avgValue=avg, suffix=self.suffix)
-            

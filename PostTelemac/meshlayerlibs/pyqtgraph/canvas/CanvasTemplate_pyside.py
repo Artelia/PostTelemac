@@ -9,6 +9,7 @@
 
 from PySide import QtCore, QtGui
 
+
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
@@ -81,14 +82,33 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         Form.setWindowTitle(QtGui.QApplication.translate("Form", "Form", None, QtGui.QApplication.UnicodeUTF8))
-        self.storeSvgBtn.setText(QtGui.QApplication.translate("Form", "Store SVG", None, QtGui.QApplication.UnicodeUTF8))
-        self.storePngBtn.setText(QtGui.QApplication.translate("Form", "Store PNG", None, QtGui.QApplication.UnicodeUTF8))
-        self.autoRangeBtn.setText(QtGui.QApplication.translate("Form", "Auto Range", None, QtGui.QApplication.UnicodeUTF8))
-        self.redirectCheck.setToolTip(QtGui.QApplication.translate("Form", "Check to display all local items in a remote canvas.", None, QtGui.QApplication.UnicodeUTF8))
-        self.redirectCheck.setText(QtGui.QApplication.translate("Form", "Redirect", None, QtGui.QApplication.UnicodeUTF8))
-        self.resetTransformsBtn.setText(QtGui.QApplication.translate("Form", "Reset Transforms", None, QtGui.QApplication.UnicodeUTF8))
-        self.mirrorSelectionBtn.setText(QtGui.QApplication.translate("Form", "Mirror Selection", None, QtGui.QApplication.UnicodeUTF8))
-        self.reflectSelectionBtn.setText(QtGui.QApplication.translate("Form", "MirrorXY", None, QtGui.QApplication.UnicodeUTF8))
+        self.storeSvgBtn.setText(
+            QtGui.QApplication.translate("Form", "Store SVG", None, QtGui.QApplication.UnicodeUTF8)
+        )
+        self.storePngBtn.setText(
+            QtGui.QApplication.translate("Form", "Store PNG", None, QtGui.QApplication.UnicodeUTF8)
+        )
+        self.autoRangeBtn.setText(
+            QtGui.QApplication.translate("Form", "Auto Range", None, QtGui.QApplication.UnicodeUTF8)
+        )
+        self.redirectCheck.setToolTip(
+            QtGui.QApplication.translate(
+                "Form", "Check to display all local items in a remote canvas.", None, QtGui.QApplication.UnicodeUTF8
+            )
+        )
+        self.redirectCheck.setText(
+            QtGui.QApplication.translate("Form", "Redirect", None, QtGui.QApplication.UnicodeUTF8)
+        )
+        self.resetTransformsBtn.setText(
+            QtGui.QApplication.translate("Form", "Reset Transforms", None, QtGui.QApplication.UnicodeUTF8)
+        )
+        self.mirrorSelectionBtn.setText(
+            QtGui.QApplication.translate("Form", "Mirror Selection", None, QtGui.QApplication.UnicodeUTF8)
+        )
+        self.reflectSelectionBtn.setText(
+            QtGui.QApplication.translate("Form", "MirrorXY", None, QtGui.QApplication.UnicodeUTF8)
+        )
+
 
 from ..widgets.TreeWidget import TreeWidget
 from CanvasManager import CanvasCombo

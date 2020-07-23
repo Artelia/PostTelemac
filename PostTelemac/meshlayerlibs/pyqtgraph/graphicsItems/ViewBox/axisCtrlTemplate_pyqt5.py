@@ -9,6 +9,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
@@ -67,23 +68,66 @@ class Ui_Form(object):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
         self.label.setText(_translate("Form", "Link Axis:"))
-        self.linkCombo.setToolTip(_translate("Form", "<html><head/><body><p>Links this axis with another view. When linked, both views will display the same data range.</p></body></html>"))
-        self.autoPercentSpin.setToolTip(_translate("Form", "<html><head/><body><p>Percent of data to be visible when auto-scaling. It may be useful to decrease this value for data with spiky noise.</p></body></html>"))
+        self.linkCombo.setToolTip(
+            _translate(
+                "Form",
+                "<html><head/><body><p>Links this axis with another view. When linked, both views will display the same data range.</p></body></html>",
+            )
+        )
+        self.autoPercentSpin.setToolTip(
+            _translate(
+                "Form",
+                "<html><head/><body><p>Percent of data to be visible when auto-scaling. It may be useful to decrease this value for data with spiky noise.</p></body></html>",
+            )
+        )
         self.autoPercentSpin.setSuffix(_translate("Form", "%"))
-        self.autoRadio.setToolTip(_translate("Form", "<html><head/><body><p>Automatically resize this axis whenever the displayed data is changed.</p></body></html>"))
+        self.autoRadio.setToolTip(
+            _translate(
+                "Form",
+                "<html><head/><body><p>Automatically resize this axis whenever the displayed data is changed.</p></body></html>",
+            )
+        )
         self.autoRadio.setText(_translate("Form", "Auto"))
-        self.manualRadio.setToolTip(_translate("Form", "<html><head/><body><p>Set the range for this axis manually. This disables automatic scaling. </p></body></html>"))
+        self.manualRadio.setToolTip(
+            _translate(
+                "Form",
+                "<html><head/><body><p>Set the range for this axis manually. This disables automatic scaling. </p></body></html>",
+            )
+        )
         self.manualRadio.setText(_translate("Form", "Manual"))
-        self.minText.setToolTip(_translate("Form", "<html><head/><body><p>Minimum value to display for this axis.</p></body></html>"))
+        self.minText.setToolTip(
+            _translate("Form", "<html><head/><body><p>Minimum value to display for this axis.</p></body></html>")
+        )
         self.minText.setText(_translate("Form", "0"))
-        self.maxText.setToolTip(_translate("Form", "<html><head/><body><p>Maximum value to display for this axis.</p></body></html>"))
+        self.maxText.setToolTip(
+            _translate("Form", "<html><head/><body><p>Maximum value to display for this axis.</p></body></html>")
+        )
         self.maxText.setText(_translate("Form", "0"))
-        self.invertCheck.setToolTip(_translate("Form", "<html><head/><body><p>Inverts the display of this axis. (+y points downward instead of upward)</p></body></html>"))
+        self.invertCheck.setToolTip(
+            _translate(
+                "Form",
+                "<html><head/><body><p>Inverts the display of this axis. (+y points downward instead of upward)</p></body></html>",
+            )
+        )
         self.invertCheck.setText(_translate("Form", "Invert Axis"))
-        self.mouseCheck.setToolTip(_translate("Form", "<html><head/><body><p>Enables mouse interaction (panning, scaling) for this axis.</p></body></html>"))
+        self.mouseCheck.setToolTip(
+            _translate(
+                "Form",
+                "<html><head/><body><p>Enables mouse interaction (panning, scaling) for this axis.</p></body></html>",
+            )
+        )
         self.mouseCheck.setText(_translate("Form", "Mouse Enabled"))
-        self.visibleOnlyCheck.setToolTip(_translate("Form", "<html><head/><body><p>When checked, the axis will only auto-scale to data that is visible along the orthogonal axis.</p></body></html>"))
+        self.visibleOnlyCheck.setToolTip(
+            _translate(
+                "Form",
+                "<html><head/><body><p>When checked, the axis will only auto-scale to data that is visible along the orthogonal axis.</p></body></html>",
+            )
+        )
         self.visibleOnlyCheck.setText(_translate("Form", "Visible Data Only"))
-        self.autoPanCheck.setToolTip(_translate("Form", "<html><head/><body><p>When checked, the axis will automatically pan to center on the current data, but the scale along this axis will not change.</p></body></html>"))
+        self.autoPanCheck.setToolTip(
+            _translate(
+                "Form",
+                "<html><head/><body><p>When checked, the axis will automatically pan to center on the current data, but the scale along this axis will not change.</p></body></html>",
+            )
+        )
         self.autoPanCheck.setText(_translate("Form", "Auto Pan Only"))
-

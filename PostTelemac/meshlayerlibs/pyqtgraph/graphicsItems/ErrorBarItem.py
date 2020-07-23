@@ -3,7 +3,8 @@ from .GraphicsObject import GraphicsObject
 from .. import getConfigOption
 from .. import functions as fn
 
-__all__ = ['ErrorBarItem']
+__all__ = ["ErrorBarItem"]
+
 
 class ErrorBarItem(GraphicsObject):
     def __init__(self, **opts):
@@ -12,16 +13,7 @@ class ErrorBarItem(GraphicsObject):
         """
         GraphicsObject.__init__(self)
         self.opts = dict(
-            x=None,
-            y=None,
-            height=None,
-            width=None,
-            top=None,
-            bottom=None,
-            left=None,
-            right=None,
-            beam=None,
-            pen=None
+            x=None, y=None, height=None, width=None, top=None, bottom=None, left=None, right=None, beam=None, pen=None
         )
         self.setData(**opts)
 
@@ -49,27 +41,26 @@ class ErrorBarItem(GraphicsObject):
         self.update()
         self.prepareGeometryChange()
         self.informViewBoundsChanged()
-        
+
     def setOpts(self, **opts):
         # for backward compatibility
         self.setData(**opts)
-        
+
     def drawPath(self):
         p = QtGui.QPainterPath()
-        
-        x, y = self.opts['x'], self.opts['y']
+
+        x, y = self.opts["x"], self.opts["y"]
         if x is None or y is None:
             return
-        
-        beam = self.opts['beam']
-        
-        
-        height, top, bottom = self.opts['height'], self.opts['top'], self.opts['bottom']
+
+        beam = self.opts["beam"]
+
+        height, top, bottom = self.opts["height"], self.opts["top"], self.opts["bottom"]
         if height is not None or top is not None or bottom is not None:
             ## draw vertical error bars
             if height is not None:
-                y1 = y - height/2.
-                y2 = y + height/2.
+                y1 = y - height / 2.0
+                y2 = y + height / 2.0
             else:
                 if bottom is None:
                     y1 = y
@@ -79,14 +70,14 @@ class ErrorBarItem(GraphicsObject):
                     y2 = y
                 else:
                     y2 = y + top
-            
+
             for i in range(len(x)):
                 p.moveTo(x[i], y1[i])
                 p.lineTo(x[i], y2[i])
-                
+
             if beam is not None and beam > 0:
-                x1 = x - beam/2.
-                x2 = x + beam/2.
+                x1 = x - beam / 2.0
+                x2 = x + beam / 2.0
                 if height is not None or top is not None:
                     for i in range(len(x)):
                         p.moveTo(x1[i], y2[i])
@@ -95,13 +86,13 @@ class ErrorBarItem(GraphicsObject):
                     for i in range(len(x)):
                         p.moveTo(x1[i], y1[i])
                         p.lineTo(x2[i], y1[i])
-        
-        width, right, left = self.opts['width'], self.opts['right'], self.opts['left']
+
+        width, right, left = self.opts["width"], self.opts["right"], self.opts["left"]
         if width is not None or right is not None or left is not None:
             ## draw vertical error bars
             if width is not None:
-                x1 = x - width/2.
-                x2 = x + width/2.
+                x1 = x - width / 2.0
+                x2 = x + width / 2.0
             else:
                 if left is None:
                     x1 = x
@@ -111,14 +102,14 @@ class ErrorBarItem(GraphicsObject):
                     x2 = x
                 else:
                     x2 = x + right
-            
+
             for i in range(len(x)):
                 p.moveTo(x1[i], y[i])
                 p.lineTo(x2[i], y[i])
-                
+
             if beam is not None and beam > 0:
-                y1 = y - beam/2.
-                y2 = y + beam/2.
+                y1 = y - beam / 2.0
+                y2 = y + beam / 2.0
                 if width is not None or right is not None:
                     for i in range(len(x)):
                         p.moveTo(x2[i], y1[i])
@@ -127,23 +118,20 @@ class ErrorBarItem(GraphicsObject):
                     for i in range(len(x)):
                         p.moveTo(x1[i], y1[i])
                         p.lineTo(x1[i], y2[i])
-                    
+
         self.path = p
         self.prepareGeometryChange()
-        
-        
+
     def paint(self, p, *args):
         if self.path is None:
             self.drawPath()
-        pen = self.opts['pen']
+        pen = self.opts["pen"]
         if pen is None:
-            pen = getConfigOption('foreground')
+            pen = getConfigOption("foreground")
         p.setPen(fn.mkPen(pen))
         p.drawPath(self.path)
-            
+
     def boundingRect(self):
         if self.path is None:
             self.drawPath()
         return self.path.boundingRect()
-    
-        

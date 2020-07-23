@@ -2,7 +2,9 @@ from ..Qt import QtGui
 from ..graphicsItems.GraphicsLayout import GraphicsLayout
 from .GraphicsView import GraphicsView
 
-__all__ = ['GraphicsLayoutWidget']
+__all__ = ["GraphicsLayoutWidget"]
+
+
 class GraphicsLayoutWidget(GraphicsView):
     """
     Convenience class consisting of a :class:`GraphicsView 
@@ -22,9 +24,23 @@ class GraphicsLayoutWidget(GraphicsView):
     :func:`itemIndex <pyqtgraph.GraphicsLayout.itemIndex>`
     :func:`clear <pyqtgraph.GraphicsLayout.clear>`
     """
+
     def __init__(self, parent=None, **kargs):
         GraphicsView.__init__(self, parent)
         self.ci = GraphicsLayout(**kargs)
-        for n in ['nextRow', 'nextCol', 'nextColumn', 'addPlot', 'addViewBox', 'addItem', 'getItem', 'addLayout', 'addLabel', 'removeItem', 'itemIndex', 'clear']:
+        for n in [
+            "nextRow",
+            "nextCol",
+            "nextColumn",
+            "addPlot",
+            "addViewBox",
+            "addItem",
+            "getItem",
+            "addLayout",
+            "addLabel",
+            "removeItem",
+            "itemIndex",
+            "clear",
+        ]:
             setattr(self, n, getattr(self.ci, n))
         self.setCentralItem(self.ci)

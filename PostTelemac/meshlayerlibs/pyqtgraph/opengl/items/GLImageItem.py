@@ -1,9 +1,10 @@
 from OpenGL.GL import *
-from .. GLGraphicsItem import GLGraphicsItem
+from ..GLGraphicsItem import GLGraphicsItem
 from ...Qt import QtGui
 import numpy as np
 
-__all__ = ['GLImageItem']
+__all__ = ["GLImageItem"]
+
 
 class GLImageItem(GLGraphicsItem):
     """
@@ -11,9 +12,8 @@ class GLImageItem(GLGraphicsItem):
     
     Displays image data as a textured quad.
     """
-    
-    
-    def __init__(self, data, smooth=False, glOptions='translucent'):
+
+    def __init__(self, data, smooth=False, glOptions="translucent"):
         """
         
         ==============  =======================================================================================
@@ -23,22 +23,22 @@ class GLImageItem(GLGraphicsItem):
         smooth          (bool) If True, the volume slices are rendered with linear interpolation 
         ==============  =======================================================================================
         """
-        
+
         self.smooth = smooth
         self._needUpdate = False
         GLGraphicsItem.__init__(self)
         self.setData(data)
         self.setGLOptions(glOptions)
-        
+
     def initializeGL(self):
         glEnable(GL_TEXTURE_2D)
         self.texture = glGenTextures(1)
-        
+
     def setData(self, data):
         self.data = data
         self._needUpdate = True
         self.update()
-        
+
     def _updateTexture(self):
         glBindTexture(GL_TEXTURE_2D, self.texture)
         if self.smooth:
@@ -49,51 +49,51 @@ class GLImageItem(GLGraphicsItem):
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER)
-        #glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER)
+        # glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER)
         shape = self.data.shape
-        
+
         ## Test texture dimensions first
         glTexImage2D(GL_PROXY_TEXTURE_2D, 0, GL_RGBA, shape[0], shape[1], 0, GL_RGBA, GL_UNSIGNED_BYTE, None)
         if glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH) == 0:
             raise Exception("OpenGL failed to create 2D texture (%dx%d); too large for this hardware." % shape[:2])
-        
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, shape[0], shape[1], 0, GL_RGBA, GL_UNSIGNED_BYTE, self.data.transpose((1,0,2)))
-        glDisable(GL_TEXTURE_2D)
-        
-        #self.lists = {}
-        #for ax in [0,1,2]:
-            #for d in [-1, 1]:
-                #l = glGenLists(1)
-                #self.lists[(ax,d)] = l
-                #glNewList(l, GL_COMPILE)
-                #self.drawVolume(ax, d)
-                #glEndList()
 
-                
+        glTexImage2D(
+            GL_TEXTURE_2D, 0, GL_RGBA, shape[0], shape[1], 0, GL_RGBA, GL_UNSIGNED_BYTE, self.data.transpose((1, 0, 2))
+        )
+        glDisable(GL_TEXTURE_2D)
+
+        # self.lists = {}
+        # for ax in [0,1,2]:
+        # for d in [-1, 1]:
+        # l = glGenLists(1)
+        # self.lists[(ax,d)] = l
+        # glNewList(l, GL_COMPILE)
+        # self.drawVolume(ax, d)
+        # glEndList()
+
     def paint(self):
         if self._needUpdate:
             self._updateTexture()
         glEnable(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, self.texture)
-        
+
         self.setupGLState()
-        
-        #glEnable(GL_DEPTH_TEST)
+
+        # glEnable(GL_DEPTH_TEST)
         ##glDisable(GL_CULL_FACE)
-        #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        #glEnable( GL_BLEND )
-        #glEnable( GL_ALPHA_TEST )
-        glColor4f(1,1,1,1)
+        # glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        # glEnable( GL_BLEND )
+        # glEnable( GL_ALPHA_TEST )
+        glColor4f(1, 1, 1, 1)
 
         glBegin(GL_QUADS)
-        glTexCoord2f(0,0)
-        glVertex3f(0,0,0)
-        glTexCoord2f(1,0)
+        glTexCoord2f(0, 0)
+        glVertex3f(0, 0, 0)
+        glTexCoord2f(1, 0)
         glVertex3f(self.data.shape[0], 0, 0)
-        glTexCoord2f(1,1)
+        glTexCoord2f(1, 1)
         glVertex3f(self.data.shape[0], self.data.shape[1], 0)
-        glTexCoord2f(0,1)
+        glTexCoord2f(0, 1)
         glVertex3f(0, self.data.shape[1], 0)
         glEnd()
         glDisable(GL_TEXTURE_3D)
-                

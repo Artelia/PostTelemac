@@ -3,10 +3,12 @@ from .. import functions as fn
 from .PlotDataItem import PlotDataItem
 from .PlotCurveItem import PlotCurveItem
 
+
 class FillBetweenItem(QtGui.QGraphicsPathItem):
     """
     GraphicsItem filling the space between two PlotDataItems.
     """
+
     def __init__(self, curve1=None, curve2=None, brush=None, pen=None):
         QtGui.QGraphicsPathItem.__init__(self)
         self.curves = None
@@ -19,10 +21,10 @@ class FillBetweenItem(QtGui.QGraphicsPathItem):
             self.setBrush(brush)
         self.setPen(pen)
         self.updatePath()
-        
+
     def setBrush(self, *args, **kwds):
         QtGui.QGraphicsPathItem.setBrush(self, fn.mkBrush(*args, **kwds))
-        
+
     def setPen(self, *args, **kwds):
         QtGui.QGraphicsPathItem.setPen(self, fn.mkPen(*args, **kwds))
 
@@ -47,7 +49,7 @@ class FillBetweenItem(QtGui.QGraphicsPathItem):
         self.curves = curves
         curve1.sigPlotChanged.connect(self.curveChanged)
         curve2.sigPlotChanged.connect(self.curveChanged)
-        self.setZValue(min(curve1.zValue(), curve2.zValue())-1)
+        self.setZValue(min(curve1.zValue(), curve2.zValue()) - 1)
         self.curveChanged()
 
     def setBrush(self, *args, **kwds):
@@ -76,8 +78,7 @@ class FillBetweenItem(QtGui.QGraphicsPathItem):
         if len(ps1) == 0 or len(ps2) == 0:
             self.setPath(QtGui.QPainterPath())
             return
-        
-            
+
         for p1, p2 in zip(ps1, ps2):
             path.addPolygon(p1 + p2)
         self.setPath(path)

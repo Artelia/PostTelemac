@@ -1,7 +1,9 @@
 from ..Qt import QtGui, QtCore
 from .. import functions as fn
 import numpy as np
-__all__ = ['ArrowItem']
+
+__all__ = ["ArrowItem"]
+
 
 class ArrowItem(QtGui.QGraphicsPathItem):
     """
@@ -9,39 +11,38 @@ class ArrowItem(QtGui.QGraphicsPathItem):
     For arrows pointing to a location on a curve, see CurveArrow
     
     """
-    
-    
+
     def __init__(self, **opts):
         """
         Arrows can be initialized with any keyword arguments accepted by 
         the setStyle() method.
         """
         self.opts = {}
-        QtGui.QGraphicsPathItem.__init__(self, opts.get('parent', None))
+        QtGui.QGraphicsPathItem.__init__(self, opts.get("parent", None))
 
-        if 'size' in opts:
-            opts['headLen'] = opts['size']
-        if 'width' in opts:
-            opts['headWidth'] = opts['width']
+        if "size" in opts:
+            opts["headLen"] = opts["size"]
+        if "width" in opts:
+            opts["headWidth"] = opts["width"]
         defaultOpts = {
-            'pxMode': True,
-            'angle': -150,   ## If the angle is 0, the arrow points left
-            'pos': (0,0),
-            'headLen': 20,
-            'tipAngle': 25,
-            'baseAngle': 0,
-            'tailLen': None,
-            'tailWidth': 3,
-            'pen': (200,200,200),
-            'brush': (50,50,200),
+            "pxMode": True,
+            "angle": -150,  ## If the angle is 0, the arrow points left
+            "pos": (0, 0),
+            "headLen": 20,
+            "tipAngle": 25,
+            "baseAngle": 0,
+            "tailLen": None,
+            "tailWidth": 3,
+            "pen": (200, 200, 200),
+            "brush": (50, 50, 200),
         }
         defaultOpts.update(opts)
-        
+
         self.setStyle(**defaultOpts)
-        
-        self.rotate(self.opts['angle'])
-        self.moveBy(*self.opts['pos'])
-    
+
+        self.rotate(self.opts["angle"])
+        self.moveBy(*self.opts["pos"])
+
     def setStyle(self, **opts):
         """
         Changes the appearance of the arrow.
@@ -70,57 +71,54 @@ class ArrowItem(QtGui.QGraphicsPathItem):
         ======================  =================================================
         """
         self.opts.update(opts)
-        
-        opt = dict([(k,self.opts[k]) for k in ['headLen', 'tipAngle', 'baseAngle', 'tailLen', 'tailWidth']])
+
+        opt = dict([(k, self.opts[k]) for k in ["headLen", "tipAngle", "baseAngle", "tailLen", "tailWidth"]])
         self.path = fn.makeArrowPath(**opt)
         self.setPath(self.path)
-        
-        self.setPen(fn.mkPen(self.opts['pen']))
-        self.setBrush(fn.mkBrush(self.opts['brush']))
-        
-        if self.opts['pxMode']:
+
+        self.setPen(fn.mkPen(self.opts["pen"]))
+        self.setBrush(fn.mkBrush(self.opts["brush"]))
+
+        if self.opts["pxMode"]:
             self.setFlags(self.flags() | self.ItemIgnoresTransformations)
         else:
             self.setFlags(self.flags() & ~self.ItemIgnoresTransformations)
-        
+
     def paint(self, p, *args):
         p.setRenderHint(QtGui.QPainter.Antialiasing)
         QtGui.QGraphicsPathItem.paint(self, p, *args)
-        
-        #p.setPen(fn.mkPen('r'))
-        #p.setBrush(fn.mkBrush(None))
-        #p.drawRect(self.boundingRect())
+
+        # p.setPen(fn.mkPen('r'))
+        # p.setBrush(fn.mkBrush(None))
+        # p.drawRect(self.boundingRect())
 
     def shape(self):
-        #if not self.opts['pxMode']:
-            #return QtGui.QGraphicsPathItem.shape(self)
+        # if not self.opts['pxMode']:
+        # return QtGui.QGraphicsPathItem.shape(self)
         return self.path
-    
+
     ## dataBounds and pixelPadding methods are provided to ensure ViewBox can
-    ## properly auto-range 
+    ## properly auto-range
     def dataBounds(self, ax, frac, orthoRange=None):
         pw = 0
         pen = self.pen()
         if not pen.isCosmetic():
             pw = pen.width() * 0.7072
-        if self.opts['pxMode']:
-            return [0,0]
+        if self.opts["pxMode"]:
+            return [0, 0]
         else:
             br = self.boundingRect()
             if ax == 0:
-                return [br.left()-pw, br.right()+pw]
+                return [br.left() - pw, br.right() + pw]
             else:
-                return [br.top()-pw, br.bottom()+pw]
-        
+                return [br.top() - pw, br.bottom() + pw]
+
     def pixelPadding(self):
         pad = 0
-        if self.opts['pxMode']:
+        if self.opts["pxMode"]:
             br = self.boundingRect()
-            pad += (br.width()**2 + br.height()**2) ** 0.5
+            pad += (br.width() ** 2 + br.height() ** 2) ** 0.5
         pen = self.pen()
         if pen.isCosmetic():
             pad += max(1, pen.width()) * 0.7072
         return pad
-        
-        
-    

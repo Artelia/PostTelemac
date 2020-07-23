@@ -1,4 +1,5 @@
 from itertools import starmap, repeat
+
 try:
     from itertools import imap
 except ImportError:
@@ -15,41 +16,58 @@ from ..pgcollections import OrderedDict
 from .. import debug
 from ..python2_3 import basestring
 
-__all__ = ['ScatterPlotItem', 'SpotItem']
+__all__ = ["ScatterPlotItem", "SpotItem"]
 
 
 ## Build all symbol paths
-Symbols = OrderedDict([(name, QtGui.QPainterPath()) for name in ['o', 's', 't', 't1', 't2', 't3','d', '+', 'x', 'p', 'h', 'star']])
-Symbols['o'].addEllipse(QtCore.QRectF(-0.5, -0.5, 1, 1))
-Symbols['s'].addRect(QtCore.QRectF(-0.5, -0.5, 1, 1))
+Symbols = OrderedDict(
+    [(name, QtGui.QPainterPath()) for name in ["o", "s", "t", "t1", "t2", "t3", "d", "+", "x", "p", "h", "star"]]
+)
+Symbols["o"].addEllipse(QtCore.QRectF(-0.5, -0.5, 1, 1))
+Symbols["s"].addRect(QtCore.QRectF(-0.5, -0.5, 1, 1))
 coords = {
-    't': [(-0.5, -0.5), (0, 0.5), (0.5, -0.5)],
-    't1': [(-0.5, 0.5), (0, -0.5), (0.5, 0.5)],
-    't2': [(-0.5, -0.5), (-0.5, 0.5), (0.5, 0)],
-    't3': [(0.5, 0.5), (0.5, -0.5), (-0.5, 0)],
-    'd': [(0., -0.5), (-0.4, 0.), (0, 0.5), (0.4, 0)],
-    '+': [
-        (-0.5, -0.05), (-0.5, 0.05), (-0.05, 0.05), (-0.05, 0.5),
-        (0.05, 0.5), (0.05, 0.05), (0.5, 0.05), (0.5, -0.05),
-        (0.05, -0.05), (0.05, -0.5), (-0.05, -0.5), (-0.05, -0.05)
+    "t": [(-0.5, -0.5), (0, 0.5), (0.5, -0.5)],
+    "t1": [(-0.5, 0.5), (0, -0.5), (0.5, 0.5)],
+    "t2": [(-0.5, -0.5), (-0.5, 0.5), (0.5, 0)],
+    "t3": [(0.5, 0.5), (0.5, -0.5), (-0.5, 0)],
+    "d": [(0.0, -0.5), (-0.4, 0.0), (0, 0.5), (0.4, 0)],
+    "+": [
+        (-0.5, -0.05),
+        (-0.5, 0.05),
+        (-0.05, 0.05),
+        (-0.05, 0.5),
+        (0.05, 0.5),
+        (0.05, 0.05),
+        (0.5, 0.05),
+        (0.5, -0.05),
+        (0.05, -0.05),
+        (0.05, -0.5),
+        (-0.05, -0.5),
+        (-0.05, -0.05),
     ],
-    'p': [(0, -0.5), (-0.4755, -0.1545), (-0.2939, 0.4045),
-          (0.2939, 0.4045), (0.4755, -0.1545)],
-    'h': [(0.433, 0.25), (0., 0.5), (-0.433, 0.25), (-0.433, -0.25),
-          (0, -0.5), (0.433, -0.25)],
-    'star': [(0, -0.5), (-0.1123, -0.1545), (-0.4755, -0.1545),
-             (-0.1816, 0.059), (-0.2939, 0.4045), (0, 0.1910),
-             (0.2939, 0.4045), (0.1816, 0.059), (0.4755, -0.1545),
-             (0.1123, -0.1545)]
+    "p": [(0, -0.5), (-0.4755, -0.1545), (-0.2939, 0.4045), (0.2939, 0.4045), (0.4755, -0.1545)],
+    "h": [(0.433, 0.25), (0.0, 0.5), (-0.433, 0.25), (-0.433, -0.25), (0, -0.5), (0.433, -0.25)],
+    "star": [
+        (0, -0.5),
+        (-0.1123, -0.1545),
+        (-0.4755, -0.1545),
+        (-0.1816, 0.059),
+        (-0.2939, 0.4045),
+        (0, 0.1910),
+        (0.2939, 0.4045),
+        (0.1816, 0.059),
+        (0.4755, -0.1545),
+        (0.1123, -0.1545),
+    ],
 }
 for k, c in coords.items():
     Symbols[k].moveTo(*c[0])
-    for x,y in c[1:]:
+    for x, y in c[1:]:
         Symbols[k].lineTo(x, y)
     Symbols[k].closeSubpath()
 tr = QtGui.QTransform()
 tr.rotate(45)
-Symbols['x'] = tr.map(Symbols['+'])
+Symbols["x"] = tr.map(Symbols["+"])
 
 
 def drawSymbol(painter, symbol, size, pen, brush):
@@ -76,21 +94,23 @@ def renderSymbol(symbol, size, pen, brush, device=None):
     ## Render a spot with the given parameters to a pixmap
     penPxWidth = max(np.ceil(pen.widthF()), 1)
     if device is None:
-        device = QtGui.QImage(int(size+penPxWidth), int(size+penPxWidth), QtGui.QImage.Format_ARGB32)
+        device = QtGui.QImage(int(size + penPxWidth), int(size + penPxWidth), QtGui.QImage.Format_ARGB32)
         device.fill(0)
     p = QtGui.QPainter(device)
     try:
         p.setRenderHint(p.Antialiasing)
-        p.translate(device.width()*0.5, device.height()*0.5)
+        p.translate(device.width() * 0.5, device.height() * 0.5)
         drawSymbol(p, symbol, size, pen, brush)
     finally:
         p.end()
     return device
 
+
 def makeSymbolPixmap(size, pen, brush, symbol):
     ## deprecated
     img = renderSymbol(symbol, size, pen, brush)
     return QtGui.QPixmap(img)
+
 
 class SymbolAtlas(object):
     """
@@ -104,6 +124,7 @@ class SymbolAtlas(object):
         pm = atlas.getAtlas()
 
     """
+
     def __init__(self):
         # symbol key : QRect(...) coordinates where symbol can be found in atlas.
         # note that the coordinate list will always be the same list object as
@@ -113,10 +134,10 @@ class SymbolAtlas(object):
         # the symbol will be forgotten.
         self.symbolMap = weakref.WeakValueDictionary()
 
-        self.atlasData = None # numpy array of atlas image
-        self.atlas = None     # atlas as QPixmap
+        self.atlasData = None  # numpy array of atlas image
+        self.atlas = None  # atlas as QPixmap
         self.atlasValid = False
-        self.max_width=0
+        self.max_width = 0
 
     def getSymbolCoords(self, opts):
         """
@@ -126,7 +147,7 @@ class SymbolAtlas(object):
         keyi = None
         sourceRecti = None
         for i, rec in enumerate(opts):
-            key = (rec[3], rec[2], id(rec[4]), id(rec[5]))   # TODO: use string indexes?
+            key = (rec[3], rec[2], id(rec[4]), id(rec[5]))  # TODO: use string indexes?
             if key == keyi:
                 sourceRect[i] = sourceRecti
             else:
@@ -134,8 +155,8 @@ class SymbolAtlas(object):
                     sourceRect[i] = self.symbolMap[key]
                 except KeyError:
                     newRectSrc = QtCore.QRectF()
-                    newRectSrc.pen = rec['pen']
-                    newRectSrc.brush = rec['brush']
+                    newRectSrc.pen = rec["pen"]
+                    newRectSrc.brush = rec["brush"]
                     self.symbolMap[key] = newRectSrc
                     self.atlasValid = False
                     sourceRect[i] = newRectSrc
@@ -155,8 +176,8 @@ class SymbolAtlas(object):
                 images.append(img)  ## we only need this to prevent the images being garbage collected immediately
                 arr = fn.imageToArray(img, copy=False, transpose=False)
             else:
-                (y,x,h,w) = sourceRect.getRect()
-                arr = self.atlasData[int(x):int(x+w), int(y):int(y+w)]
+                (y, x, h, w) = sourceRect.getRect()
+                arr = self.atlasData[int(x) : int(x + w), int(y) : int(y + w)]
             rendered[key] = arr
             w = arr.shape[0]
             avgWidth += w
@@ -165,7 +186,7 @@ class SymbolAtlas(object):
         nSymbols = len(rendered)
         if nSymbols > 0:
             avgWidth /= nSymbols
-            width = max(maxWidth, avgWidth * (nSymbols**0.5))
+            width = max(maxWidth, avgWidth * (nSymbols ** 0.5))
         else:
             avgWidth = 0
             width = 0
@@ -180,8 +201,8 @@ class SymbolAtlas(object):
         rowheight = 0
         for key in symbols:
             arr = rendered[key]
-            w,h = arr.shape[:2]
-            if x+w > width:
+            w, h = arr.shape[:2]
+            if x + w > width:
                 y += rowheight
                 x = 0
                 rowheight = h
@@ -194,7 +215,7 @@ class SymbolAtlas(object):
         self.atlasData = np.zeros((int(width), int(height), 4), dtype=np.ubyte)
         for key in symbols:
             y, x, h, w = self.symbolMap[key].getRect()
-            self.atlasData[int(x):int(x+w), int(y):int(y+h)] = rendered[key]
+            self.atlasData[int(x) : int(x + w), int(y) : int(y + h)] = rendered[key]
         self.atlas = None
         self.atlasValid = True
         self.max_width = maxWidth
@@ -204,12 +225,10 @@ class SymbolAtlas(object):
             self.buildAtlas()
         if self.atlas is None:
             if len(self.atlasData) == 0:
-                return QtGui.QPixmap(0,0)
+                return QtGui.QPixmap(0, 0)
             img = fn.makeQImage(self.atlasData, copy=False, transpose=False)
             self.atlas = QtGui.QPixmap(img)
         return self.atlas
-
-
 
 
 class ScatterPlotItem(GraphicsObject):
@@ -230,9 +249,11 @@ class ScatterPlotItem(GraphicsObject):
     ========================  ===============================================
 
     """
-    #sigPointClicked = QtCore.Signal(object, object)
+
+    # sigPointClicked = QtCore.Signal(object, object)
     sigClicked = QtCore.Signal(object, object)  ## self, points
     sigPlotChanged = QtCore.Signal(object)
+
     def __init__(self, *args, **kargs):
         """
         Accepts the same arguments as setData()
@@ -240,29 +261,44 @@ class ScatterPlotItem(GraphicsObject):
         profiler = debug.Profiler()
         GraphicsObject.__init__(self)
 
-        self.picture = None   # QPicture used for rendering when pxmode==False
+        self.picture = None  # QPicture used for rendering when pxmode==False
         self.fragmentAtlas = SymbolAtlas()
 
-        self.data = np.empty(0, dtype=[('x', float), ('y', float), ('size', float), ('symbol', object), ('pen', object), ('brush', object), ('data', object), ('item', object), ('sourceRect', object), ('targetRect', object), ('width', float)])
+        self.data = np.empty(
+            0,
+            dtype=[
+                ("x", float),
+                ("y", float),
+                ("size", float),
+                ("symbol", object),
+                ("pen", object),
+                ("brush", object),
+                ("data", object),
+                ("item", object),
+                ("sourceRect", object),
+                ("targetRect", object),
+                ("width", float),
+            ],
+        )
         self.bounds = [None, None]  ## caches data bounds
-        self._maxSpotWidth = 0      ## maximum size of the scale-variant portion of all spots
-        self._maxSpotPxWidth = 0    ## maximum size of the scale-invariant portion of all spots
+        self._maxSpotWidth = 0  ## maximum size of the scale-variant portion of all spots
+        self._maxSpotPxWidth = 0  ## maximum size of the scale-invariant portion of all spots
         self.opts = {
-            'pxMode': True,
-            'useCache': True,  ## If useCache is False, symbols are re-drawn on every paint.
-            'antialias': getConfigOption('antialias'),
-            'name': None,
+            "pxMode": True,
+            "useCache": True,  ## If useCache is False, symbols are re-drawn on every paint.
+            "antialias": getConfigOption("antialias"),
+            "name": None,
         }
 
-        self.setPen(fn.mkPen(getConfigOption('foreground')), update=False)
-        self.setBrush(fn.mkBrush(100,100,150), update=False)
-        self.setSymbol('o', update=False)
+        self.setPen(fn.mkPen(getConfigOption("foreground")), update=False)
+        self.setBrush(fn.mkBrush(100, 100, 150), update=False)
+        self.setSymbol("o", update=False)
         self.setSize(7, update=False)
         profiler()
         self.setData(*args, **kargs)
-        profiler('setData')
+        profiler("setData")
 
-        #self.setCacheMode(self.DeviceCoordinateCache)
+        # self.setCacheMode(self.DeviceCoordinateCache)
 
     def setData(self, *args, **kargs):
         """
@@ -315,19 +351,19 @@ class ScatterPlotItem(GraphicsObject):
 
         ## deal with non-keyword arguments
         if len(args) == 1:
-            kargs['spots'] = args[0]
+            kargs["spots"] = args[0]
         elif len(args) == 2:
-            kargs['x'] = args[0]
-            kargs['y'] = args[1]
+            kargs["x"] = args[0]
+            kargs["y"] = args[1]
         elif len(args) > 2:
-            raise Exception('Only accepts up to two non-keyword arguments.')
+            raise Exception("Only accepts up to two non-keyword arguments.")
 
         ## convert 'pos' argument to 'x' and 'y'
-        if 'pos' in kargs:
-            pos = kargs['pos']
+        if "pos" in kargs:
+            pos = kargs["pos"]
             if isinstance(pos, np.ndarray):
-                kargs['x'] = pos[:,0]
-                kargs['y'] = pos[:,1]
+                kargs["x"] = pos[:, 0]
+                kargs["y"] = pos[:, 1]
             else:
                 x = []
                 y = []
@@ -338,69 +374,69 @@ class ScatterPlotItem(GraphicsObject):
                     else:
                         x.append(p[0])
                         y.append(p[1])
-                kargs['x'] = x
-                kargs['y'] = y
+                kargs["x"] = x
+                kargs["y"] = y
 
         ## determine how many spots we have
-        if 'spots' in kargs:
-            numPts = len(kargs['spots'])
-        elif 'y' in kargs and kargs['y'] is not None:
-            numPts = len(kargs['y'])
+        if "spots" in kargs:
+            numPts = len(kargs["spots"])
+        elif "y" in kargs and kargs["y"] is not None:
+            numPts = len(kargs["y"])
         else:
-            kargs['x'] = []
-            kargs['y'] = []
+            kargs["x"] = []
+            kargs["y"] = []
             numPts = 0
 
         ## Extend record array
         oldData = self.data
-        self.data = np.empty(len(oldData)+numPts, dtype=self.data.dtype)
+        self.data = np.empty(len(oldData) + numPts, dtype=self.data.dtype)
         ## note that np.empty initializes object fields to None and string fields to ''
 
-        self.data[:len(oldData)] = oldData
-        #for i in range(len(oldData)):
-            #oldData[i]['item']._data = self.data[i]  ## Make sure items have proper reference to new array
+        self.data[: len(oldData)] = oldData
+        # for i in range(len(oldData)):
+        # oldData[i]['item']._data = self.data[i]  ## Make sure items have proper reference to new array
 
-        newData = self.data[len(oldData):]
-        newData['size'] = -1  ## indicates to use default size
+        newData = self.data[len(oldData) :]
+        newData["size"] = -1  ## indicates to use default size
 
-        if 'spots' in kargs:
-            spots = kargs['spots']
+        if "spots" in kargs:
+            spots = kargs["spots"]
             for i in range(len(spots)):
                 spot = spots[i]
                 for k in spot:
-                    if k == 'pos':
+                    if k == "pos":
                         pos = spot[k]
                         if isinstance(pos, QtCore.QPointF):
-                            x,y = pos.x(), pos.y()
+                            x, y = pos.x(), pos.y()
                         else:
-                            x,y = pos[0], pos[1]
-                        newData[i]['x'] = x
-                        newData[i]['y'] = y
-                    elif k == 'pen':
+                            x, y = pos[0], pos[1]
+                        newData[i]["x"] = x
+                        newData[i]["y"] = y
+                    elif k == "pen":
                         newData[i][k] = fn.mkPen(spot[k])
-                    elif k == 'brush':
+                    elif k == "brush":
                         newData[i][k] = fn.mkBrush(spot[k])
-                    elif k in ['x', 'y', 'size', 'symbol', 'brush', 'data']:
+                    elif k in ["x", "y", "size", "symbol", "brush", "data"]:
                         newData[i][k] = spot[k]
                     else:
                         raise Exception("Unknown spot parameter: %s" % k)
-        elif 'y' in kargs:
-            newData['x'] = kargs['x']
-            newData['y'] = kargs['y']
+        elif "y" in kargs:
+            newData["x"] = kargs["x"]
+            newData["y"] = kargs["y"]
 
-        if 'pxMode' in kargs:
-            self.setPxMode(kargs['pxMode'])
-        if 'antialias' in kargs:
-            self.opts['antialias'] = kargs['antialias']
+        if "pxMode" in kargs:
+            self.setPxMode(kargs["pxMode"])
+        if "antialias" in kargs:
+            self.opts["antialias"] = kargs["antialias"]
 
         ## Set any extra parameters provided in keyword arguments
-        for k in ['pen', 'brush', 'symbol', 'size']:
+        for k in ["pen", "brush", "symbol", "size"]:
             if k in kargs:
-                setMethod = getattr(self, 'set' + k[0].upper() + k[1:])
-                setMethod(kargs[k], update=False, dataSet=newData, mask=kargs.get('mask', None))
+                setMethod = getattr(self, "set" + k[0].upper() + k[1:])
+                setMethod(kargs[k], update=False, dataSet=newData, mask=kargs.get("mask", None))
 
-        if 'data' in kargs:
-            self.setPointData(kargs['data'], dataSet=newData)
+        if "data" in kargs:
+            self.setPointData(kargs["data"], dataSet=newData)
 
         self.prepareGeometryChange()
         self.informViewBoundsChanged()
@@ -415,40 +451,40 @@ class ScatterPlotItem(GraphicsObject):
         self.update()
 
     def getData(self):
-        return self.data['x'], self.data['y']
+        return self.data["x"], self.data["y"]
 
     def setPoints(self, *args, **kargs):
         ##Deprecated; use setData
         return self.setData(*args, **kargs)
 
     def implements(self, interface=None):
-        ints = ['plotData']
+        ints = ["plotData"]
         if interface is None:
             return ints
         return interface in ints
 
     def name(self):
-        return self.opts.get('name', None)
+        return self.opts.get("name", None)
 
     def setPen(self, *args, **kargs):
         """Set the pen(s) used to draw the outline around each spot.
         If a list or array is provided, then the pen for each spot will be set separately.
         Otherwise, the arguments are passed to pg.mkPen and used as the default pen for
         all spots which do not have a pen explicitly set."""
-        update = kargs.pop('update', True)
-        dataSet = kargs.pop('dataSet', self.data)
+        update = kargs.pop("update", True)
+        dataSet = kargs.pop("dataSet", self.data)
 
         if len(args) == 1 and (isinstance(args[0], np.ndarray) or isinstance(args[0], list)):
             pens = args[0]
-            if 'mask' in kargs and kargs['mask'] is not None:
-                pens = pens[kargs['mask']]
+            if "mask" in kargs and kargs["mask"] is not None:
+                pens = pens[kargs["mask"]]
             if len(pens) != len(dataSet):
                 raise Exception("Number of pens does not match number of points (%d != %d)" % (len(pens), len(dataSet)))
-            dataSet['pen'] = pens
+            dataSet["pen"] = pens
         else:
-            self.opts['pen'] = fn.mkPen(*args, **kargs)
+            self.opts["pen"] = fn.mkPen(*args, **kargs)
 
-        dataSet['sourceRect'] = None
+        dataSet["sourceRect"] = None
         if update:
             self.updateSpots(dataSet)
 
@@ -457,21 +493,23 @@ class ScatterPlotItem(GraphicsObject):
         If a list or array is provided, then the brush for each spot will be set separately.
         Otherwise, the arguments are passed to pg.mkBrush and used as the default brush for
         all spots which do not have a brush explicitly set."""
-        update = kargs.pop('update', True)
-        dataSet = kargs.pop('dataSet', self.data)
+        update = kargs.pop("update", True)
+        dataSet = kargs.pop("dataSet", self.data)
 
         if len(args) == 1 and (isinstance(args[0], np.ndarray) or isinstance(args[0], list)):
             brushes = args[0]
-            if 'mask' in kargs and kargs['mask'] is not None:
-                brushes = brushes[kargs['mask']]
+            if "mask" in kargs and kargs["mask"] is not None:
+                brushes = brushes[kargs["mask"]]
             if len(brushes) != len(dataSet):
-                raise Exception("Number of brushes does not match number of points (%d != %d)" % (len(brushes), len(dataSet)))
-            dataSet['brush'] = brushes
+                raise Exception(
+                    "Number of brushes does not match number of points (%d != %d)" % (len(brushes), len(dataSet))
+                )
+            dataSet["brush"] = brushes
         else:
-            self.opts['brush'] = fn.mkBrush(*args, **kargs)
-            #self._spotPixmap = None
+            self.opts["brush"] = fn.mkBrush(*args, **kargs)
+            # self._spotPixmap = None
 
-        dataSet['sourceRect'] = None
+        dataSet["sourceRect"] = None
         if update:
             self.updateSpots(dataSet)
 
@@ -488,13 +526,15 @@ class ScatterPlotItem(GraphicsObject):
             if mask is not None:
                 symbols = symbols[mask]
             if len(symbols) != len(dataSet):
-                raise Exception("Number of symbols does not match number of points (%d != %d)" % (len(symbols), len(dataSet)))
-            dataSet['symbol'] = symbols
+                raise Exception(
+                    "Number of symbols does not match number of points (%d != %d)" % (len(symbols), len(dataSet))
+                )
+            dataSet["symbol"] = symbols
         else:
-            self.opts['symbol'] = symbol
+            self.opts["symbol"] = symbol
             self._spotPixmap = None
 
-        dataSet['sourceRect'] = None
+        dataSet["sourceRect"] = None
         if update:
             self.updateSpots(dataSet)
 
@@ -511,13 +551,15 @@ class ScatterPlotItem(GraphicsObject):
             if mask is not None:
                 sizes = sizes[mask]
             if len(sizes) != len(dataSet):
-                raise Exception("Number of sizes does not match number of points (%d != %d)" % (len(sizes), len(dataSet)))
-            dataSet['size'] = sizes
+                raise Exception(
+                    "Number of sizes does not match number of points (%d != %d)" % (len(sizes), len(dataSet))
+                )
+            dataSet["size"] = sizes
         else:
-            self.opts['size'] = size
+            self.opts["size"] = size
             self._spotPixmap = None
 
-        dataSet['sourceRect'] = None
+        dataSet["sourceRect"] = None
         if update:
             self.updateSpots(dataSet)
 
@@ -529,21 +571,23 @@ class ScatterPlotItem(GraphicsObject):
             if mask is not None:
                 data = data[mask]
             if len(data) != len(dataSet):
-                raise Exception("Length of meta data does not match number of points (%d != %d)" % (len(data), len(dataSet)))
+                raise Exception(
+                    "Length of meta data does not match number of points (%d != %d)" % (len(data), len(dataSet))
+                )
 
         ## Bug: If data is a numpy record array, then items from that array must be copied to dataSet one at a time.
         ## (otherwise they are converted to tuples and thus lose their field names.
-        if isinstance(data, np.ndarray) and (data.dtype.fields is not None)and len(data.dtype.fields) > 1:
+        if isinstance(data, np.ndarray) and (data.dtype.fields is not None) and len(data.dtype.fields) > 1:
             for i, rec in enumerate(data):
-                dataSet['data'][i] = rec
+                dataSet["data"][i] = rec
         else:
-            dataSet['data'] = data
+            dataSet["data"] = data
 
     def setPxMode(self, mode):
-        if self.opts['pxMode'] == mode:
+        if self.opts["pxMode"] == mode:
             return
 
-        self.opts['pxMode'] = mode
+        self.opts["pxMode"] = mode
         self.invalidate()
 
     def updateSpots(self, dataSet=None):
@@ -551,18 +595,18 @@ class ScatterPlotItem(GraphicsObject):
             dataSet = self.data
 
         invalidate = False
-        if self.opts['pxMode']:
-            mask = np.equal(dataSet['sourceRect'], None)
+        if self.opts["pxMode"]:
+            mask = np.equal(dataSet["sourceRect"], None)
             if np.any(mask):
                 invalidate = True
                 opts = self.getSpotOpts(dataSet[mask])
                 sourceRect = self.fragmentAtlas.getSymbolCoords(opts)
-                dataSet['sourceRect'][mask] = sourceRect
+                dataSet["sourceRect"][mask] = sourceRect
 
-            self.fragmentAtlas.getAtlas() # generate atlas so source widths are available.
+            self.fragmentAtlas.getAtlas()  # generate atlas so source widths are available.
 
-            dataSet['width'] = np.array(list(imap(QtCore.QRectF.width, dataSet['sourceRect'])))/2
-            dataSet['targetRect'] = None
+            dataSet["width"] = np.array(list(imap(QtCore.QRectF.width, dataSet["sourceRect"]))) / 2
+            dataSet["targetRect"] = None
             self._maxSpotPxWidth = self.fragmentAtlas.max_width
         else:
             self._maxSpotWidth = 0
@@ -575,29 +619,27 @@ class ScatterPlotItem(GraphicsObject):
     def getSpotOpts(self, recs, scale=1.0):
         if recs.ndim == 0:
             rec = recs
-            symbol = rec['symbol']
+            symbol = rec["symbol"]
             if symbol is None:
-                symbol = self.opts['symbol']
-            size = rec['size']
+                symbol = self.opts["symbol"]
+            size = rec["size"]
             if size < 0:
-                size = self.opts['size']
-            pen = rec['pen']
+                size = self.opts["size"]
+            pen = rec["pen"]
             if pen is None:
-                pen = self.opts['pen']
-            brush = rec['brush']
+                pen = self.opts["pen"]
+            brush = rec["brush"]
             if brush is None:
-                brush = self.opts['brush']
-            return (symbol, size*scale, fn.mkPen(pen), fn.mkBrush(brush))
+                brush = self.opts["brush"]
+            return (symbol, size * scale, fn.mkPen(pen), fn.mkBrush(brush))
         else:
             recs = recs.copy()
-            recs['symbol'][np.equal(recs['symbol'], None)] = self.opts['symbol']
-            recs['size'][np.equal(recs['size'], -1)] = self.opts['size']
-            recs['size'] *= scale
-            recs['pen'][np.equal(recs['pen'], None)] = fn.mkPen(self.opts['pen'])
-            recs['brush'][np.equal(recs['brush'], None)] = fn.mkBrush(self.opts['brush'])
+            recs["symbol"][np.equal(recs["symbol"], None)] = self.opts["symbol"]
+            recs["size"][np.equal(recs["size"], -1)] = self.opts["size"]
+            recs["size"] *= scale
+            recs["pen"][np.equal(recs["pen"], None)] = fn.mkPen(self.opts["pen"])
+            recs["brush"][np.equal(recs["brush"], None)] = fn.mkBrush(self.opts["brush"])
             return recs
-
-
 
     def measureSpotSizes(self, dataSet):
         for rec in dataSet:
@@ -605,7 +647,7 @@ class ScatterPlotItem(GraphicsObject):
             symbol, size, pen, brush = self.getSpotOpts(rec)
             width = 0
             pxWidth = 0
-            if self.opts['pxMode']:
+            if self.opts["pxMode"]:
                 pxWidth = size + pen.widthF()
             else:
                 width = size
@@ -617,10 +659,9 @@ class ScatterPlotItem(GraphicsObject):
             self._maxSpotPxWidth = max(self._maxSpotPxWidth, pxWidth)
         self.bounds = [None, None]
 
-
     def clear(self):
         """Remove all spots from the scatter plot"""
-        #self.clearItems()
+        # self.clearItems()
         self.data = np.empty(0, dtype=self.data.dtype)
         self.bounds = [None, None]
         self.invalidate()
@@ -629,16 +670,16 @@ class ScatterPlotItem(GraphicsObject):
         if frac >= 1.0 and orthoRange is None and self.bounds[ax] is not None:
             return self.bounds[ax]
 
-        #self.prepareGeometryChange()
+        # self.prepareGeometryChange()
         if self.data is None or len(self.data) == 0:
             return (None, None)
 
         if ax == 0:
-            d = self.data['x']
-            d2 = self.data['y']
+            d = self.data["x"]
+            d2 = self.data["y"]
         elif ax == 1:
-            d = self.data['y']
-            d2 = self.data['x']
+            d = self.data["y"]
+            d2 = self.data["x"]
 
         if orthoRange is not None:
             mask = (d2 >= orthoRange[0]) * (d2 <= orthoRange[1])
@@ -646,7 +687,7 @@ class ScatterPlotItem(GraphicsObject):
             d2 = d2[mask]
 
         if frac >= 1.0:
-            self.bounds[ax] = (np.nanmin(d) - self._maxSpotWidth*0.7072, np.nanmax(d) + self._maxSpotWidth*0.7072)
+            self.bounds[ax] = (np.nanmin(d) - self._maxSpotWidth * 0.7072, np.nanmax(d) + self._maxSpotWidth * 0.7072)
             return self.bounds[ax]
         elif frac <= 0.0:
             raise Exception("Value for parameter 'frac' must be > 0. (got %s)" % str(frac))
@@ -656,7 +697,7 @@ class ScatterPlotItem(GraphicsObject):
             return np.percentile(d, [50 * (1 - frac), 50 * (1 + frac)])
 
     def pixelPadding(self):
-        return self._maxSpotPxWidth*0.7072
+        return self._maxSpotPxWidth * 0.7072
 
     def boundingRect(self):
         (xmn, xmx) = self.dataBounds(ax=0)
@@ -685,18 +726,17 @@ class ScatterPlotItem(GraphicsObject):
             # return bounds expanded by pixel size
             px *= pxPad
             py *= pxPad
-        return QtCore.QRectF(xmn-px, ymn-py, (2*px)+xmx-xmn, (2*py)+ymx-ymn)
+        return QtCore.QRectF(xmn - px, ymn - py, (2 * px) + xmx - xmn, (2 * py) + ymx - ymn)
 
     def viewTransformChanged(self):
         self.prepareGeometryChange()
         GraphicsObject.viewTransformChanged(self)
         self.bounds = [None, None]
-        self.data['targetRect'] = None
+        self.data["targetRect"] = None
 
     def setExportMode(self, *args, **kwds):
         GraphicsObject.setExportMode(self, *args, **kwds)
         self.invalidate()
-
 
     def mapPointsToDevice(self, pts):
         # Map point locations to device
@@ -704,12 +744,12 @@ class ScatterPlotItem(GraphicsObject):
         if tr is None:
             return None
 
-        #pts = np.empty((2,len(self.data['x'])))
-        #pts[0] = self.data['x']
-        #pts[1] = self.data['y']
+        # pts = np.empty((2,len(self.data['x'])))
+        # pts[0] = self.data['x']
+        # pts[1] = self.data['y']
         pts = fn.transformCoordinates(tr, pts)
-        pts -= self.data['width']
-        pts = np.clip(pts, -2**30, 2**30) ## prevent Qt segmentation fault.
+        pts -= self.data["width"]
+        pts = np.clip(pts, -(2 ** 30), 2 ** 30)  ## prevent Qt segmentation fault.
 
         return pts
 
@@ -720,66 +760,71 @@ class ScatterPlotItem(GraphicsObject):
         if vb is None:
             return None
         viewBounds = vb.mapRectToDevice(vb.boundingRect())
-        w = self.data['width']
-        mask = ((pts[0] + w > viewBounds.left()) &
-                (pts[0] - w < viewBounds.right()) &
-                (pts[1] + w > viewBounds.top()) &
-                (pts[1] - w < viewBounds.bottom())) ## remove out of view points
+        w = self.data["width"]
+        mask = (
+            (pts[0] + w > viewBounds.left())
+            & (pts[0] - w < viewBounds.right())
+            & (pts[1] + w > viewBounds.top())
+            & (pts[1] - w < viewBounds.bottom())
+        )  ## remove out of view points
         return mask
-
 
     @debug.warnOnException  ## raising an exception here causes crash
     def paint(self, p, *args):
 
-        #p.setPen(fn.mkPen('r'))
-        #p.drawRect(self.boundingRect())
+        # p.setPen(fn.mkPen('r'))
+        # p.drawRect(self.boundingRect())
 
         if self._exportOpts is not False:
-            aa = self._exportOpts.get('antialias', True)
-            scale = self._exportOpts.get('resolutionScale', 1.0)  ## exporting to image; pixel resolution may have changed
+            aa = self._exportOpts.get("antialias", True)
+            scale = self._exportOpts.get(
+                "resolutionScale", 1.0
+            )  ## exporting to image; pixel resolution may have changed
         else:
-            aa = self.opts['antialias']
+            aa = self.opts["antialias"]
             scale = 1.0
 
-        if self.opts['pxMode'] is True:
+        if self.opts["pxMode"] is True:
             p.resetTransform()
 
             # Map point coordinates to device
-            pts = np.vstack([self.data['x'], self.data['y']])
+            pts = np.vstack([self.data["x"], self.data["y"]])
             pts = self.mapPointsToDevice(pts)
             if pts is None:
                 return
 
             # Cull points that are outside view
             viewMask = self.getViewMask(pts)
-            #pts = pts[:,mask]
-            #data = self.data[mask]
+            # pts = pts[:,mask]
+            # data = self.data[mask]
 
-            if self.opts['useCache'] and self._exportOpts is False:
+            if self.opts["useCache"] and self._exportOpts is False:
                 # Draw symbols from pre-rendered atlas
                 atlas = self.fragmentAtlas.getAtlas()
 
                 # Update targetRects if necessary
-                updateMask = viewMask & np.equal(self.data['targetRect'], None)
+                updateMask = viewMask & np.equal(self.data["targetRect"], None)
                 if np.any(updateMask):
-                    updatePts = pts[:,updateMask]
-                    width = self.data[updateMask]['width']*2
-                    self.data['targetRect'][updateMask] = list(imap(QtCore.QRectF, updatePts[0,:], updatePts[1,:], width, width))
+                    updatePts = pts[:, updateMask]
+                    width = self.data[updateMask]["width"] * 2
+                    self.data["targetRect"][updateMask] = list(
+                        imap(QtCore.QRectF, updatePts[0, :], updatePts[1, :], width, width)
+                    )
 
                 data = self.data[viewMask]
                 if USE_PYSIDE or USE_PYQT5:
-                    list(imap(p.drawPixmap, data['targetRect'], repeat(atlas), data['sourceRect']))
+                    list(imap(p.drawPixmap, data["targetRect"], repeat(atlas), data["sourceRect"]))
                 else:
-                    p.drawPixmapFragments(data['targetRect'].tolist(), data['sourceRect'].tolist(), atlas)
+                    p.drawPixmapFragments(data["targetRect"].tolist(), data["sourceRect"].tolist(), atlas)
             else:
                 # render each symbol individually
                 p.setRenderHint(p.Antialiasing, aa)
 
                 data = self.data[viewMask]
-                pts = pts[:,viewMask]
+                pts = pts[:, viewMask]
                 for i, rec in enumerate(data):
                     p.resetTransform()
-                    p.translate(pts[0,i] + rec['width'], pts[1,i] + rec['width'])
+                    p.translate(pts[0, i] + rec["width"], pts[1, i] + rec["width"])
                     drawSymbol(p, *self.getSpotOpts(rec, scale))
         else:
             if self.picture is None:
@@ -788,9 +833,9 @@ class ScatterPlotItem(GraphicsObject):
                 for rec in self.data:
                     if scale != 1.0:
                         rec = rec.copy()
-                        rec['size'] *= scale
+                        rec["size"] *= scale
                     p2.resetTransform()
-                    p2.translate(rec['x'], rec['y'])
+                    p2.translate(rec["x"], rec["y"])
                     drawSymbol(p2, *self.getSpotOpts(rec, scale))
                 p2.end()
 
@@ -799,9 +844,9 @@ class ScatterPlotItem(GraphicsObject):
 
     def points(self):
         for rec in self.data:
-            if rec['item'] is None:
-                rec['item'] = SpotItem(rec, self)
-        return self.data['item']
+            if rec["item"] is None:
+                rec["item"] = SpotItem(rec, self)
+        return self.data["item"]
 
     def pointsAt(self, pos):
         x = pos.x()
@@ -815,17 +860,16 @@ class ScatterPlotItem(GraphicsObject):
             sx = sp.x()
             sy = sp.y()
             s2x = s2y = ss * 0.5
-            if self.opts['pxMode']:
+            if self.opts["pxMode"]:
                 s2x *= pw
                 s2y *= ph
-            if x > sx-s2x and x < sx+s2x and y > sy-s2y and y < sy+s2y:
+            if x > sx - s2x and x < sx + s2x and y > sy - s2y and y < sy + s2y:
                 pts.append(s)
-                #print "HIT:", x, y, sx, sy, s2x, s2y
-            #else:
-                #print "No hit:", (x, y), (sx, sy)
-                #print "       ", (sx-s2x, sy-s2y), (sx+s2x, sy+s2y)
+                # print "HIT:", x, y, sx, sy, s2x, s2y
+            # else:
+            # print "No hit:", (x, y), (sx, sy)
+            # print "       ", (sx-s2x, sy-s2y), (sx+s2x, sy+s2y)
         return pts[::-1]
-
 
     def mouseClickEvent(self, ev):
         if ev.button() == QtCore.Qt.LeftButton:
@@ -835,7 +879,7 @@ class ScatterPlotItem(GraphicsObject):
                 self.sigClicked.emit(self, self.ptsClicked)
                 ev.accept()
             else:
-                #print "no spots"
+                # print "no spots"
                 ev.ignore()
         else:
             ev.ignore()
@@ -849,27 +893,27 @@ class SpotItem(object):
     """
 
     def __init__(self, data, plot):
-        #GraphicsItem.__init__(self, register=False)
+        # GraphicsItem.__init__(self, register=False)
         self._data = data
         self._plot = plot
-        #self.setParentItem(plot)
-        #self.setPos(QtCore.QPointF(data['x'], data['y']))
-        #self.updateItem()
+        # self.setParentItem(plot)
+        # self.setPos(QtCore.QPointF(data['x'], data['y']))
+        # self.updateItem()
 
     def data(self):
         """Return the user data associated with this spot."""
-        return self._data['data']
+        return self._data["data"]
 
     def size(self):
         """Return the size of this spot.
         If the spot has no explicit size set, then return the ScatterPlotItem's default size instead."""
-        if self._data['size'] == -1:
-            return self._plot.opts['size']
+        if self._data["size"] == -1:
+            return self._plot.opts["size"]
         else:
-            return self._data['size']
+            return self._data["size"]
 
     def pos(self):
-        return Point(self._data['x'], self._data['y'])
+        return Point(self._data["x"], self._data["y"])
 
     def viewPos(self):
         return self._plot.mapToView(self.pos())
@@ -878,16 +922,16 @@ class SpotItem(object):
         """Set the size of this spot.
         If the size is set to -1, then the ScatterPlotItem's default size
         will be used instead."""
-        self._data['size'] = size
+        self._data["size"] = size
         self.updateItem()
 
     def symbol(self):
         """Return the symbol of this spot.
         If the spot has no explicit symbol set, then return the ScatterPlotItem's default symbol instead.
         """
-        symbol = self._data['symbol']
+        symbol = self._data["symbol"]
         if symbol is None:
-            symbol = self._plot.opts['symbol']
+            symbol = self._plot.opts["symbol"]
         try:
             n = int(symbol)
             symbol = list(Symbols.keys())[n % len(Symbols)]
@@ -898,82 +942,83 @@ class SpotItem(object):
     def setSymbol(self, symbol):
         """Set the symbol for this spot.
         If the symbol is set to '', then the ScatterPlotItem's default symbol will be used instead."""
-        self._data['symbol'] = symbol
+        self._data["symbol"] = symbol
         self.updateItem()
 
     def pen(self):
-        pen = self._data['pen']
+        pen = self._data["pen"]
         if pen is None:
-            pen = self._plot.opts['pen']
+            pen = self._plot.opts["pen"]
         return fn.mkPen(pen)
 
     def setPen(self, *args, **kargs):
         """Set the outline pen for this spot"""
         pen = fn.mkPen(*args, **kargs)
-        self._data['pen'] = pen
+        self._data["pen"] = pen
         self.updateItem()
 
     def resetPen(self):
         """Remove the pen set for this spot; the scatter plot's default pen will be used instead."""
-        self._data['pen'] = None  ## Note this is NOT the same as calling setPen(None)
+        self._data["pen"] = None  ## Note this is NOT the same as calling setPen(None)
         self.updateItem()
 
     def brush(self):
-        brush = self._data['brush']
+        brush = self._data["brush"]
         if brush is None:
-            brush = self._plot.opts['brush']
+            brush = self._plot.opts["brush"]
         return fn.mkBrush(brush)
 
     def setBrush(self, *args, **kargs):
         """Set the fill brush for this spot"""
         brush = fn.mkBrush(*args, **kargs)
-        self._data['brush'] = brush
+        self._data["brush"] = brush
         self.updateItem()
 
     def resetBrush(self):
         """Remove the brush set for this spot; the scatter plot's default brush will be used instead."""
-        self._data['brush'] = None  ## Note this is NOT the same as calling setBrush(None)
+        self._data["brush"] = None  ## Note this is NOT the same as calling setBrush(None)
         self.updateItem()
 
     def setData(self, data):
         """Set the user-data associated with this spot"""
-        self._data['data'] = data
+        self._data["data"] = data
 
     def updateItem(self):
-        self._data['sourceRect'] = None
+        self._data["sourceRect"] = None
         self._plot.updateSpots(self._data.reshape(1))
         self._plot.invalidate()
 
-#class PixmapSpotItem(SpotItem, QtGui.QGraphicsPixmapItem):
-    #def __init__(self, data, plot):
-        #QtGui.QGraphicsPixmapItem.__init__(self)
-        #self.setFlags(self.flags() | self.ItemIgnoresTransformations)
-        #SpotItem.__init__(self, data, plot)
 
-    #def setPixmap(self, pixmap):
-        #QtGui.QGraphicsPixmapItem.setPixmap(self, pixmap)
-        #self.setOffset(-pixmap.width()/2.+0.5, -pixmap.height()/2.)
+# class PixmapSpotItem(SpotItem, QtGui.QGraphicsPixmapItem):
+# def __init__(self, data, plot):
+# QtGui.QGraphicsPixmapItem.__init__(self)
+# self.setFlags(self.flags() | self.ItemIgnoresTransformations)
+# SpotItem.__init__(self, data, plot)
 
-    #def updateItem(self):
-        #symbolOpts = (self._data['pen'], self._data['brush'], self._data['size'], self._data['symbol'])
+# def setPixmap(self, pixmap):
+# QtGui.QGraphicsPixmapItem.setPixmap(self, pixmap)
+# self.setOffset(-pixmap.width()/2.+0.5, -pixmap.height()/2.)
 
-        ### If all symbol options are default, use default pixmap
-        #if symbolOpts == (None, None, -1, ''):
-            #pixmap = self._plot.defaultSpotPixmap()
-        #else:
-            #pixmap = makeSymbolPixmap(size=self.size(), pen=self.pen(), brush=self.brush(), symbol=self.symbol())
-        #self.setPixmap(pixmap)
+# def updateItem(self):
+# symbolOpts = (self._data['pen'], self._data['brush'], self._data['size'], self._data['symbol'])
+
+### If all symbol options are default, use default pixmap
+# if symbolOpts == (None, None, -1, ''):
+# pixmap = self._plot.defaultSpotPixmap()
+# else:
+# pixmap = makeSymbolPixmap(size=self.size(), pen=self.pen(), brush=self.brush(), symbol=self.symbol())
+# self.setPixmap(pixmap)
 
 
-#class PathSpotItem(SpotItem, QtGui.QGraphicsPathItem):
-    #def __init__(self, data, plot):
-        #QtGui.QGraphicsPathItem.__init__(self)
-        #SpotItem.__init__(self, data, plot)
+# class PathSpotItem(SpotItem, QtGui.QGraphicsPathItem):
+# def __init__(self, data, plot):
+# QtGui.QGraphicsPathItem.__init__(self)
+# SpotItem.__init__(self, data, plot)
 
-    #def updateItem(self):
-        #QtGui.QGraphicsPathItem.setPath(self, Symbols[self.symbol()])
-        #QtGui.QGraphicsPathItem.setPen(self, self.pen())
-        #QtGui.QGraphicsPathItem.setBrush(self, self.brush())
-        #size = self.size()
-        #self.resetTransform()
-        #self.scale(size, size)
+# def updateItem(self):
+# QtGui.QGraphicsPathItem.setPath(self, Symbols[self.symbol()])
+# QtGui.QGraphicsPathItem.setPen(self, self.pen())
+# QtGui.QGraphicsPathItem.setBrush(self, self.brush())
+# size = self.size()
+# self.resetTransform()
+# self.scale(size, size)

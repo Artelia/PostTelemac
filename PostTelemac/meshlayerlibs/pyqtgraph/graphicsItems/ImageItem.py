@@ -10,7 +10,7 @@ from ..Point import Point
 from .. import getConfigOption
 
 
-__all__ = ['ImageItem']
+__all__ = ["ImageItem"]
 
 
 class ImageItem(GraphicsObject):
@@ -29,35 +29,35 @@ class ImageItem(GraphicsObject):
     :class:`HistogramLUTWidget <pyqtgraph.HistogramLUTWidget>` to provide a GUI
     for controlling the levels and lookup table used to display the image.
     """
-    
+
     sigImageChanged = QtCore.Signal()
     sigRemoveRequested = QtCore.Signal(object)  # self; emitted when 'remove' is selected from context menu
-    
+
     def __init__(self, image=None, **kargs):
         """
         See :func:`setImage <pyqtgraph.ImageItem.setImage>` for all allowed initialization arguments.
         """
         GraphicsObject.__init__(self)
         self.menu = None
-        self.image = None   ## original image data
+        self.image = None  ## original image data
         self.qimage = None  ## rendered image for display
-        
+
         self.paintMode = None
-        
+
         self.levels = None  ## [min, max] or [[redMin, redMax], ...]
         self.lut = None
         self.autoDownsample = False
-        
-        self.axisOrder = getConfigOption('imageAxisOrder')
-        
+
+        self.axisOrder = getConfigOption("imageAxisOrder")
+
         # In some cases, we use a modified lookup table to handle both rescaling
         # and LUT more efficiently
         self._effectiveLut = None
-        
+
         self.drawKernel = None
         self.border = None
         self.removable = False
-        
+
         if image is not None:
             self.setImage(image, **kargs)
         else:
@@ -81,27 +81,27 @@ class ImageItem(GraphicsObject):
         """
         self.paintMode = mode
         self.update()
-        
+
     def setBorder(self, b):
         self.border = fn.mkPen(b)
         self.update()
-        
+
     def width(self):
         if self.image is None:
             return None
-        axis = 0 if self.axisOrder == 'col-major' else 1
+        axis = 0 if self.axisOrder == "col-major" else 1
         return self.image.shape[axis]
-        
+
     def height(self):
         if self.image is None:
             return None
-        axis = 1 if self.axisOrder == 'col-major' else 0
+        axis = 1 if self.axisOrder == "col-major" else 0
         return self.image.shape[axis]
 
     def boundingRect(self):
         if self.image is None:
-            return QtCore.QRectF(0., 0., 0., 0.)
-        return QtCore.QRectF(0., 0., float(self.width()), float(self.height()))
+            return QtCore.QRectF(0.0, 0.0, 0.0, 0.0)
+        return QtCore.QRectF(0.0, 0.0, float(self.width()), float(self.height()))
 
     def setLevels(self, levels, update=True):
         """
@@ -120,10 +120,10 @@ class ImageItem(GraphicsObject):
             self._effectiveLut = None
             if update:
                 self.updateImage()
-        
+
     def getLevels(self):
         return self.levels
-        #return self.whiteLevel, self.blackLevel
+        # return self.whiteLevel, self.blackLevel
 
     def setLookupTable(self, lut, update=True):
         """
@@ -152,28 +152,28 @@ class ImageItem(GraphicsObject):
         self.update()
 
     def setOpts(self, update=True, **kargs):
-        if 'axisOrder' in kargs:
-            val = kargs['axisOrder']
-            if val not in ('row-major', 'col-major'):
+        if "axisOrder" in kargs:
+            val = kargs["axisOrder"]
+            if val not in ("row-major", "col-major"):
                 raise ValueError('axisOrder must be either "row-major" or "col-major"')
             self.axisOrder = val
-        if 'lut' in kargs:
-            self.setLookupTable(kargs['lut'], update=update)
-        if 'levels' in kargs:
-            self.setLevels(kargs['levels'], update=update)
-        #if 'clipLevel' in kargs:
-            #self.setClipLevel(kargs['clipLevel'])
-        if 'opacity' in kargs:
-            self.setOpacity(kargs['opacity'])
-        if 'compositionMode' in kargs:
-            self.setCompositionMode(kargs['compositionMode'])
-        if 'border' in kargs:
-            self.setBorder(kargs['border'])
-        if 'removable' in kargs:
-            self.removable = kargs['removable']
+        if "lut" in kargs:
+            self.setLookupTable(kargs["lut"], update=update)
+        if "levels" in kargs:
+            self.setLevels(kargs["levels"], update=update)
+        # if 'clipLevel' in kargs:
+        # self.setClipLevel(kargs['clipLevel'])
+        if "opacity" in kargs:
+            self.setOpacity(kargs["opacity"])
+        if "compositionMode" in kargs:
+            self.setCompositionMode(kargs["compositionMode"])
+        if "border" in kargs:
+            self.setBorder(kargs["border"])
+        if "removable" in kargs:
+            self.removable = kargs["removable"]
             self.menu = None
-        if 'autoDownsample' in kargs:
-            self.setAutoDownsample(kargs['autoDownsample'])
+        if "autoDownsample" in kargs:
+            self.setAutoDownsample(kargs["autoDownsample"])
         if update:
             self.update()
 
@@ -239,14 +239,14 @@ class ImageItem(GraphicsObject):
                 return
         else:
             gotNewData = True
-            shapeChanged = (self.image is None or image.shape != self.image.shape)
+            shapeChanged = self.image is None or image.shape != self.image.shape
             image = image.view(np.ndarray)
             if self.image is None or image.dtype != self.image.dtype:
                 self._effectiveLut = None
             self.image = image
-            if self.image.shape[0] > 2**15-1 or self.image.shape[1] > 2**15-1:
-                if 'autoDownsample' not in kargs:
-                    kargs['autoDownsample'] = True
+            if self.image.shape[0] > 2 ** 15 - 1 or self.image.shape[1] > 2 ** 15 - 1:
+                if "autoDownsample" not in kargs:
+                    kargs["autoDownsample"] = True
             if shapeChanged:
                 self.prepareGeometryChange()
                 self.informViewBoundsChanged()
@@ -254,19 +254,19 @@ class ImageItem(GraphicsObject):
         profile()
 
         if autoLevels is None:
-            if 'levels' in kargs:
+            if "levels" in kargs:
                 autoLevels = False
             else:
                 autoLevels = True
         if autoLevels:
             img = self.image
-            while img.size > 2**16:
+            while img.size > 2 ** 16:
                 img = img[::2, ::2]
             mn, mx = img.min(), img.max()
             if mn == mx:
                 mn = 0
                 mx = 255
-            kargs['levels'] = [mn,mx]
+            kargs["levels"] = [mn, mx]
 
         profile()
 
@@ -291,7 +291,7 @@ class ImageItem(GraphicsObject):
         """
         # Might eventually need to account for downsampling / clipping here
         tr = QtGui.QTransform()
-        if self.axisOrder == 'row-major':
+        if self.axisOrder == "row-major":
             # transpose
             tr.scale(1, -1)
             tr.rotate(-90)
@@ -304,7 +304,7 @@ class ImageItem(GraphicsObject):
         See dataTransform() for more information.
         """
         tr = QtGui.QTransform()
-        if self.axisOrder == 'row-major':
+        if self.axisOrder == "row-major":
             # transpose
             tr.scale(1, -1)
             tr.rotate(-90)
@@ -332,18 +332,18 @@ class ImageItem(GraphicsObject):
 
     def updateImage(self, *args, **kargs):
         ## used for re-rendering qimage from self.image.
-        
+
         ## can we make any assumptions here that speed things up?
         ## dtype, range, size are all the same?
         defaults = {
-            'autoLevels': False,
+            "autoLevels": False,
         }
         defaults.update(kargs)
         return self.setImage(*args, **defaults)
 
     def render(self):
         # Convert data to QImage for display.
-        
+
         profile = debug.Profiler()
         if self.image is None or self.image.size == 0:
             return
@@ -354,17 +354,17 @@ class ImageItem(GraphicsObject):
 
         if self.autoDownsample:
             # reduce dimensions of image based on screen resolution
-            o = self.mapToDevice(QtCore.QPointF(0,0))
-            x = self.mapToDevice(QtCore.QPointF(1,0))
-            y = self.mapToDevice(QtCore.QPointF(0,1))
-            w = Point(x-o).length()
-            h = Point(y-o).length()
+            o = self.mapToDevice(QtCore.QPointF(0, 0))
+            x = self.mapToDevice(QtCore.QPointF(1, 0))
+            y = self.mapToDevice(QtCore.QPointF(0, 1))
+            w = Point(x - o).length()
+            h = Point(y - o).length()
             if w == 0 or h == 0:
                 self.qimage = None
                 return
             xds = max(1, int(1.0 / w))
             yds = max(1, int(1.0 / h))
-            axes = [1, 0] if self.axisOrder == 'row-major' else [0, 1]
+            axes = [1, 0] if self.axisOrder == "row-major" else [0, 1]
             image = fn.downsample(self.image, xds, axis=axes[0])
             image = fn.downsample(image, yds, axis=axes[1])
             self._lastDownsample = (xds, yds)
@@ -376,30 +376,34 @@ class ImageItem(GraphicsObject):
         levels = self.levels
         if levels is not None and levels.ndim == 1 and image.dtype in (np.ubyte, np.uint16):
             if self._effectiveLut is None:
-                eflsize = 2**(image.itemsize*8)
+                eflsize = 2 ** (image.itemsize * 8)
                 ind = np.arange(eflsize)
                 minlev, maxlev = levels
                 levdiff = maxlev - minlev
                 levdiff = 1 if levdiff == 0 else levdiff  # don't allow division by 0
                 if lut is None:
-                    efflut = fn.rescaleData(ind, scale=255./levdiff, 
-                                            offset=minlev, dtype=np.ubyte)
+                    efflut = fn.rescaleData(ind, scale=255.0 / levdiff, offset=minlev, dtype=np.ubyte)
                 else:
-                    lutdtype = np.min_scalar_type(lut.shape[0]-1)
-                    efflut = fn.rescaleData(ind, scale=(lut.shape[0]-1)/levdiff,
-                                            offset=minlev, dtype=lutdtype, clip=(0, lut.shape[0]-1))
+                    lutdtype = np.min_scalar_type(lut.shape[0] - 1)
+                    efflut = fn.rescaleData(
+                        ind,
+                        scale=(lut.shape[0] - 1) / levdiff,
+                        offset=minlev,
+                        dtype=lutdtype,
+                        clip=(0, lut.shape[0] - 1),
+                    )
                     efflut = lut[efflut]
-                
+
                 self._effectiveLut = efflut
             lut = self._effectiveLut
             levels = None
-        
+
         # Assume images are in column-major order for backward compatibility
         # (most images are in row-major order)
-        
-        if self.axisOrder == 'col-major':
-            image = image.transpose((1, 0, 2)[:image.ndim])
-        
+
+        if self.axisOrder == "col-major":
+            image = image.transpose((1, 0, 2)[: image.ndim])
+
         argb, alpha = fn.makeARGB(image, lut=lut, levels=levels)
         self.qimage = fn.makeQImage(argb, alpha, transpose=False)
 
@@ -411,14 +415,14 @@ class ImageItem(GraphicsObject):
             self.render()
             if self.qimage is None:
                 return
-            profile('render QImage')
+            profile("render QImage")
         if self.paintMode is not None:
             p.setCompositionMode(self.paintMode)
-            profile('set comp mode')
+            profile("set comp mode")
 
-        shape = self.image.shape[:2] if self.axisOrder == 'col-major' else self.image.shape[:2][::-1]
-        p.drawImage(QtCore.QRectF(0,0,*shape), self.qimage)
-        profile('p.drawImage')
+        shape = self.image.shape[:2] if self.axisOrder == "col-major" else self.image.shape[:2][::-1]
+        p.drawImage(QtCore.QRectF(0, 0, *shape), self.qimage)
+        profile("p.drawImage")
         if self.border is not None:
             p.setPen(self.border)
             p.drawRect(self.boundingRect())
@@ -429,7 +433,7 @@ class ImageItem(GraphicsObject):
             self.render()
         self.qimage.save(fileName, *args)
 
-    def getHistogram(self, bins='auto', step='auto', targetImageSize=200, targetHistogramSize=500, **kwds):
+    def getHistogram(self, bins="auto", step="auto", targetImageSize=200, targetHistogramSize=500, **kwds):
         """Returns x and y arrays containing the histogram values for the current image.
         For an explanation of the return format, see numpy.histogram().
         
@@ -448,29 +452,31 @@ class ImageItem(GraphicsObject):
         This method is also used when automatically computing levels.
         """
         if self.image is None:
-            return None,None
-        if step == 'auto':
-            step = (int(np.ceil(self.image.shape[0] / targetImageSize)),
-                    int(np.ceil(self.image.shape[1] / targetImageSize)))
+            return None, None
+        if step == "auto":
+            step = (
+                int(np.ceil(self.image.shape[0] / targetImageSize)),
+                int(np.ceil(self.image.shape[1] / targetImageSize)),
+            )
         if np.isscalar(step):
             step = (step, step)
-        stepData = self.image[::step[0], ::step[1]]
-        
-        if bins == 'auto':
+        stepData = self.image[:: step[0], :: step[1]]
+
+        if bins == "auto":
             if stepData.dtype.kind in "ui":
                 mn = stepData.min()
                 mx = stepData.max()
-                step = np.ceil((mx-mn) / 500.)
-                bins = np.arange(mn, mx+1.01*step, step, dtype=np.int)
+                step = np.ceil((mx - mn) / 500.0)
+                bins = np.arange(mn, mx + 1.01 * step, step, dtype=np.int)
                 if len(bins) == 0:
                     bins = [mn, mx]
             else:
                 bins = 500
 
-        kwds['bins'] = bins
+        kwds["bins"] = bins
         stepData = stepData[np.isfinite(stepData)]
         hist = np.histogram(stepData, **kwds)
-        
+
         return hist[1][:-1], hist[0]
 
     def setPxMode(self, b):
@@ -481,7 +487,7 @@ class ImageItem(GraphicsObject):
         (see GraphicsItem::ItemIgnoresTransformations in the Qt documentation)
         """
         self.setFlag(self.ItemIgnoresTransformations, b)
-    
+
     def setScaledMode(self):
         self.setPxMode(False)
 
@@ -491,14 +497,14 @@ class ImageItem(GraphicsObject):
             if self.qimage is None:
                 return None
         return QtGui.QPixmap.fromImage(self.qimage)
-    
+
     def pixelSize(self):
         """return scene-size of a single pixel in the image"""
         br = self.sceneBoundingRect()
         if self.image is None:
-            return 1,1
-        return br.width()/self.width(), br.height()/self.height()
-    
+            return 1, 1
+        return br.width() / self.width(), br.height() / self.height()
+
     def viewTransformChanged(self):
         if self.autoDownsample:
             self.qimage = None
@@ -539,62 +545,64 @@ class ImageItem(GraphicsObject):
             self.menu.addAction(remAct)
             self.menu.remAct = remAct
         return self.menu
-        
+
     def hoverEvent(self, ev):
         if not ev.isExit() and self.drawKernel is not None and ev.acceptDrags(QtCore.Qt.LeftButton):
-            ev.acceptClicks(QtCore.Qt.LeftButton) ## we don't use the click, but we also don't want anyone else to use it.
+            ev.acceptClicks(
+                QtCore.Qt.LeftButton
+            )  ## we don't use the click, but we also don't want anyone else to use it.
             ev.acceptClicks(QtCore.Qt.RightButton)
         elif not ev.isExit() and self.removable:
             ev.acceptClicks(QtCore.Qt.RightButton)  ## accept context menu clicks
 
     def tabletEvent(self, ev):
         pass
-        #print(ev.device())
-        #print(ev.pointerType())
-        #print(ev.pressure())
-    
+        # print(ev.device())
+        # print(ev.pointerType())
+        # print(ev.pressure())
+
     def drawAt(self, pos, ev=None):
         pos = [int(pos.x()), int(pos.y())]
         dk = self.drawKernel
         kc = self.drawKernelCenter
-        sx = [0,dk.shape[0]]
-        sy = [0,dk.shape[1]]
-        tx = [pos[0] - kc[0], pos[0] - kc[0]+ dk.shape[0]]
-        ty = [pos[1] - kc[1], pos[1] - kc[1]+ dk.shape[1]]
-        
-        for i in [0,1]:
+        sx = [0, dk.shape[0]]
+        sy = [0, dk.shape[1]]
+        tx = [pos[0] - kc[0], pos[0] - kc[0] + dk.shape[0]]
+        ty = [pos[1] - kc[1], pos[1] - kc[1] + dk.shape[1]]
+
+        for i in [0, 1]:
             dx1 = -min(0, tx[i])
-            dx2 = min(0, self.image.shape[0]-tx[i])
-            tx[i] += dx1+dx2
-            sx[i] += dx1+dx2
+            dx2 = min(0, self.image.shape[0] - tx[i])
+            tx[i] += dx1 + dx2
+            sx[i] += dx1 + dx2
 
             dy1 = -min(0, ty[i])
-            dy2 = min(0, self.image.shape[1]-ty[i])
-            ty[i] += dy1+dy2
-            sy[i] += dy1+dy2
+            dy2 = min(0, self.image.shape[1] - ty[i])
+            ty[i] += dy1 + dy2
+            sy[i] += dy1 + dy2
 
-        ts = (slice(tx[0],tx[1]), slice(ty[0],ty[1]))
-        ss = (slice(sx[0],sx[1]), slice(sy[0],sy[1]))
+        ts = (slice(tx[0], tx[1]), slice(ty[0], ty[1]))
+        ss = (slice(sx[0], sx[1]), slice(sy[0], sy[1]))
         mask = self.drawMask
         src = dk
-        
+
         if isinstance(self.drawMode, collections.Callable):
             self.drawMode(dk, self.image, mask, ss, ts, ev)
         else:
             src = src[ss]
-            if self.drawMode == 'set':
+            if self.drawMode == "set":
                 if mask is not None:
                     mask = mask[ss]
-                    self.image[ts] = self.image[ts] * (1-mask) + src * mask
+                    self.image[ts] = self.image[ts] * (1 - mask) + src * mask
                 else:
                     self.image[ts] = src
-            elif self.drawMode == 'add':
+            elif self.drawMode == "add":
                 self.image[ts] += src
             else:
                 raise Exception("Unknown draw mode '%s'" % self.drawMode)
             self.updateImage()
-        
-    def setDrawKernel(self, kernel=None, mask=None, center=(0,0), mode='set'):
+
+    def setDrawKernel(self, kernel=None, mask=None, center=(0, 0), mode="set"):
         self.drawKernel = kernel
         self.drawKernelCenter = center
         self.drawMode = mode

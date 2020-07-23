@@ -9,13 +9,15 @@ from ..Qt import QtCore, QtGui
 from .GraphicsView import *
 from ..graphicsItems.PlotItem import *
 
-__all__ = ['PlotWidget']
+__all__ = ["PlotWidget"]
+
+
 class PlotWidget(GraphicsView):
-    
+
     # signals wrapped from PlotItem / ViewBox
     sigRangeChanged = QtCore.Signal(object, object)
     sigTransformChanged = QtCore.Signal(object)
-    
+
     """
     :class:`GraphicsView <pyqtgraph.GraphicsView>` widget with a single 
     :class:`PlotItem <pyqtgraph.PlotItem>` inside.
@@ -43,7 +45,8 @@ class PlotWidget(GraphicsView):
     For all 
     other methods, use :func:`getPlotItem <pyqtgraph.PlotWidget.getPlotItem>`.
     """
-    def __init__(self, parent=None, background='default', **kargs):
+
+    def __init__(self, parent=None, background="default", **kargs):
         """When initializing PlotWidget, *parent* and *background* are passed to 
         :func:`GraphicsWidget.__init__() <pyqtgraph.GraphicsWidget.__init__>`
         and all others are passed
@@ -55,31 +58,46 @@ class PlotWidget(GraphicsView):
         self.setCentralItem(self.plotItem)
         ## Explicitly wrap methods from plotItem
         ## NOTE: If you change this list, update the documentation above as well.
-        for m in ['addItem', 'removeItem', 'autoRange', 'clear', 'setXRange', 
-                  'setYRange', 'setRange', 'setAspectLocked', 'setMouseEnabled', 
-                  'setXLink', 'setYLink', 'enableAutoRange', 'disableAutoRange', 
-                  'setLimits', 'register', 'unregister', 'viewRect']:
+        for m in [
+            "addItem",
+            "removeItem",
+            "autoRange",
+            "clear",
+            "setXRange",
+            "setYRange",
+            "setRange",
+            "setAspectLocked",
+            "setMouseEnabled",
+            "setXLink",
+            "setYLink",
+            "enableAutoRange",
+            "disableAutoRange",
+            "setLimits",
+            "register",
+            "unregister",
+            "viewRect",
+        ]:
             setattr(self, m, getattr(self.plotItem, m))
-        #QtCore.QObject.connect(self.plotItem, QtCore.SIGNAL('viewChanged'), self.viewChanged)
+        # QtCore.QObject.connect(self.plotItem, QtCore.SIGNAL('viewChanged'), self.viewChanged)
         self.plotItem.sigRangeChanged.connect(self.viewRangeChanged)
-    
+
     def close(self):
         self.plotItem.close()
         self.plotItem = None
-        #self.scene().clear()
-        #self.mPlotItem.close()
+        # self.scene().clear()
+        # self.mPlotItem.close()
         self.setParent(None)
         super(PlotWidget, self).close()
 
     def __getattr__(self, attr):  ## implicitly wrap methods from plotItem
         if hasattr(self.plotItem, attr):
             m = getattr(self.plotItem, attr)
-            if hasattr(m, '__call__'):
+            if hasattr(m, "__call__"):
                 return m
         raise NameError(attr)
-    
+
     def viewRangeChanged(self, view, range):
-        #self.emit(QtCore.SIGNAL('viewChanged'), *args)
+        # self.emit(QtCore.SIGNAL('viewChanged'), *args)
         self.sigRangeChanged.emit(self, range)
 
     def widgetGroupInterface(self):
@@ -87,13 +105,10 @@ class PlotWidget(GraphicsView):
 
     def saveState(self):
         return self.plotItem.saveState()
-        
+
     def restoreState(self, state):
         return self.plotItem.restoreState(state)
-        
+
     def getPlotItem(self):
         """Return the PlotItem contained within."""
         return self.plotItem
-        
-        
-        

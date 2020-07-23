@@ -1,6 +1,8 @@
 from ..Qt import QtCore, QtGui, QtOpenGL
 from OpenGL.GL import *
+
 app = QtGui.QApplication([])
+
 
 class GLTest(QtOpenGL.QGLWidget):
     def __init__(self):
@@ -11,6 +13,5 @@ class GLTest(QtOpenGL.QGLWidget):
         print("MAX_3D_TEXTURE_SIZE: %d" % glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE))
         print("Extensions: " + glGetString(GL_EXTENSIONS))
 
+
 GLTest()
-
-

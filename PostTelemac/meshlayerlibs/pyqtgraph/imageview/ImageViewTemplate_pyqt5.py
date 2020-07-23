@@ -9,6 +9,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
@@ -100,18 +101,18 @@ class Ui_Form(object):
         self.normXBlurSpin.setObjectName("normXBlurSpin")
         self.gridLayout_2.addWidget(self.normXBlurSpin, 2, 2, 1, 1)
         self.label_8 = QtWidgets.QLabel(self.normGroup)
-        self.label_8.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_8.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.label_8.setObjectName("label_8")
         self.gridLayout_2.addWidget(self.label_8, 2, 1, 1, 1)
         self.label_9 = QtWidgets.QLabel(self.normGroup)
-        self.label_9.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_9.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.label_9.setObjectName("label_9")
         self.gridLayout_2.addWidget(self.label_9, 2, 3, 1, 1)
         self.normYBlurSpin = QtWidgets.QDoubleSpinBox(self.normGroup)
         self.normYBlurSpin.setObjectName("normYBlurSpin")
         self.gridLayout_2.addWidget(self.normYBlurSpin, 2, 4, 1, 1)
         self.label_10 = QtWidgets.QLabel(self.normGroup)
-        self.label_10.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label_10.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.label_10.setObjectName("label_10")
         self.gridLayout_2.addWidget(self.label_10, 2, 5, 1, 1)
         self.normOffRadio = QtWidgets.QRadioButton(self.normGroup)
@@ -150,6 +151,7 @@ class Ui_Form(object):
         self.normOffRadio.setText(_translate("Form", "Off"))
         self.normTimeRangeCheck.setText(_translate("Form", "Time range"))
         self.normFrameCheck.setText(_translate("Form", "Frame"))
+
 
 from ..widgets.HistogramLUTWidget import HistogramLUTWidget
 from ..widgets.PlotWidget import PlotWidget

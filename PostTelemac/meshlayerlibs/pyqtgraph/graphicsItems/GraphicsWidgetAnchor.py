@@ -15,11 +15,11 @@ class GraphicsWidgetAnchor(object):
         self.__parent = None
         self.__parentAnchor = None
         self.__itemAnchor = None
-        self.__offset = (0,0)
-        if hasattr(self, 'geometryChanged'):
+        self.__offset = (0, 0)
+        if hasattr(self, "geometryChanged"):
             self.geometryChanged.connect(self.__geometryChanged)
 
-    def anchor(self, itemPos, parentPos, offset=(0,0)):
+    def anchor(self, itemPos, parentPos, offset=(0, 0)):
         """
         Anchors the item at its local itemPos to the item's parent at parentPos.
         Both positions are expressed in values relative to the size of the item or parent;
@@ -35,19 +35,18 @@ class GraphicsWidgetAnchor(object):
         parent = self.parentItem()
         if parent is None:
             raise Exception("Cannot anchor; parent is not set.")
-        
+
         if self.__parent is not parent:
             if self.__parent is not None:
                 self.__parent.geometryChanged.disconnect(self.__geometryChanged)
-                
+
             self.__parent = parent
             parent.geometryChanged.connect(self.__geometryChanged)
-        
+
         self.__itemAnchor = itemPos
         self.__parentAnchor = parentPos
         self.__offset = offset
         self.__geometryChanged()
-    
 
     def autoAnchor(self, pos, relative=True):
         """
@@ -65,7 +64,7 @@ class GraphicsWidgetAnchor(object):
         pos = Point(pos)
         br = self.mapRectToParent(self.boundingRect()).translated(pos - self.pos())
         pbr = self.parentItem().boundingRect()
-        anchorPos = [0,0]
+        anchorPos = [0, 0]
         parentPos = Point()
         itemPos = Point()
         if abs(br.left() - pbr.left()) < abs(br.right() - pbr.right()):
@@ -85,26 +84,24 @@ class GraphicsWidgetAnchor(object):
             anchorPos[1] = 1
             parentPos[1] = pbr.bottom()
             itemPos[1] = br.bottom()
-        
+
         if relative:
-            relPos = [(itemPos[0]-pbr.left()) / pbr.width(), (itemPos[1]-pbr.top()) / pbr.height()]
+            relPos = [(itemPos[0] - pbr.left()) / pbr.width(), (itemPos[1] - pbr.top()) / pbr.height()]
             self.anchor(anchorPos, relPos)
         else:
             offset = itemPos - parentPos
             self.anchor(anchorPos, anchorPos, offset)
-    
+
     def __geometryChanged(self):
         if self.__parent is None:
             return
         if self.__itemAnchor is None:
             return
-            
-        o = self.mapToParent(Point(0,0))
+
+        o = self.mapToParent(Point(0, 0))
         a = self.boundingRect().bottomRight() * Point(self.__itemAnchor)
         a = self.mapToParent(a)
         p = self.__parent.boundingRect().bottomRight() * Point(self.__parentAnchor)
         off = Point(self.__offset)
-        pos = p + (o-a) + off
+        pos = p + (o - a) + off
         self.setPos(pos)
-        
-        

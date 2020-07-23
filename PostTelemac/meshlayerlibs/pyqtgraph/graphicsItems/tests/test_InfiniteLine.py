@@ -1,6 +1,7 @@
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui, QtCore, QtTest
 from pyqtgraph.tests import mouseDrag, mouseMove
+
 pg.mkQApp()
 
 
@@ -10,11 +11,11 @@ def test_InfiniteLine():
     plt.setXRange(-10, 10)
     plt.setYRange(-10, 10)
     plt.resize(600, 600)
-    
+
     # seemingly arbitrary requirements; might need longer wait time for some platforms..
     QtTest.QTest.qWaitForWindowShown(plt)
     QtTest.QTest.qWait(100)
-    
+
     vline = plt.addLine(x=1)
     assert vline.angle == 90
     br = vline.mapToView(QtGui.QPolygonF(vline.boundingRect()))
@@ -29,22 +30,22 @@ def test_InfiniteLine():
     assert vline.value() == 2
     vline.setPos(pg.Point(4, -5))
     assert vline.value() == 4
-    
+
     oline = pg.InfiniteLine(angle=30)
     plt.addItem(oline)
     oline.setPos(pg.Point(1, -1))
     assert oline.angle == 30
     assert oline.pos() == pg.Point(1, -1)
     assert oline.value() == [1, -1]
-    
+
     # test bounding rect for oblique line
     br = oline.mapToScene(oline.boundingRect())
     pos = oline.mapToScene(pg.Point(2, 0))
     assert br.containsPoint(pos, QtCore.Qt.OddEvenFill)
-    px = pg.Point(-0.5, -1.0 / 3**0.5)
+    px = pg.Point(-0.5, -1.0 / 3 ** 0.5)
     assert br.containsPoint(pos + 5 * px, QtCore.Qt.OddEvenFill)
     assert not br.containsPoint(pos + 7 * px, QtCore.Qt.OddEvenFill)
-    
+
 
 def test_mouseInteraction():
     plt = pg.plot()
@@ -55,9 +56,9 @@ def test_mouseInteraction():
     hline2 = plt.addLine(y=-1, movable=False)
     plt.setXRange(-10, 10)
     plt.setYRange(-10, 10)
-    
+
     # test horizontal drag
-    pos = plt.plotItem.vb.mapViewToScene(pg.Point(0,5)).toPoint()
+    pos = plt.plotItem.vb.mapViewToScene(pg.Point(0, 5)).toPoint()
     pos2 = pos - QtCore.QPoint(200, 200)
     mouseMove(plt, pos)
     assert vline.mouseHovering is True and hline.mouseHovering is False
@@ -66,7 +67,7 @@ def test_mouseInteraction():
     assert abs(vline.value() - plt.plotItem.vb.mapSceneToView(pos2).x()) <= px
 
     # test missed drag
-    pos = plt.plotItem.vb.mapViewToScene(pg.Point(5,0)).toPoint()
+    pos = plt.plotItem.vb.mapViewToScene(pg.Point(5, 0)).toPoint()
     pos = pos + QtCore.QPoint(0, 6)
     pos2 = pos + QtCore.QPoint(-20, -20)
     mouseMove(plt, pos)
@@ -75,7 +76,7 @@ def test_mouseInteraction():
     assert hline.value() == 0
 
     # test vertical drag
-    pos = plt.plotItem.vb.mapViewToScene(pg.Point(5,0)).toPoint()
+    pos = plt.plotItem.vb.mapViewToScene(pg.Point(5, 0)).toPoint()
     pos2 = pos - QtCore.QPoint(50, 50)
     mouseMove(plt, pos)
     assert vline.mouseHovering is False and hline.mouseHovering is True
@@ -84,7 +85,7 @@ def test_mouseInteraction():
     assert abs(hline.value() - plt.plotItem.vb.mapSceneToView(pos2).y()) <= px
 
     # test non-interactive line
-    pos = plt.plotItem.vb.mapViewToScene(pg.Point(5,-1)).toPoint()
+    pos = plt.plotItem.vb.mapViewToScene(pg.Point(5, -1)).toPoint()
     pos2 = pos - QtCore.QPoint(50, 50)
     mouseMove(plt, pos)
     assert hline2.mouseHovering == False
@@ -92,5 +93,5 @@ def test_mouseInteraction():
     assert hline2.value() == -1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_mouseInteraction()

@@ -1,6 +1,7 @@
 import os, time, sys, traceback, weakref
 import numpy as np
 import threading
+
 try:
     import __builtin__ as builtins
     import cPickle as pickle
@@ -11,17 +12,21 @@ except ImportError:
 # color printing for debugging
 from ..util import cprint
 
+
 class ClosedError(Exception):
     """Raised when an event handler receives a request to close the connection
     or discovers that the connection has been closed."""
+
     pass
+
 
 class NoResultError(Exception):
     """Raised when a request for the return value of a remote call fails
     because the call has not yet returned."""
+
     pass
 
-    
+
 class RemoteEventHandler(object):
     """
     This class handles communication between two processes. One instance is present on 
@@ -43,48 +48,51 @@ class RemoteEventHandler(object):
     
     
     """
-    handlers = {}   ## maps {process ID : handler}. This allows unpickler to determine which process
-                    ## an object proxy belongs to
-                         
+
+    handlers = {}  ## maps {process ID : handler}. This allows unpickler to determine which process
+    ## an object proxy belongs to
+
     def __init__(self, connection, name, pid, debug=False):
         self.debug = debug
         self.conn = connection
         self.name = name
-        self.results = {} ## reqId: (status, result); cache of request results received from the remote process
-                          ## status is either 'result' or 'error'
-                          ##   if 'error', then result will be (exception, formatted exceprion)
-                          ##   where exception may be None if it could not be passed through the Connection.
+        self.results = {}  ## reqId: (status, result); cache of request results received from the remote process
+        ## status is either 'result' or 'error'
+        ##   if 'error', then result will be (exception, formatted exceprion)
+        ##   where exception may be None if it could not be passed through the Connection.
         self.resultLock = threading.RLock()
-                          
-        self.proxies = {} ## maps {weakref(proxy): proxyId}; used to inform the remote process when a proxy has been deleted.
+
+        self.proxies = (
+            {}
+        )  ## maps {weakref(proxy): proxyId}; used to inform the remote process when a proxy has been deleted.
         self.proxyLock = threading.RLock()
-        
-        ## attributes that affect the behavior of the proxy. 
+
+        ## attributes that affect the behavior of the proxy.
         ## See ObjectProxy._setProxyOptions for description
         self.proxyOptions = {
-            'callSync': 'sync',      ## 'sync', 'async', 'off'
-            'timeout': 10,           ## float
-            'returnType': 'auto',    ## 'proxy', 'value', 'auto'
-            'autoProxy': False,      ## bool
-            'deferGetattr': False,   ## True, False
-            'noProxyTypes': [ type(None), str, int, float, tuple, list, dict, LocalObjectProxy, ObjectProxy ],
+            "callSync": "sync",  ## 'sync', 'async', 'off'
+            "timeout": 10,  ## float
+            "returnType": "auto",  ## 'proxy', 'value', 'auto'
+            "autoProxy": False,  ## bool
+            "deferGetattr": False,  ## True, False
+            "noProxyTypes": [type(None), str, int, float, tuple, list, dict, LocalObjectProxy, ObjectProxy],
         }
         if int(sys.version[0]) < 3:
-            self.proxyOptions['noProxyTypes'].append(unicode)
+            self.proxyOptions["noProxyTypes"].append(unicode)
         else:
-            self.proxyOptions['noProxyTypes'].append(bytes)
-        
+            self.proxyOptions["noProxyTypes"].append(bytes)
+
         self.optsLock = threading.RLock()
-        
+
         self.nextRequestId = 0
         self.exited = False
-        
+
         # Mutexes to help prevent issues when multiple threads access the same RemoteEventHandler
         self.processLock = threading.RLock()
         self.sendLock = threading.RLock()
-        
+
         RemoteEventHandler.handlers[pid] = self  ## register this handler as the one communicating with pid
-    
+
     @classmethod
     def getHandler(cls, pid):
         try:
@@ -92,16 +100,16 @@ class RemoteEventHandler(object):
         except:
             print(pid, cls.handlers)
             raise
-    
+
     def debugMsg(self, msg, *args):
         if not self.debug:
             return
-        cprint.cout(self.debug, "[%d] %s\n" % (os.getpid(), str(msg)%args), -1) 
-    
+        cprint.cout(self.debug, "[%d] %s\n" % (os.getpid(), str(msg) % args), -1)
+
     def getProxyOption(self, opt):
         with self.optsLock:
             return self.proxyOptions[opt]
-        
+
     def setProxyOptions(self, **kwds):
         """
         Set the default behavior options for object proxies.
@@ -109,73 +117,75 @@ class RemoteEventHandler(object):
         """
         with self.optsLock:
             self.proxyOptions.update(kwds)
-    
+
     def processRequests(self):
         """Process all pending requests from the pipe, return
         after no more events are immediately available. (non-blocking)
         Returns the number of events processed.
         """
         with self.processLock:
-            
+
             if self.exited:
-                self.debugMsg('  processRequests: exited already; raise ClosedError.')
+                self.debugMsg("  processRequests: exited already; raise ClosedError.")
                 raise ClosedError()
-            
+
             numProcessed = 0
-            
+
             while self.conn.poll():
-                #try:
-                    #poll = self.conn.poll()
-                    #if not poll:
-                        #break
-                #except IOError:  # this can happen if the remote process dies.
-                                ## might it also happen in other circumstances?
-                    #raise ClosedError()
-                        
+                # try:
+                # poll = self.conn.poll()
+                # if not poll:
+                # break
+                # except IOError:  # this can happen if the remote process dies.
+                ## might it also happen in other circumstances?
+                # raise ClosedError()
+
                 try:
                     self.handleRequest()
                     numProcessed += 1
                 except ClosedError:
-                    self.debugMsg('processRequests: got ClosedError from handleRequest; setting exited=True.')
+                    self.debugMsg("processRequests: got ClosedError from handleRequest; setting exited=True.")
                     self.exited = True
                     raise
-                #except IOError as err:  ## let handleRequest take care of this.
-                    #self.debugMsg('  got IOError from handleRequest; try again.')
-                    #if err.errno == 4:  ## interrupted system call; try again
-                        #continue
-                    #else:
-                        #raise
+                # except IOError as err:  ## let handleRequest take care of this.
+                # self.debugMsg('  got IOError from handleRequest; try again.')
+                # if err.errno == 4:  ## interrupted system call; try again
+                # continue
+                # else:
+                # raise
                 except:
                     print("Error in process %s" % self.name)
                     sys.excepthook(*sys.exc_info())
-                    
+
             if numProcessed > 0:
-                self.debugMsg('processRequests: finished %d requests', numProcessed)
+                self.debugMsg("processRequests: finished %d requests", numProcessed)
             return numProcessed
-    
+
     def handleRequest(self):
         """Handle a single request from the remote process. 
         Blocks until a request is available."""
         result = None
         while True:
             try:
-                ## args, kwds are double-pickled to ensure this recv() call never fails                
-                cmd, reqId, nByteMsgs, optStr = self.conn.recv() 
+                ## args, kwds are double-pickled to ensure this recv() call never fails
+                cmd, reqId, nByteMsgs, optStr = self.conn.recv()
                 break
             except EOFError:
-                self.debugMsg('  handleRequest: got EOFError from recv; raise ClosedError.')
+                self.debugMsg("  handleRequest: got EOFError from recv; raise ClosedError.")
                 ## remote process has shut down; end event loop
                 raise ClosedError()
             except IOError as err:
                 if err.errno == 4:  ## interrupted system call; try again
-                    self.debugMsg('  handleRequest: got IOError 4 from recv; try again.')
+                    self.debugMsg("  handleRequest: got IOError 4 from recv; try again.")
                     continue
                 else:
-                    self.debugMsg('  handleRequest: got IOError %d from recv (%s); raise ClosedError.', err.errno, err.strerror)
+                    self.debugMsg(
+                        "  handleRequest: got IOError %d from recv (%s); raise ClosedError.", err.errno, err.strerror
+                    )
                     raise ClosedError()
-        
+
         self.debugMsg("  handleRequest: received %s %s", cmd, reqId)
-            
+
         ## read byte messages following the main request
         byteData = []
         if nByteMsgs > 0:
@@ -195,46 +205,45 @@ class RemoteEventHandler(object):
                     else:
                         self.debugMsg("    handleRequest: got IOError while reading byte messages; raise ClosedError.")
                         raise ClosedError()
-            
-        
+
         try:
-            if cmd == 'result' or cmd == 'error':
+            if cmd == "result" or cmd == "error":
                 resultId = reqId
                 reqId = None  ## prevents attempt to return information from this request
-                              ## (this is already a return from a previous request)
-            
+                ## (this is already a return from a previous request)
+
             opts = pickle.loads(optStr)
             self.debugMsg("    handleRequest: id=%s opts=%s", reqId, opts)
-            #print os.getpid(), "received request:", cmd, reqId, opts
-            returnType = opts.get('returnType', 'auto')
-            
-            if cmd == 'result':
+            # print os.getpid(), "received request:", cmd, reqId, opts
+            returnType = opts.get("returnType", "auto")
+
+            if cmd == "result":
                 with self.resultLock:
-                    self.results[resultId] = ('result', opts['result'])
-            elif cmd == 'error':
+                    self.results[resultId] = ("result", opts["result"])
+            elif cmd == "error":
                 with self.resultLock:
-                    self.results[resultId] = ('error', (opts['exception'], opts['excString']))
-            elif cmd == 'getObjAttr':
-                result = getattr(opts['obj'], opts['attr'])
-            elif cmd == 'callObj':
-                obj = opts['obj']
-                fnargs = opts['args']
-                fnkwds = opts['kwds']
-                
-                ## If arrays were sent as byte messages, they must be re-inserted into the 
+                    self.results[resultId] = ("error", (opts["exception"], opts["excString"]))
+            elif cmd == "getObjAttr":
+                result = getattr(opts["obj"], opts["attr"])
+            elif cmd == "callObj":
+                obj = opts["obj"]
+                fnargs = opts["args"]
+                fnkwds = opts["kwds"]
+
+                ## If arrays were sent as byte messages, they must be re-inserted into the
                 ## arguments
                 if len(byteData) > 0:
-                    for i,arg in enumerate(fnargs):
-                        if isinstance(arg, tuple) and len(arg) > 0 and arg[0] == '__byte_message__':
+                    for i, arg in enumerate(fnargs):
+                        if isinstance(arg, tuple) and len(arg) > 0 and arg[0] == "__byte_message__":
                             ind = arg[1]
                             dtype, shape = arg[2]
                             fnargs[i] = np.fromstring(byteData[ind], dtype=dtype).reshape(shape)
-                    for k,arg in fnkwds.items():
-                        if isinstance(arg, tuple) and len(arg) > 0 and arg[0] == '__byte_message__':
+                    for k, arg in fnkwds.items():
+                        if isinstance(arg, tuple) and len(arg) > 0 and arg[0] == "__byte_message__":
                             ind = arg[1]
                             dtype, shape = arg[2]
                             fnkwds[k] = np.fromstring(byteData[ind], dtype=dtype).reshape(shape)
-                
+
                 if len(fnkwds) == 0:  ## need to do this because some functions do not allow keyword arguments.
                     try:
                         result = obj(*fnargs)
@@ -243,90 +252,86 @@ class RemoteEventHandler(object):
                         raise
                 else:
                     result = obj(*fnargs, **fnkwds)
-                    
-            elif cmd == 'getObjValue':
-                result = opts['obj']  ## has already been unpickled into its local value
-                returnType = 'value'
-            elif cmd == 'transfer':
-                result = opts['obj']
-                returnType = 'proxy'
-            elif cmd == 'transferArray':
+
+            elif cmd == "getObjValue":
+                result = opts["obj"]  ## has already been unpickled into its local value
+                returnType = "value"
+            elif cmd == "transfer":
+                result = opts["obj"]
+                returnType = "proxy"
+            elif cmd == "transferArray":
                 ## read array data from next message:
-                result = np.fromstring(byteData[0], dtype=opts['dtype']).reshape(opts['shape'])
-                returnType = 'proxy'
-            elif cmd == 'import':
-                name = opts['module']
-                fromlist = opts.get('fromlist', [])
+                result = np.fromstring(byteData[0], dtype=opts["dtype"]).reshape(opts["shape"])
+                returnType = "proxy"
+            elif cmd == "import":
+                name = opts["module"]
+                fromlist = opts.get("fromlist", [])
                 mod = builtins.__import__(name, fromlist=fromlist)
-                
+
                 if len(fromlist) == 0:
-                    parts = name.lstrip('.').split('.')
+                    parts = name.lstrip(".").split(".")
                     result = mod
                     for part in parts[1:]:
                         result = getattr(result, part)
                 else:
                     result = map(mod.__getattr__, fromlist)
-                
-            elif cmd == 'del':
-                LocalObjectProxy.releaseProxyId(opts['proxyId'])
-                #del self.proxiedObjects[opts['objId']]
-                
-            elif cmd == 'close':
+
+            elif cmd == "del":
+                LocalObjectProxy.releaseProxyId(opts["proxyId"])
+                # del self.proxiedObjects[opts['objId']]
+
+            elif cmd == "close":
                 if reqId is not None:
                     result = True
-                    returnType = 'value'
-                    
+                    returnType = "value"
+
             exc = None
         except:
             exc = sys.exc_info()
 
-            
-            
         if reqId is not None:
             if exc is None:
-                self.debugMsg("    handleRequest: sending return value for %d: %s", reqId, result) 
-                #print "returnValue:", returnValue, result
-                if returnType == 'auto':
+                self.debugMsg("    handleRequest: sending return value for %d: %s", reqId, result)
+                # print "returnValue:", returnValue, result
+                if returnType == "auto":
                     with self.optsLock:
-                        noProxyTypes = self.proxyOptions['noProxyTypes']
+                        noProxyTypes = self.proxyOptions["noProxyTypes"]
                     result = self.autoProxy(result, noProxyTypes)
-                elif returnType == 'proxy':
+                elif returnType == "proxy":
                     result = LocalObjectProxy(result)
-                
+
                 try:
                     self.replyResult(reqId, result)
                 except:
                     sys.excepthook(*sys.exc_info())
                     self.replyError(reqId, *sys.exc_info())
             else:
-                self.debugMsg("    handleRequest: returning exception for %d", reqId) 
+                self.debugMsg("    handleRequest: returning exception for %d", reqId)
                 self.replyError(reqId, *exc)
-                    
+
         elif exc is not None:
             sys.excepthook(*exc)
-    
-        if cmd == 'close':
-            if opts.get('noCleanup', False) is True:
+
+        if cmd == "close":
+            if opts.get("noCleanup", False) is True:
                 os._exit(0)  ## exit immediately, do not pass GO, do not collect $200.
-                             ## (more importantly, do not call any code that would
-                             ## normally be invoked at exit)
+                ## (more importantly, do not call any code that would
+                ## normally be invoked at exit)
             else:
                 raise ClosedError()
-        
-    
-    
+
     def replyResult(self, reqId, result):
-        self.send(request='result', reqId=reqId, callSync='off', opts=dict(result=result))
-    
+        self.send(request="result", reqId=reqId, callSync="off", opts=dict(result=result))
+
     def replyError(self, reqId, *exc):
         print("error: %s %s %s" % (self.name, str(reqId), str(exc[1])))
         excStr = traceback.format_exception(*exc)
         try:
-            self.send(request='error', reqId=reqId, callSync='off', opts=dict(exception=exc[1], excString=excStr))
+            self.send(request="error", reqId=reqId, callSync="off", opts=dict(exception=exc[1], excString=excStr))
         except:
-            self.send(request='error', reqId=reqId, callSync='off', opts=dict(exception=None, excString=excStr))
-    
-    def send(self, request, opts=None, reqId=None, callSync='sync', timeout=10, returnType=None, byteData=None, **kwds):
+            self.send(request="error", reqId=reqId, callSync="off", opts=dict(exception=None, excString=excStr))
+
+    def send(self, request, opts=None, reqId=None, callSync="sync", timeout=10, returnType=None, byteData=None, **kwds):
         """Send a request or return packet to the remote process.
         Generally it is not necessary to call this method directly; it is for internal use.
         (The docstring has information that is nevertheless useful to the programmer
@@ -409,30 +414,30 @@ class RemoteEventHandler(object):
         =============  =====================================================================
         """
         if self.exited:
-            self.debugMsg('  send: exited already; raise ClosedError.')
+            self.debugMsg("  send: exited already; raise ClosedError.")
             raise ClosedError()
-        
+
         with self.sendLock:
-            #if len(kwds) > 0:
-                #print "Warning: send() ignored args:", kwds
-                
+            # if len(kwds) > 0:
+            # print "Warning: send() ignored args:", kwds
+
             if opts is None:
                 opts = {}
-            
-            assert callSync in ['off', 'sync', 'async'], 'callSync must be one of "off", "sync", or "async"'
+
+            assert callSync in ["off", "sync", "async"], 'callSync must be one of "off", "sync", or "async"'
             if reqId is None:
-                if callSync != 'off': ## requested return value; use the next available request ID
+                if callSync != "off":  ## requested return value; use the next available request ID
                     reqId = self.nextRequestId
                     self.nextRequestId += 1
             else:
                 ## If requestId is provided, this _must_ be a response to a previously received request.
-                assert request in ['result', 'error']
-            
+                assert request in ["result", "error"]
+
             if returnType is not None:
-                opts['returnType'] = returnType
-                
-            #print os.getpid(), "send request:", request, reqId, opts
-            
+                opts["returnType"] = returnType
+
+            # print os.getpid(), "send request:", request, reqId, opts
+
             ## double-pickle args to ensure that at least status and request ID get through
             try:
                 optStr = pickle.dumps(opts)
@@ -441,78 +446,78 @@ class RemoteEventHandler(object):
                 print(opts)
                 print("=======================================")
                 raise
-            
+
             nByteMsgs = 0
             if byteData is not None:
                 nByteMsgs = len(byteData)
-                
+
             ## Send primary request
             request = (request, reqId, nByteMsgs, optStr)
-            self.debugMsg('send request: cmd=%s nByteMsgs=%d id=%s opts=%s', request[0], nByteMsgs, reqId, opts)
+            self.debugMsg("send request: cmd=%s nByteMsgs=%d id=%s opts=%s", request[0], nByteMsgs, reqId, opts)
             self.conn.send(request)
-            
+
             ## follow up by sending byte messages
             if byteData is not None:
                 for obj in byteData:  ## Remote process _must_ be prepared to read the same number of byte messages!
                     self.conn.send_bytes(obj)
-                self.debugMsg('  sent %d byte messages', len(byteData))
-            
-            self.debugMsg('  call sync: %s', callSync)
-            if callSync == 'off':
+                self.debugMsg("  sent %d byte messages", len(byteData))
+
+            self.debugMsg("  call sync: %s", callSync)
+            if callSync == "off":
                 return
-            
+
         req = Request(self, reqId, description=str(request), timeout=timeout)
-        if callSync == 'async':
+        if callSync == "async":
             return req
-            
-        if callSync == 'sync':
+
+        if callSync == "sync":
             try:
                 return req.result()
             except NoResultError:
                 return req
-        
-    def close(self, callSync='off', noCleanup=False, **kwds):
+
+    def close(self, callSync="off", noCleanup=False, **kwds):
         try:
-            self.send(request='close', opts=dict(noCleanup=noCleanup), callSync=callSync, **kwds)
+            self.send(request="close", opts=dict(noCleanup=noCleanup), callSync=callSync, **kwds)
             self.exited = True
         except ClosedError:
             pass
-    
+
     def getResult(self, reqId):
         ## raises NoResultError if the result is not available yet
-        #print self.results.keys(), os.getpid()
+        # print self.results.keys(), os.getpid()
         with self.resultLock:
             haveResult = reqId in self.results
-        
+
         if not haveResult:
             try:
                 self.processRequests()
-            except ClosedError:  ## even if remote connection has closed, we may have 
-                                 ## received new data during this call to processRequests()
+            except ClosedError:  ## even if remote connection has closed, we may have
+                ## received new data during this call to processRequests()
                 pass
-        
+
         with self.resultLock:
             if reqId not in self.results:
                 raise NoResultError()
             status, result = self.results.pop(reqId)
-        
-        if status == 'result': 
+
+        if status == "result":
             return result
-        elif status == 'error':
-            #print ''.join(result)
+        elif status == "error":
+            # print ''.join(result)
             exc, excStr = result
             if exc is not None:
                 print("===== Remote process raised exception on request: =====")
-                print(''.join(excStr))
+                print("".join(excStr))
                 print("===== Local Traceback to request follows: =====")
                 raise exc
             else:
-                print(''.join(excStr))
+                print("".join(excStr))
                 raise Exception("Error getting result. See above for exception from remote process.")
-                
+
         else:
             raise Exception("Internal error.")
-    
+
     def _import(self, mod, **kwds):
         """
         Request the remote process import a module (or symbols from a module)
@@ -526,57 +531,57 @@ class RemoteEventHandler(object):
                                              (this also differs from behavior of __import__)
             
         """
-        return self.send(request='import', callSync='sync', opts=dict(module=mod), **kwds)
-        
+        return self.send(request="import", callSync="sync", opts=dict(module=mod), **kwds)
+
     def getObjAttr(self, obj, attr, **kwds):
-        return self.send(request='getObjAttr', opts=dict(obj=obj, attr=attr), **kwds)
-        
+        return self.send(request="getObjAttr", opts=dict(obj=obj, attr=attr), **kwds)
+
     def getObjValue(self, obj, **kwds):
-        return self.send(request='getObjValue', opts=dict(obj=obj), **kwds)
-        
+        return self.send(request="getObjValue", opts=dict(obj=obj), **kwds)
+
     def callObj(self, obj, args, kwds, **opts):
         opts = opts.copy()
         args = list(args)
-        
+
         ## Decide whether to send arguments by value or by proxy
         with self.optsLock:
-            noProxyTypes = opts.pop('noProxyTypes', None)
+            noProxyTypes = opts.pop("noProxyTypes", None)
             if noProxyTypes is None:
-                noProxyTypes = self.proxyOptions['noProxyTypes']
-                
-            autoProxy = opts.pop('autoProxy', self.proxyOptions['autoProxy'])
-        
+                noProxyTypes = self.proxyOptions["noProxyTypes"]
+
+            autoProxy = opts.pop("autoProxy", self.proxyOptions["autoProxy"])
+
         if autoProxy is True:
             args = [self.autoProxy(v, noProxyTypes) for v in args]
             for k, v in kwds.iteritems():
                 opts[k] = self.autoProxy(v, noProxyTypes)
-        
+
         byteMsgs = []
-        
+
         ## If there are arrays in the arguments, send those as byte messages.
         ## We do this because pickling arrays is too expensive.
-        for i,arg in enumerate(args):
+        for i, arg in enumerate(args):
             if arg.__class__ == np.ndarray:
                 args[i] = ("__byte_message__", len(byteMsgs), (arg.dtype, arg.shape))
                 byteMsgs.append(arg)
-        for k,v in kwds.items():
+        for k, v in kwds.items():
             if v.__class__ == np.ndarray:
                 kwds[k] = ("__byte_message__", len(byteMsgs), (v.dtype, v.shape))
                 byteMsgs.append(v)
-        
-        return self.send(request='callObj', opts=dict(obj=obj, args=args, kwds=kwds), byteData=byteMsgs, **opts)
+
+        return self.send(request="callObj", opts=dict(obj=obj, args=args, kwds=kwds), byteData=byteMsgs, **opts)
 
     def registerProxy(self, proxy):
         with self.proxyLock:
             ref = weakref.ref(proxy, self.deleteProxy)
             self.proxies[ref] = proxy._proxyId
-    
+
     def deleteProxy(self, ref):
         with self.proxyLock:
             proxyId = self.proxies.pop(ref)
-            
+
         try:
-            self.send(request='del', opts=dict(proxyId=proxyId), callSync='off')
+            self.send(request="del", opts=dict(proxyId=proxyId), callSync="off")
         except ClosedError:  ## if remote process has closed down, there is no need to send delete requests anymore
             pass
 
@@ -586,19 +591,19 @@ class RemoteEventHandler(object):
         and return a proxy for the new remote object.
         """
         if obj.__class__ is np.ndarray:
-            opts = {'dtype': obj.dtype, 'shape': obj.shape}
-            return self.send(request='transferArray', opts=opts, byteData=[obj], **kwds)            
+            opts = {"dtype": obj.dtype, "shape": obj.shape}
+            return self.send(request="transferArray", opts=opts, byteData=[obj], **kwds)
         else:
-            return self.send(request='transfer', opts=dict(obj=obj), **kwds)
-        
+            return self.send(request="transfer", opts=dict(obj=obj), **kwds)
+
     def autoProxy(self, obj, noProxyTypes):
         ## Return object wrapped in LocalObjectProxy _unless_ its type is in noProxyTypes.
         for typ in noProxyTypes:
             if isinstance(obj, typ):
                 return obj
         return LocalObjectProxy(obj)
-        
-        
+
+
 class Request(object):
     """
     Request objects are returned when calling an ObjectProxy in asynchronous mode
@@ -606,6 +611,7 @@ class Request(object):
     the result of the call has been returned yet. Use result() to get
     the returned value.
     """
+
     def __init__(self, process, reqId, description=None, timeout=10):
         self.proc = process
         self.description = description
@@ -613,7 +619,7 @@ class Request(object):
         self.gotResult = False
         self._result = None
         self.timeout = timeout
-        
+
     def result(self, block=True, timeout=None):
         """
         Return the result for this request. 
@@ -624,13 +630,13 @@ class Request(object):
         
         If the process's connection has closed before the result arrives, raise ClosedError.
         """
-        
+
         if self.gotResult:
             return self._result
-            
+
         if timeout is None:
-            timeout = self.timeout 
-        
+            timeout = self.timeout
+
         if block:
             start = time.time()
             while not self.hasResult():
@@ -640,6 +646,7 @@ class Request(object):
                 if timeout >= 0 and time.time() - start > timeout:
                     print("Request timed out: %s" % self.description)
                     import traceback
+
                     traceback.print_stack()
                     raise NoResultError()
             return self._result
@@ -647,15 +654,16 @@ class Request(object):
             self._result = self.proc.getResult(self.reqId)  ## raises NoResultError if result is not available yet
             self.gotResult = True
             return self._result
-        
+
     def hasResult(self):
         """Returns True if the result for this request has arrived."""
         try:
             self.result(block=False)
         except NoResultError:
             pass
-        
+
         return self.gotResult
+
 
 class LocalObjectProxy(object):
     """
@@ -669,29 +677,29 @@ class LocalObjectProxy(object):
         remotePlot.plot(proxy(data))  ## force the object to be sent by proxy
     
     """
+
     nextProxyId = 0
     proxiedObjects = {}  ## maps {proxyId: object}
-    
-    
+
     @classmethod
     def registerObject(cls, obj):
         ## assign it a unique ID so we can keep a reference to the local object
-        
+
         pid = cls.nextProxyId
         cls.nextProxyId += 1
         cls.proxiedObjects[pid] = obj
-        #print "register:", cls.proxiedObjects
+        # print "register:", cls.proxiedObjects
         return pid
-    
+
     @classmethod
     def lookupProxyId(cls, pid):
         return cls.proxiedObjects[pid]
-    
+
     @classmethod
     def releaseProxyId(cls, pid):
         del cls.proxiedObjects[pid]
-        #print "release:", cls.proxiedObjects 
-    
+        # print "release:", cls.proxiedObjects
+
     def __init__(self, obj, **opts):
         """
         Create a 'local' proxy object that, when sent to a remote host,
@@ -700,21 +708,23 @@ class LocalObjectProxy(object):
         on the remote side.
         """
         self.processId = os.getpid()
-        #self.objectId = id(obj)
+        # self.objectId = id(obj)
         self.typeStr = repr(obj)
-        #self.handler = handler
+        # self.handler = handler
         self.obj = obj
         self.opts = opts
-        
+
     def __reduce__(self):
         ## a proxy is being pickled and sent to a remote process.
         ## every time this happens, a new proxy will be generated in the remote process,
         ## so we keep a new ID so we can track when each is released.
         pid = LocalObjectProxy.registerObject(self.obj)
         return (unpickleObjectProxy, (self.processId, pid, self.typeStr, None, self.opts))
-        
+
+
 ## alias
 proxy = LocalObjectProxy
+
 
 def unpickleObjectProxy(processId, proxyId, typeStr, attributes=None, opts=None):
     if processId == os.getpid():
@@ -728,7 +738,8 @@ def unpickleObjectProxy(processId, proxyId, typeStr, attributes=None, opts=None)
         if opts is not None:
             proxy._setProxyOptions(**opts)
         return proxy
-    
+
+
 class ObjectProxy(object):
     """
     Proxy to an object stored by the remote process. Proxies are created
@@ -775,28 +786,31 @@ class ObjectProxy(object):
     proc.setProxyOptions(). 
     
     """
-    def __init__(self, processId, proxyId, typeStr='', parent=None):
+
+    def __init__(self, processId, proxyId, typeStr="", parent=None):
         object.__init__(self)
         ## can't set attributes directly because setattr is overridden.
-        self.__dict__['_processId'] = processId
-        self.__dict__['_typeStr'] = typeStr
-        self.__dict__['_proxyId'] = proxyId
-        self.__dict__['_attributes'] = ()
-        ## attributes that affect the behavior of the proxy. 
+        self.__dict__["_processId"] = processId
+        self.__dict__["_typeStr"] = typeStr
+        self.__dict__["_proxyId"] = proxyId
+        self.__dict__["_attributes"] = ()
+        ## attributes that affect the behavior of the proxy.
         ## in all cases, a value of None causes the proxy to ask
         ## its parent event handler to make the decision
-        self.__dict__['_proxyOptions'] = {
-            'callSync': None,      ## 'sync', 'async', None 
-            'timeout': None,       ## float, None
-            'returnType': None,    ## 'proxy', 'value', 'auto', None
-            'deferGetattr': None,  ## True, False, None
-            'noProxyTypes': None,  ## list of types to send by value instead of by proxy
-            'autoProxy': None,
+        self.__dict__["_proxyOptions"] = {
+            "callSync": None,  ## 'sync', 'async', None
+            "timeout": None,  ## float, None
+            "returnType": None,  ## 'proxy', 'value', 'auto', None
+            "deferGetattr": None,  ## True, False, None
+            "noProxyTypes": None,  ## list of types to send by value instead of by proxy
+            "autoProxy": None,
         }
-        
-        self.__dict__['_handler'] = RemoteEventHandler.getHandler(processId)
-        self.__dict__['_handler'].registerProxy(self)  ## handler will watch proxy; inform remote process when the proxy is deleted.
-    
+
+        self.__dict__["_handler"] = RemoteEventHandler.getHandler(processId)
+        self.__dict__["_handler"].registerProxy(
+            self
+        )  ## handler will watch proxy; inform remote process when the proxy is deleted.
+
     def _setProxyOptions(self, **kwds):
         """
         Change the behavior of this proxy. For all options, a value of None
@@ -849,31 +863,30 @@ class ObjectProxy(object):
             if k not in self._proxyOptions:
                 raise KeyError("Unrecognized proxy option '%s'" % k)
         self._proxyOptions.update(kwds)
-    
+
     def _getValue(self):
         """
         Return the value of the proxied object
         (the remote object must be picklable)
         """
         return self._handler.getObjValue(self)
-        
+
     def _getProxyOption(self, opt):
         val = self._proxyOptions[opt]
         if val is None:
             return self._handler.getProxyOption(opt)
         return val
-    
+
     def _getProxyOptions(self):
         return dict([(k, self._getProxyOption(k)) for k in self._proxyOptions])
-    
+
     def __reduce__(self):
         return (unpickleObjectProxy, (self._processId, self._proxyId, self._typeStr, self._attributes))
-    
+
     def __repr__(self):
-        #objRepr = self.__getattr__('__repr__')(callSync='value')
+        # objRepr = self.__getattr__('__repr__')(callSync='value')
         return "<ObjectProxy for process %d, object 0x%x: %s >" % (self._processId, self._proxyId, self._typeStr)
-        
-        
+
     def __getattr__(self, attr, **kwds):
         """
         Calls __getattr__ on the remote object and returns the attribute
@@ -888,17 +901,17 @@ class ObjectProxy(object):
         """
         opts = self._getProxyOptions()
         for k in opts:
-            if '_'+k in kwds:
-                opts[k] = kwds.pop('_'+k)
-        if opts['deferGetattr'] is True:
+            if "_" + k in kwds:
+                opts[k] = kwds.pop("_" + k)
+        if opts["deferGetattr"] is True:
             return self._deferredAttr(attr)
         else:
-            #opts = self._getProxyOptions()
+            # opts = self._getProxyOptions()
             return self._handler.getObjAttr(self, attr, **opts)
-    
+
     def _deferredAttr(self, attr):
         return DeferredObjectProxy(self, attr)
-    
+
     def __call__(self, *args, **kwds):
         """
         Attempts to call the proxied object from the remote process.
@@ -913,168 +926,168 @@ class ObjectProxy(object):
         """
         opts = self._getProxyOptions()
         for k in opts:
-            if '_'+k in kwds:
-                opts[k] = kwds.pop('_'+k)
+            if "_" + k in kwds:
+                opts[k] = kwds.pop("_" + k)
         return self._handler.callObj(obj=self, args=args, kwds=kwds, **opts)
-    
-    
+
     ## Explicitly proxy special methods. Is there a better way to do this??
-    
+
     def _getSpecialAttr(self, attr):
         ## this just gives us an easy way to change the behavior of the special methods
         return self._deferredAttr(attr)
-    
+
     def __getitem__(self, *args):
-        return self._getSpecialAttr('__getitem__')(*args)
-    
+        return self._getSpecialAttr("__getitem__")(*args)
+
     def __setitem__(self, *args):
-        return self._getSpecialAttr('__setitem__')(*args, _callSync='off')
-        
+        return self._getSpecialAttr("__setitem__")(*args, _callSync="off")
+
     def __setattr__(self, *args):
-        return self._getSpecialAttr('__setattr__')(*args, _callSync='off')
-        
+        return self._getSpecialAttr("__setattr__")(*args, _callSync="off")
+
     def __str__(self, *args):
-        return self._getSpecialAttr('__str__')(*args, _returnType='value')
-        
+        return self._getSpecialAttr("__str__")(*args, _returnType="value")
+
     def __len__(self, *args):
-        return self._getSpecialAttr('__len__')(*args)
-    
+        return self._getSpecialAttr("__len__")(*args)
+
     def __add__(self, *args):
-        return self._getSpecialAttr('__add__')(*args)
-    
+        return self._getSpecialAttr("__add__")(*args)
+
     def __sub__(self, *args):
-        return self._getSpecialAttr('__sub__')(*args)
-        
+        return self._getSpecialAttr("__sub__")(*args)
+
     def __div__(self, *args):
-        return self._getSpecialAttr('__div__')(*args)
-        
+        return self._getSpecialAttr("__div__")(*args)
+
     def __truediv__(self, *args):
-        return self._getSpecialAttr('__truediv__')(*args)
-        
+        return self._getSpecialAttr("__truediv__")(*args)
+
     def __floordiv__(self, *args):
-        return self._getSpecialAttr('__floordiv__')(*args)
-        
+        return self._getSpecialAttr("__floordiv__")(*args)
+
     def __mul__(self, *args):
-        return self._getSpecialAttr('__mul__')(*args)
-        
+        return self._getSpecialAttr("__mul__")(*args)
+
     def __pow__(self, *args):
-        return self._getSpecialAttr('__pow__')(*args)
-        
+        return self._getSpecialAttr("__pow__")(*args)
+
     def __iadd__(self, *args):
-        return self._getSpecialAttr('__iadd__')(*args, _callSync='off')
-    
+        return self._getSpecialAttr("__iadd__")(*args, _callSync="off")
+
     def __isub__(self, *args):
-        return self._getSpecialAttr('__isub__')(*args, _callSync='off')
-        
+        return self._getSpecialAttr("__isub__")(*args, _callSync="off")
+
     def __idiv__(self, *args):
-        return self._getSpecialAttr('__idiv__')(*args, _callSync='off')
-        
+        return self._getSpecialAttr("__idiv__")(*args, _callSync="off")
+
     def __itruediv__(self, *args):
-        return self._getSpecialAttr('__itruediv__')(*args, _callSync='off')
-        
+        return self._getSpecialAttr("__itruediv__")(*args, _callSync="off")
+
     def __ifloordiv__(self, *args):
-        return self._getSpecialAttr('__ifloordiv__')(*args, _callSync='off')
-        
+        return self._getSpecialAttr("__ifloordiv__")(*args, _callSync="off")
+
     def __imul__(self, *args):
-        return self._getSpecialAttr('__imul__')(*args, _callSync='off')
-        
+        return self._getSpecialAttr("__imul__")(*args, _callSync="off")
+
     def __ipow__(self, *args):
-        return self._getSpecialAttr('__ipow__')(*args, _callSync='off')
-        
+        return self._getSpecialAttr("__ipow__")(*args, _callSync="off")
+
     def __rshift__(self, *args):
-        return self._getSpecialAttr('__rshift__')(*args)
-        
+        return self._getSpecialAttr("__rshift__")(*args)
+
     def __lshift__(self, *args):
-        return self._getSpecialAttr('__lshift__')(*args)
-        
+        return self._getSpecialAttr("__lshift__")(*args)
+
     def __irshift__(self, *args):
-        return self._getSpecialAttr('__irshift__')(*args, _callSync='off')
-        
+        return self._getSpecialAttr("__irshift__")(*args, _callSync="off")
+
     def __ilshift__(self, *args):
-        return self._getSpecialAttr('__ilshift__')(*args, _callSync='off')
-        
+        return self._getSpecialAttr("__ilshift__")(*args, _callSync="off")
+
     def __eq__(self, *args):
-        return self._getSpecialAttr('__eq__')(*args)
-    
+        return self._getSpecialAttr("__eq__")(*args)
+
     def __ne__(self, *args):
-        return self._getSpecialAttr('__ne__')(*args)
-        
+        return self._getSpecialAttr("__ne__")(*args)
+
     def __lt__(self, *args):
-        return self._getSpecialAttr('__lt__')(*args)
-    
+        return self._getSpecialAttr("__lt__")(*args)
+
     def __gt__(self, *args):
-        return self._getSpecialAttr('__gt__')(*args)
-        
+        return self._getSpecialAttr("__gt__")(*args)
+
     def __le__(self, *args):
-        return self._getSpecialAttr('__le__')(*args)
-    
+        return self._getSpecialAttr("__le__")(*args)
+
     def __ge__(self, *args):
-        return self._getSpecialAttr('__ge__')(*args)
-        
+        return self._getSpecialAttr("__ge__")(*args)
+
     def __and__(self, *args):
-        return self._getSpecialAttr('__and__')(*args)
-        
+        return self._getSpecialAttr("__and__")(*args)
+
     def __or__(self, *args):
-        return self._getSpecialAttr('__or__')(*args)
-        
+        return self._getSpecialAttr("__or__")(*args)
+
     def __xor__(self, *args):
-        return self._getSpecialAttr('__xor__')(*args)
-        
+        return self._getSpecialAttr("__xor__")(*args)
+
     def __iand__(self, *args):
-        return self._getSpecialAttr('__iand__')(*args, _callSync='off')
-        
+        return self._getSpecialAttr("__iand__")(*args, _callSync="off")
+
     def __ior__(self, *args):
-        return self._getSpecialAttr('__ior__')(*args, _callSync='off')
-        
+        return self._getSpecialAttr("__ior__")(*args, _callSync="off")
+
     def __ixor__(self, *args):
-        return self._getSpecialAttr('__ixor__')(*args, _callSync='off')
-        
+        return self._getSpecialAttr("__ixor__")(*args, _callSync="off")
+
     def __mod__(self, *args):
-        return self._getSpecialAttr('__mod__')(*args)
-        
+        return self._getSpecialAttr("__mod__")(*args)
+
     def __radd__(self, *args):
-        return self._getSpecialAttr('__radd__')(*args)
-    
+        return self._getSpecialAttr("__radd__")(*args)
+
     def __rsub__(self, *args):
-        return self._getSpecialAttr('__rsub__')(*args)
-        
+        return self._getSpecialAttr("__rsub__")(*args)
+
     def __rdiv__(self, *args):
-        return self._getSpecialAttr('__rdiv__')(*args)
-        
+        return self._getSpecialAttr("__rdiv__")(*args)
+
     def __rfloordiv__(self, *args):
-        return self._getSpecialAttr('__rfloordiv__')(*args)
-        
+        return self._getSpecialAttr("__rfloordiv__")(*args)
+
     def __rtruediv__(self, *args):
-        return self._getSpecialAttr('__rtruediv__')(*args)
-        
+        return self._getSpecialAttr("__rtruediv__")(*args)
+
     def __rmul__(self, *args):
-        return self._getSpecialAttr('__rmul__')(*args)
-        
+        return self._getSpecialAttr("__rmul__")(*args)
+
     def __rpow__(self, *args):
-        return self._getSpecialAttr('__rpow__')(*args)
-        
+        return self._getSpecialAttr("__rpow__")(*args)
+
     def __rrshift__(self, *args):
-        return self._getSpecialAttr('__rrshift__')(*args)
-        
+        return self._getSpecialAttr("__rrshift__")(*args)
+
     def __rlshift__(self, *args):
-        return self._getSpecialAttr('__rlshift__')(*args)
-        
+        return self._getSpecialAttr("__rlshift__")(*args)
+
     def __rand__(self, *args):
-        return self._getSpecialAttr('__rand__')(*args)
-        
+        return self._getSpecialAttr("__rand__")(*args)
+
     def __ror__(self, *args):
-        return self._getSpecialAttr('__ror__')(*args)
-        
+        return self._getSpecialAttr("__ror__")(*args)
+
     def __rxor__(self, *args):
-        return self._getSpecialAttr('__ror__')(*args)
-        
+        return self._getSpecialAttr("__ror__")(*args)
+
     def __rmod__(self, *args):
-        return self._getSpecialAttr('__rmod__')(*args)
-        
+        return self._getSpecialAttr("__rmod__")(*args)
+
     def __hash__(self):
         ## Required for python3 since __eq__ is defined.
         return id(self)
-        
+
+
 class DeferredObjectProxy(ObjectProxy):
     """
     This class represents an attribute (or sub-attribute) of a proxied object.
@@ -1107,20 +1120,20 @@ class DeferredObjectProxy(ObjectProxy):
     Note that if the attributes requested do not exist on the remote object, 
     making the call to write() will raise an AttributeError.
     """
+
     def __init__(self, parentProxy, attribute):
         ## can't set attributes directly because setattr is overridden.
-        for k in ['_processId', '_typeStr', '_proxyId', '_handler']:
+        for k in ["_processId", "_typeStr", "_proxyId", "_handler"]:
             self.__dict__[k] = getattr(parentProxy, k)
-        self.__dict__['_parent'] = parentProxy  ## make sure parent stays alive
-        self.__dict__['_attributes'] = parentProxy._attributes + (attribute,)
-        self.__dict__['_proxyOptions'] = parentProxy._proxyOptions.copy()
-    
+        self.__dict__["_parent"] = parentProxy  ## make sure parent stays alive
+        self.__dict__["_attributes"] = parentProxy._attributes + (attribute,)
+        self.__dict__["_proxyOptions"] = parentProxy._proxyOptions.copy()
+
     def __repr__(self):
-        return ObjectProxy.__repr__(self) + '.' + '.'.join(self._attributes)
-    
+        return ObjectProxy.__repr__(self) + "." + ".".join(self._attributes)
+
     def _undefer(self):
         """
         Return a non-deferred ObjectProxy referencing the same object
         """
         return self._parent.__getattr__(self._attributes[-1], _deferGetattr=False)
-

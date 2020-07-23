@@ -9,6 +9,7 @@
 
 from PySide import QtCore, QtGui
 
+
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
@@ -47,9 +48,14 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         Form.setWindowTitle(QtGui.QApplication.translate("Form", "Form", None, QtGui.QApplication.UnicodeUTF8))
-        self.translateLabel.setText(QtGui.QApplication.translate("Form", "Translate:", None, QtGui.QApplication.UnicodeUTF8))
+        self.translateLabel.setText(
+            QtGui.QApplication.translate("Form", "Translate:", None, QtGui.QApplication.UnicodeUTF8)
+        )
         self.rotateLabel.setText(QtGui.QApplication.translate("Form", "Rotate:", None, QtGui.QApplication.UnicodeUTF8))
         self.scaleLabel.setText(QtGui.QApplication.translate("Form", "Scale:", None, QtGui.QApplication.UnicodeUTF8))
-        self.mirrorImageBtn.setText(QtGui.QApplication.translate("Form", "Mirror", None, QtGui.QApplication.UnicodeUTF8))
-        self.reflectImageBtn.setText(QtGui.QApplication.translate("Form", "Reflect", None, QtGui.QApplication.UnicodeUTF8))
-
+        self.mirrorImageBtn.setText(
+            QtGui.QApplication.translate("Form", "Mirror", None, QtGui.QApplication.UnicodeUTF8)
+        )
+        self.reflectImageBtn.setText(
+            QtGui.QApplication.translate("Form", "Reflect", None, QtGui.QApplication.UnicodeUTF8)
+        )

@@ -8,7 +8,7 @@ import numpy as np
 import weakref
 
 
-__all__ = ['InfiniteLine', 'InfLineLabel']
+__all__ = ["InfiniteLine", "InfLineLabel"]
 
 
 class InfiniteLine(GraphicsObject):
@@ -30,8 +30,18 @@ class InfiniteLine(GraphicsObject):
     sigPositionChangeFinished = QtCore.Signal(object)
     sigPositionChanged = QtCore.Signal(object)
 
-    def __init__(self, pos=None, angle=90, pen=None, movable=False, bounds=None,
-                 hoverPen=None, label=None, labelOpts=None, name=None):
+    def __init__(
+        self,
+        pos=None,
+        angle=90,
+        pen=None,
+        movable=False,
+        bounds=None,
+        hoverPen=None,
+        label=None,
+        labelOpts=None,
+        name=None,
+    ):
         """
         =============== ==================================================================
         **Arguments:**
@@ -62,7 +72,7 @@ class InfiniteLine(GraphicsObject):
 
         GraphicsObject.__init__(self)
 
-        if bounds is None:              ## allowed value boundaries for orthogonal lines
+        if bounds is None:  ## allowed value boundaries for orthogonal lines
             self.maxRange = [None, None]
         else:
             self.maxRange = bounds
@@ -73,18 +83,18 @@ class InfiniteLine(GraphicsObject):
         self.setAngle(angle)
 
         if pos is None:
-            pos = Point(0,0)
+            pos = Point(0, 0)
         self.setPos(pos)
 
         if pen is None:
             pen = (200, 200, 100)
         self.setPen(pen)
         if hoverPen is None:
-            self.setHoverPen(color=(255,0,0), width=self.pen.width())
+            self.setHoverPen(color=(255, 0, 0), width=self.pen.width())
         else:
             self.setHoverPen(hoverPen)
         self.currentPen = self.pen
-        
+
         if label is not None:
             labelOpts = {} if labelOpts is None else labelOpts
             self.label = InfLineLabel(self, text=label, **labelOpts)
@@ -128,7 +138,7 @@ class InfiniteLine(GraphicsObject):
         Note that the use of value() and setValue() changes if the line is
         not vertical or horizontal.
         """
-        self.angle = ((angle+45) % 180) - 45   ##  -45 <= angle < 135
+        self.angle = ((angle + 45) % 180) - 45  ##  -45 <= angle < 135
         self.resetTransform()
         self.rotate(self.angle)
         self.update()
@@ -177,9 +187,9 @@ class InfiniteLine(GraphicsObject):
     def value(self):
         """Return the value of the line. Will be a single number for horizontal and
         vertical lines, and a list of [x,y] values for diagonal lines."""
-        if self.angle%180 == 0:
+        if self.angle % 180 == 0:
             return self.getYPos()
-        elif self.angle%180 == 90:
+        elif self.angle % 180 == 90:
             return self.getXPos()
         else:
             return self.getPos()
@@ -191,14 +201,14 @@ class InfiniteLine(GraphicsObject):
         self.setPos(v)
 
     ## broken in 4.7
-    #def itemChange(self, change, val):
-        #if change in [self.ItemScenePositionHasChanged, self.ItemSceneHasChanged]:
-            #self.updateLine()
-            #print "update", change
-            #print self.getBoundingParents()
-        #else:
-            #print "ignore", change
-        #return GraphicsObject.itemChange(self, change, val)
+    # def itemChange(self, change, val):
+    # if change in [self.ItemScenePositionHasChanged, self.ItemSceneHasChanged]:
+    # self.updateLine()
+    # print "update", change
+    # print self.getBoundingParents()
+    # else:
+    # print "ignore", change
+    # return GraphicsObject.itemChange(self, change, val)
 
     def _invalidateCache(self):
         self._line = None
@@ -206,19 +216,19 @@ class InfiniteLine(GraphicsObject):
 
     def boundingRect(self):
         if self._boundingRect is None:
-            #br = UIGraphicsItem.boundingRect(self)
+            # br = UIGraphicsItem.boundingRect(self)
             br = self.viewRect()
             if br is None:
                 return QtCore.QRectF()
-            
+
             ## add a 4-pixel radius around the line for mouse interaction.
-            px = self.pixelLength(direction=Point(1,0), ortho=True)  ## get pixel length orthogonal to the line
+            px = self.pixelLength(direction=Point(1, 0), ortho=True)  ## get pixel length orthogonal to the line
             if px is None:
                 px = 0
-            w = (max(4, self.pen.width()/2, self.hoverPen.width()/2)+1) * px
+            w = (max(4, self.pen.width() / 2, self.hoverPen.width() / 2) + 1) * px
             br.setBottom(-w)
             br.setTop(w)
-            
+
             br = br.normalized()
             self._boundingRect = br
             self._line = QtCore.QLineF(br.right(), 0.0, br.left(), 0.0)
@@ -230,9 +240,9 @@ class InfiniteLine(GraphicsObject):
 
     def dataBounds(self, axis, frac=1.0, orthoRange=None):
         if axis == 0:
-            return None   ## x axis should never be auto-scaled
+            return None  ## x axis should never be auto-scaled
         else:
-            return (0,0)
+            return (0, 0)
 
     def mouseDragEvent(self, ev):
         if self.movable and ev.button() == QtCore.Qt.LeftButton:
@@ -282,7 +292,7 @@ class InfiniteLine(GraphicsObject):
         (eg, the view range has changed or the view was resized)
         """
         self._invalidateCache()
-        
+
     def setName(self, name):
         self._name = name
 
@@ -322,6 +332,7 @@ class InfLineLabel(TextItem):
     option here is to use `rotateAxis=(1, 0)`, which will cause the text to
     be automatically rotated parallel to the line.
     """
+
     def __init__(self, line, text="", movable=False, position=0.5, anchors=None, **kwds):
         self.line = line
         self.movable = movable
@@ -332,9 +343,9 @@ class InfLineLabel(TextItem):
         self._endpoints = (None, None)
         if anchors is None:
             # automatically pick sensible anchors
-            rax = kwds.get('rotateAxis', None)
+            rax = kwds.get("rotateAxis", None)
             if rax is not None:
-                if tuple(rax) == (1,0):
+                if tuple(rax) == (1, 0):
                     anchors = [(0.5, 0), (0.5, 1)]
                 else:
                     anchors = [(0, 0.5), (1, 0.5)]
@@ -343,7 +354,7 @@ class InfLineLabel(TextItem):
                     anchors = [(0.5, 0), (0.5, 1)]
                 else:
                     anchors = [(0, 0.5), (1, 0.5)]
-            
+
         self.anchors = anchors
         TextItem.__init__(self, **kwds)
         self.setParentItem(line)
@@ -363,7 +374,7 @@ class InfLineLabel(TextItem):
             lr = self.line.boundingRect()
             pt1 = Point(lr.left(), 0)
             pt2 = Point(lr.right(), 0)
-            
+
             if self.line.angle % 90 != 0:
                 # more expensive to find text position for oblique lines.
                 view = self.getViewBox()
@@ -383,33 +394,33 @@ class InfLineLabel(TextItem):
                     pt2 = self.line.mapFromItem(view, l[1])
             self._endpoints = (pt1, pt2)
         return self._endpoints
-    
+
     def updatePosition(self):
         # update text position to relative view location along line
         self._endpoints = (None, None)
         pt1, pt2 = self.getEndpoints()
         if pt1 is None:
             return
-        pt = pt2 * self.orthoPos + pt1 * (1-self.orthoPos)
+        pt = pt2 * self.orthoPos + pt1 * (1 - self.orthoPos)
         self.setPos(pt)
-        
+
         # update anchor to keep text visible as it nears the view box edge
         vr = self.line.viewRect()
         if vr is not None:
             self.setAnchor(self.anchors[0 if vr.center().y() < 0 else 1])
-        
+
     def setVisible(self, v):
         TextItem.setVisible(self, v)
         if v:
             self.updateText()
             self.updatePosition()
-            
+
     def setMovable(self, m):
         """Set whether this label is movable by dragging along the line.
         """
         self.movable = m
         self.setAcceptHoverEvents(m)
-        
+
     def setPosition(self, p):
         """Set the relative position (0.0-1.0) of this label within the view box
         and along the line. 
@@ -419,7 +430,7 @@ class InfLineLabel(TextItem):
         """
         self.orthoPos = p
         self.updatePosition()
-        
+
     def setFormat(self, text):
         """Set the text format string for this label.
         
@@ -428,7 +439,7 @@ class InfLineLabel(TextItem):
         """
         self.format = text
         self.valueChanged()
-        
+
     def mouseDragEvent(self, ev):
         if self.movable and ev.button() == QtCore.Qt.LeftButton:
             if ev.isStart():
@@ -467,4 +478,4 @@ class InfLineLabel(TextItem):
             return 0
         view = self.getViewBox()
         pos = self.mapToParent(pos)
-        return (pos.x() - pt1.x()) / (pt2.x()-pt1.x())
+        return (pos.x() - pt1.x()) / (pt2.x() - pt1.x())

@@ -16,21 +16,15 @@ app = pg.mkQApp()
 seed(12345)
 
 widgetTypes = [
-    pg.PlotWidget, 
-    pg.ImageView, 
-    pg.GraphicsView, 
+    pg.PlotWidget,
+    pg.ImageView,
+    pg.GraphicsView,
     pg.QtGui.QWidget,
-    pg.QtGui.QTreeWidget, 
+    pg.QtGui.QTreeWidget,
     pg.QtGui.QPushButton,
-    ]
+]
 
-itemTypes = [
-    pg.PlotCurveItem, 
-    pg.ImageItem, 
-    pg.PlotDataItem, 
-    pg.ViewBox,
-    pg.QtGui.QGraphicsRectItem
-    ]
+itemTypes = [pg.PlotCurveItem, pg.ImageItem, pg.PlotDataItem, pg.ViewBox, pg.QtGui.QGraphicsRectItem]
 
 widgets = []
 items = []
@@ -42,14 +36,14 @@ def crashtest():
     try:
         gc.disable()
         actions = [
-                createWidget,
-                #setParent,
-                forgetWidget,
-                showWidget,
-                processEvents,
-                #raiseException,
-                #addReference,
-                ]
+            createWidget,
+            # setParent,
+            forgetWidget,
+            showWidget,
+            processEvents,
+            # raiseException,
+            # addReference,
+        ]
 
         thread = WorkThread()
         thread.start()
@@ -58,7 +52,7 @@ def crashtest():
             try:
                 action = randItem(actions)
                 action()
-                print('[%d widgets alive, %d zombie]' % (len(allWidgets), len(allWidgets) - len(widgets)))
+                print("[%d widgets alive, %d zombie]" % (len(allWidgets), len(allWidgets) - len(widgets)))
             except KeyboardInterrupt:
                 print("Caught interrupt; send another to exit.")
                 try:
@@ -73,26 +67,28 @@ def crashtest():
         gc.enable()
 
 
-
 class WorkThread(pg.QtCore.QThread):
-    '''Intended to give the gc an opportunity to run from a non-gui thread.'''
+    """Intended to give the gc an opportunity to run from a non-gui thread."""
+
     def run(self):
         i = 0
         while True:
             i += 1
             if (i % 1000000) == 0:
-                print('--worker--')
-            
+                print("--worker--")
+
 
 def randItem(items):
-    return items[randint(0, len(items)-1)]
+    return items[randint(0, len(items) - 1)]
+
 
 def p(msg):
     print(msg)
     sys.stdout.flush()
 
+
 def createWidget():
-    p('create widget')
+    p("create widget")
     global widgets, allWidgets
     if len(widgets) > 50:
         return
@@ -103,8 +99,9 @@ def createWidget():
     p("    %s" % widget)
     return widget
 
+
 def setParent():
-    p('set parent')
+    p("set parent")
     global widgets
     if len(widgets) < 2:
         return
@@ -115,46 +112,51 @@ def setParent():
     p("    %s parent of %s" % (parent, child))
     child.setParent(parent)
 
+
 def forgetWidget():
-    p('forget widget')
+    p("forget widget")
     global widgets
     if len(widgets) < 1:
         return
     widget = randItem(widgets)
-    p('    %s' % widget)
+    p("    %s" % widget)
     widgets.remove(widget)
 
+
 def showWidget():
-    p('show widget')
+    p("show widget")
     global widgets
     if len(widgets) < 1:
         return
     widget = randItem(widgets)
-    p('    %s' % widget)
+    p("    %s" % widget)
     widget.show()
 
+
 def processEvents():
-    p('process events')
+    p("process events")
     QtTest.QTest.qWait(25)
+
 
 class TstException(Exception):
     pass
 
+
 def raiseException():
-    p('raise exception')
+    p("raise exception")
     raise TstException("A test exception")
 
+
 def addReference():
-    p('add reference')
+    p("add reference")
     global widgets
     if len(widgets) < 1:
         return
     obj1 = randItem(widgets)
     obj2 = randItem(widgets)
-    p('    %s -> %s' % (obj1, obj2))    
+    p("    %s -> %s" % (obj1, obj2))
     obj1._testref = obj2
-    
 
-        
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     test_stability()

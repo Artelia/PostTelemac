@@ -52,22 +52,26 @@
    widgets.
 """
 import sys
-#import datetime
+
+# import datetime
 import time
+
 # The following two are for automatic resize but only work on linux / unix
 from array import array
-# from fcntl import ioctl
-#import termios
-import signal
-#import math
-#import os
 
-#try:
+# from fcntl import ioctl
+# import termios
+import signal
+
+# import math
+# import os
+
+# try:
 #    from abc import ABCMeta, abstractmethod
-#except ImportError:
+# except ImportError:
 #    AbstractWidget = object
 #    abstractmethod = lambda fn: fn
-#else:
+# else:
 #    AbstractWidget = ABCMeta('AbstractWidget', (object,), {})
 
 # FD@EDF : idea taken from Dendright from Clint module
@@ -77,10 +81,13 @@ import signal
 # e.g. when it has been replaced by something that partially implements the File interface
 try:
     hide_default = not sys.stderr.isatty()
-except AttributeError: # output does not support isatty()
+except AttributeError:  # output does not support isatty()
     hide_default = True
 
-class UnknownLength: pass
+
+class UnknownLength:
+    pass
+
 
 """
    This is an element of ProgressBar formatting.
@@ -88,20 +95,26 @@ class UnknownLength: pass
       is needed. It's size may change between call, but the results will
       not be good if the size changes drastically and repeatedly.
 """
+
+
 class ProgressBarWidget(object):
-   #class Widget(AbstractWidget):
-   #TIME_SENSITIVE = False
-   #__slots__ = ()
-   """
+    # class Widget(AbstractWidget):
+    # TIME_SENSITIVE = False
+    # __slots__ = ()
+    """
    Returns the string representing the widget.
    The parameter pbar is a reference to the calling ProgressBar,
       where one can access attributes of the class for knowing how
       the update must be made.
    At least this function must be overriden.
    """
-   def update(self, pbar): pass
-   #@abstractmethod
-   #def update(self, pbar): pass
+
+    def update(self, pbar):
+        pass
+
+    # @abstractmethod
+    # def update(self, pbar): pass
+
 
 """
    This is a variable width element of ProgressBar formatting.
@@ -111,9 +124,11 @@ class ProgressBarWidget(object):
       line, and they will all have the same width, and together will
       fill the line.
 """
+
+
 class ProgressBarWidgetHFill(object):
-   #class WidgetHFill(Widget):
-   """
+    # class WidgetHFill(Widget):
+    """
    Returns the string representing the widget.
    The parameter pbar is a reference to the calling ProgressBar,
       where one can access attributes of the class for knowing how
@@ -122,88 +137,108 @@ class ProgressBarWidgetHFill(object):
 
    At least this function must be overriden.
    """
-   def update(self, pbar, width): pass
-   #@abstractmethod
-   #def update(self, pbar, width): pass
+
+    def update(self, pbar, width):
+        pass
+
+    # @abstractmethod
+    # def update(self, pbar, width): pass
+
 
 """
    Widget for the Estimated Time of Arrival
 """
+
+
 class ETA(ProgressBarWidget):
-#class ETA(Timer):
-#   TIME_SENSITIVE = True
+    # class ETA(Timer):
+    #   TIME_SENSITIVE = True
 
-   def format_time(self, seconds):
-      return str(int(seconds+1))+'s'
-      #return time.strftime('%H:%M:%S', time.localtime(seconds))
+    def format_time(self, seconds):
+        return str(int(seconds + 1)) + "s"
+        # return time.strftime('%H:%M:%S', time.localtime(seconds))
 
-   # ~~> Updates the widget to show the ETA or total time when finished.
-   def update(self, pbar):
-      if pbar.currval == 0: return ' | ---s' #'ETA:  --:--:--'
-      elif pbar.finished: return ' | %s' % self.format_time(pbar.seconds_elapsed) #'Time: %s' % self.format_time(pbar.seconds_elapsed)
-      else:
-         elapsed = pbar.seconds_elapsed
-         eta = elapsed * pbar.maxval / pbar.currval - elapsed
-         return ' | %s' % self.format_time(eta)
-         #return 'ETA:  %s' % self.format_time(eta)
+    # ~~> Updates the widget to show the ETA or total time when finished.
+    def update(self, pbar):
+        if pbar.currval == 0:
+            return " | ---s"  #'ETA:  --:--:--'
+        elif pbar.finished:
+            return " | %s" % self.format_time(
+                pbar.seconds_elapsed
+            )  #'Time: %s' % self.format_time(pbar.seconds_elapsed)
+        else:
+            elapsed = pbar.seconds_elapsed
+            eta = elapsed * pbar.maxval / pbar.currval - elapsed
+            return " | %s" % self.format_time(eta)
+            # return 'ETA:  %s' % self.format_time(eta)
+
 
 """
    Widget for showing the transfer speed (useful for file transfers).
 """
+
+
 class FileTransferSpeed(ProgressBarWidget):
-#class FileTransferSpeed(Widget):
-#   format = '%6.2f %s%s/s'
-#   prefixes = ' kMGTPEZY'
-#   __slots__ = ('unit', 'format')
+    # class FileTransferSpeed(Widget):
+    #   format = '%6.2f %s%s/s'
+    #   prefixes = ' kMGTPEZY'
+    #   __slots__ = ('unit', 'format')
 
-   def __init__(self):
-      self.fmt = '%6.2f %s'
-      self.units = ['B','K','M','G','T','P']
+    def __init__(self):
+        self.fmt = "%6.2f %s"
+        self.units = ["B", "K", "M", "G", "T", "P"]
 
-   # ~~> Updates the widget with the current SI prefixed speed.
-   def update(self, pbar):
-      if pbar.seconds_elapsed < 2e-6: #or pbar.currval < 2e-6:
-         #scaled = power = 0
-         bps = 0.0
-      else:
-         bps = float(pbar.currval) / pbar.seconds_elapsed
-         #speed = pbar.currval / pbar.seconds_elapsed
-         #power = int(math.log(speed, 1000))
-         #scaled = speed / 1000.**power
-      spd = bps
-      for u in self.units:
-         if spd < 1000:
-            break
-         spd /= 1000
+    # ~~> Updates the widget with the current SI prefixed speed.
+    def update(self, pbar):
+        if pbar.seconds_elapsed < 2e-6:  # or pbar.currval < 2e-6:
+            # scaled = power = 0
+            bps = 0.0
+        else:
+            bps = float(pbar.currval) / pbar.seconds_elapsed
+            # speed = pbar.currval / pbar.seconds_elapsed
+            # power = int(math.log(speed, 1000))
+            # scaled = speed / 1000.**power
+        spd = bps
+        for u in self.units:
+            if spd < 1000:
+                break
+            spd /= 1000
 
-      return self.fmt % (spd, u+'/s')
-      #return self.format % (scaled, self.prefixes[power], self.unit)
+        return self.fmt % (spd, u + "/s")
+        # return self.format % (scaled, self.prefixes[power], self.unit)
+
 
 """
    A rotating marker for filling the bar of progress.
 """
+
+
 class RotatingMarker(ProgressBarWidget):
-#class RotatingMarker(Widget):
-#   __slots__ = ('markers', 'curmark')
-    
-   def __init__(self, markers='|/-\\'):
-      self.markers = markers
-      self.curmark = -1
+    # class RotatingMarker(Widget):
+    #   __slots__ = ('markers', 'curmark')
+
+    def __init__(self, markers="|/-\\"):
+        self.markers = markers
+        self.curmark = -1
 
     # ~~> An animated marker for the progress bar which defaults to appear
     #     as if it were rotating.
-   def update(self, pbar):
-      if pbar.finished:
-         return self.markers[0]
-      self.curmark = (self.curmark + 1)%len(self.markers)
-      return self.markers[self.curmark]
+    def update(self, pbar):
+        if pbar.finished:
+            return self.markers[0]
+        self.curmark = (self.curmark + 1) % len(self.markers)
+        return self.markers[self.curmark]
+
 
 """
    Just the percentage done.
 """
+
+
 class Percentage(ProgressBarWidget):
-   def update(self, pbar):
-      return '%3d%%' % pbar.percentage()
+    def update(self, pbar):
+        return "%3d%%" % pbar.percentage()
+
 
 """
    The bar of progress. It will strech to fill the line.
@@ -213,58 +248,66 @@ class Percentage(ProgressBarWidget):
       fill - character to use for the empty part of the progress bar
       fill_left - whether to fill from the left or the right
 """
-class Bar(ProgressBarWidgetHFill):
-#class Bar(WidgetHFill):
-#   __slots__ = ('marker', 'left', 'right', 'fill', 'fill_left')
 
-   def __init__(self, marker='#', left='|', right='|'): #, fill=' ',fill_left=True):
-      self.marker = marker
-      self.left = left
-      self.right = right
-      #self.fill = fill
-      #self.fill_left = fill_left
-   def _format_marker(self, pbar):
-      if isinstance(self.marker, (str, unicode)):
-         return self.marker
-      else:
-         return self.marker.update(pbar)
-   # ~~> Updates the progress bar and its subcomponents
-   def update(self, pbar, width):
-      #left, marker, right = (format_updatable(i, pbar) for i in
-      #                         (self.left, self.marker, self.right))
-      #width -= len(left) + len(right)
-      # ~~> Marker must *always* have length of 1
-      #marker *= int(pbar.currval / pbar.maxval * width)
-      percent = pbar.percentage()
-      cwidth = width - len(self.left) - len(self.right)
-      marked_width = int(percent * cwidth / 100)
-      m = self._format_marker(pbar)
-      bar = (self.left + (m*marked_width).ljust(cwidth) + self.right)
-      #if self.fill_left: return '%s%s%s' % (left, marker.ljust(width, self.fill), right)
-      #else: return '%s%s%s' % (left, marker.rjust(width, self.fill), right)
-      return bar
+
+class Bar(ProgressBarWidgetHFill):
+    # class Bar(WidgetHFill):
+    #   __slots__ = ('marker', 'left', 'right', 'fill', 'fill_left')
+
+    def __init__(self, marker="#", left="|", right="|"):  # , fill=' ',fill_left=True):
+        self.marker = marker
+        self.left = left
+        self.right = right
+        # self.fill = fill
+        # self.fill_left = fill_left
+
+    def _format_marker(self, pbar):
+        if isinstance(self.marker, (str, unicode)):
+            return self.marker
+        else:
+            return self.marker.update(pbar)
+
+    # ~~> Updates the progress bar and its subcomponents
+    def update(self, pbar, width):
+        # left, marker, right = (format_updatable(i, pbar) for i in
+        #                         (self.left, self.marker, self.right))
+        # width -= len(left) + len(right)
+        # ~~> Marker must *always* have length of 1
+        # marker *= int(pbar.currval / pbar.maxval * width)
+        percent = pbar.percentage()
+        cwidth = width - len(self.left) - len(self.right)
+        marked_width = int(percent * cwidth / 100)
+        m = self._format_marker(pbar)
+        bar = self.left + (m * marked_width).ljust(cwidth) + self.right
+        # if self.fill_left: return '%s%s%s' % (left, marker.ljust(width, self.fill), right)
+        # else: return '%s%s%s' % (left, marker.rjust(width, self.fill), right)
+        return bar
+
 
 """
    The reverse bar of progress, or bar of regress. :)
 """
+
+
 class ReverseBar(Bar):
 
-   #def __init__(self, marker='#', left='|', right='|', fill=' ', fill_left=False):
-   #     self.marker = marker
-   #     self.left = left
-   #     self.right = right
-   #     self.fill = fill
-   #     self.fill_left = fill_left
-   def update(self, pbar, width):
-      percent = pbar.percentage()
-      cwidth = width - len(self.left) - len(self.right)
-      marked_width = int(percent * cwidth / 100)
-      m = self._format_marker(pbar)
-      bar = (self.left + (m*marked_width).rjust(cwidth) + self.right)
-      return bar
+    # def __init__(self, marker='#', left='|', right='|', fill=' ', fill_left=False):
+    #     self.marker = marker
+    #     self.left = left
+    #     self.right = right
+    #     self.fill = fill
+    #     self.fill_left = fill_left
+    def update(self, pbar, width):
+        percent = pbar.percentage()
+        cwidth = width - len(self.left) - len(self.right)
+        marked_width = int(percent * cwidth / 100)
+        m = self._format_marker(pbar)
+        bar = self.left + (m * marked_width).rjust(cwidth) + self.right
+        return bar
 
-default_widgets = [Bar(marker='\\',left='[',right=']'),' ',Percentage(),' ',ETA()]
-default_subwidgets = [Bar(marker='.',left='[',right=']')]
+
+default_widgets = [Bar(marker="\\", left="[", right="]"), " ", Percentage(), " ", ETA()]
+default_subwidgets = [Bar(marker=".", left="[", right="]")]
 
 """
 def format_updatable(updatable, pbar):
@@ -386,148 +429,154 @@ class BouncingBar(Bar):
                         update
        - percentage(): progress in percent [0..100]
 """
-class ProgressBar(object):
 
-   def __init__(self, maxval=100, widgets=default_widgets, term_width=None,
-                fd=sys.stderr):
-      assert maxval > 0
-      self.maxval = maxval
-      self.widgets = widgets
-      self.fd = fd
-      self.signal_set = False
-      self.term_width = 79
-      if term_width is None:
+
+class ProgressBar(object):
+    def __init__(self, maxval=100, widgets=default_widgets, term_width=None, fd=sys.stderr):
+        assert maxval > 0
+        self.maxval = maxval
+        self.widgets = widgets
+        self.fd = fd
+        self.signal_set = False
+        self.term_width = 79
+        if term_width is None:
             try:
-                self.handle_resize(None,None)
+                self.handle_resize(None, None)
                 signal.signal(signal.SIGWINCH, self.handle_resize)
                 self.signal_set = True
             except:
                 self.term_width = 79
-      else:
+        else:
             self.term_width = term_width
 
-      self.currval = 0
-      self.finished = False
-      self.prev_percentage = -1
-      self.start_time = None
-      self.seconds_elapsed = 0
+        self.currval = 0
+        self.finished = False
+        self.prev_percentage = -1
+        self.start_time = None
+        self.seconds_elapsed = 0
 
-   def handle_resize(self, signum, frame):
-      #h,w=array('h', ioctl(self.fd,termios.TIOCGWINSZ,'\0'*8))[:2]
-      #self.term_width = w
-      pass
+    def handle_resize(self, signum, frame):
+        # h,w=array('h', ioctl(self.fd,termios.TIOCGWINSZ,'\0'*8))[:2]
+        # self.term_width = w
+        pass
 
-   def percentage(self):
-      "Returns the percentage of the progress."
-      return self.currval*100.0 / self.maxval
+    def percentage(self):
+        "Returns the percentage of the progress."
+        return self.currval * 100.0 / self.maxval
 
-   def _format_widgets(self):
-      r = []
-      hfill_inds = []
-      num_hfill = 0
-      currwidth = 0
-      for i, w in enumerate(self.widgets):
-          if isinstance(w, ProgressBarWidgetHFill):
-              r.append(w)
-              hfill_inds.append(i)
-              num_hfill += 1
-          elif isinstance(w, (str, unicode)):
-              r.append(w)
-              currwidth += len(w)
-          else:
-              weval = w.update(self)
-              currwidth += len(weval)
-              r.append(weval)
-      for iw in hfill_inds:
-          r[iw] = r[iw].update(self, (self.term_width-currwidth)/num_hfill)
-      return r
+    def _format_widgets(self):
+        r = []
+        hfill_inds = []
+        num_hfill = 0
+        currwidth = 0
+        for i, w in enumerate(self.widgets):
+            if isinstance(w, ProgressBarWidgetHFill):
+                r.append(w)
+                hfill_inds.append(i)
+                num_hfill += 1
+            elif isinstance(w, (str, unicode)):
+                r.append(w)
+                currwidth += len(w)
+            else:
+                weval = w.update(self)
+                currwidth += len(weval)
+                r.append(weval)
+        for iw in hfill_inds:
+            r[iw] = r[iw].update(self, (self.term_width - currwidth) / num_hfill)
+        return r
 
-   def _format_line(self):
-      return ''.join(self._format_widgets()).ljust(self.term_width)
+    def _format_line(self):
+        return "".join(self._format_widgets()).ljust(self.term_width)
 
-   def _need_update(self):
-      return int(self.percentage()) != int(self.prev_percentage)
+    def _need_update(self):
+        return int(self.percentage()) != int(self.prev_percentage)
 
-   def update(self, value, carriage='\r'):
-      "Updates the progress bar to a new value."
-      assert 0 <= value <= self.maxval
-      self.currval = value
-      if not self._need_update() or self.finished: return
-      if not self.start_time: self.start_time = time.time()
-      self.seconds_elapsed = time.time() - self.start_time
-      self.prev_percentage = self.percentage()
-      if not hide_default:
-          if value != self.maxval:
-              self.fd.write(self._format_line() + carriage)
-          else:
-              self.finished = True
-              self.fd.write(' '*79+'\r') # /!\ remove the progress bar from display
-              #self.fd.write(self._format_line() + '\n') or with carriage
+    def update(self, value, carriage="\r"):
+        "Updates the progress bar to a new value."
+        assert 0 <= value <= self.maxval
+        self.currval = value
+        if not self._need_update() or self.finished:
+            return
+        if not self.start_time:
+            self.start_time = time.time()
+        self.seconds_elapsed = time.time() - self.start_time
+        self.prev_percentage = self.percentage()
+        if not hide_default:
+            if value != self.maxval:
+                self.fd.write(self._format_line() + carriage)
+            else:
+                self.finished = True
+                self.fd.write(" " * 79 + "\r")  # /!\ remove the progress bar from display
+                # self.fd.write(self._format_line() + '\n') or with carriage
 
-   def write(self, str, value):
-      "Move the progress bar along."
-      self.fd.write(' '*79+'\r')
-      self.fd.write(str+'\n')
-      if not self.start_time: self.start_time = time.time()
-      self.seconds_elapsed = time.time() - self.start_time
-      self.prev_percentage = self.percentage()
-      if value != self.maxval:
-          self.fd.write(self._format_line() + '\r')
-      else:
-          self.finished = True
-          self.fd.write(' '*79+'\r') # /!\ remove the progress bar from display
-          #self.fd.write(self._format_line() + '\n')
+    def write(self, str, value):
+        "Move the progress bar along."
+        self.fd.write(" " * 79 + "\r")
+        self.fd.write(str + "\n")
+        if not self.start_time:
+            self.start_time = time.time()
+        self.seconds_elapsed = time.time() - self.start_time
+        self.prev_percentage = self.percentage()
+        if value != self.maxval:
+            self.fd.write(self._format_line() + "\r")
+        else:
+            self.finished = True
+            self.fd.write(" " * 79 + "\r")  # /!\ remove the progress bar from display
+            # self.fd.write(self._format_line() + '\n')
 
-   def trace(self):
-      "Leave a trace on screen of the progress bar and carry on to the next line."
-      if self.currval > 0: self.fd.write(self._format_line() + '\n')
+    def trace(self):
+        "Leave a trace on screen of the progress bar and carry on to the next line."
+        if self.currval > 0:
+            self.fd.write(self._format_line() + "\n")
 
-   def start(self):
-      # ~~> Start measuring time, and prints the bar at 0%.
-      self.update(0)
-      return self
+    def start(self):
+        # ~~> Start measuring time, and prints the bar at 0%.
+        self.update(0)
+        return self
 
-   def finish(self):
-      # ~~> Used to tell the progress is finished.
-      self.update(self.maxval)
-      if self.signal_set: signal.signal(signal.SIGWINCH, signal.SIG_DFL)
+    def finish(self):
+        # ~~> Used to tell the progress is finished.
+        self.update(self.maxval)
+        if self.signal_set:
+            signal.signal(signal.SIGWINCH, signal.SIG_DFL)
+
 
 class SubProgressBar(ProgressBar):
+    def __init__(self, maxval=100):
+        ProgressBar.__init__(self, maxval=maxval, widgets=default_subwidgets)
 
-   def __init__(self, maxval=100):
-      ProgressBar.__init__( self, maxval=maxval, widgets=default_subwidgets )
 
 # _____             ________________________________________________
 # ____/ MAIN CALL  /_______________________________________________/
 #
 
-__author__="Nilton Volpato"
-__date__ ="$07-May-2006 08:51:29$"
+__author__ = "Nilton Volpato"
+__date__ = "$07-May-2006 08:51:29$"
 
 if __name__ == "__main__":
 
-# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-# ~~~~ widgets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    # ~~~~ widgets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   if True:
-      widgets = [Bar('>'), ' ', ETA(), ' ', ReverseBar('<')]
-      pbar = ProgressBar(widgets=widgets, maxval=10000000).start()
-      for i in range(1000000):
-         # do something
-         pbar.update(10*i+1)
-      pbar.finish()
-   if True:
-      widgets = ['Test: ', Percentage(), ' ', Bar(marker=RotatingMarker()),' ', ETA(), ' ', FileTransferSpeed()]
-      pbar = ProgressBar(widgets=widgets, maxval=10000000).start()
-      for i in range(1000000):
-         # do something
-         pbar.update(10*i+1)
-      pbar.finish()
-   if True:
-      widgets=[Percentage(), Bar(marker='o',left='[',right=']')]
-      pbar = ProgressBar(widgets=widgets, maxval=10000000).start()
-      for i in range(1000000):
-         # do something
-         pbar.update(10*i+1)
-      pbar.finish()
-   sys.exit(0)
+    if True:
+        widgets = [Bar(">"), " ", ETA(), " ", ReverseBar("<")]
+        pbar = ProgressBar(widgets=widgets, maxval=10000000).start()
+        for i in range(1000000):
+            # do something
+            pbar.update(10 * i + 1)
+        pbar.finish()
+    if True:
+        widgets = ["Test: ", Percentage(), " ", Bar(marker=RotatingMarker()), " ", ETA(), " ", FileTransferSpeed()]
+        pbar = ProgressBar(widgets=widgets, maxval=10000000).start()
+        for i in range(1000000):
+            # do something
+            pbar.update(10 * i + 1)
+        pbar.finish()
+    if True:
+        widgets = [Percentage(), Bar(marker="o", left="[", right="]")]
+        pbar = ProgressBar(widgets=widgets, maxval=10000000).start()
+        for i in range(1000000):
+            # do something
+            pbar.update(10 * i + 1)
+        pbar.finish()
+    sys.exit(0)

@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-#import sip
-#sip.setapi('QString', 1)
+# import sip
+# sip.setapi('QString', 1)
 
 import pyqtgraph as pg
+
 pg.mkQApp()
 
 import pyqtgraph.dockarea as da
+
 
 def test_dock():
     name = pg.asUnicode("évènts_zàhéér")

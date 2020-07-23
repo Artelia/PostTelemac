@@ -1,7 +1,7 @@
 ##[01_Telemac]=group
 
 
-#*************************************************************************
+# *************************************************************************
 """
 Versions :
 0.0 : debut
@@ -9,7 +9,7 @@ Versions :
 
 
 """
-#*************************************************************************
+# *************************************************************************
 
 
 ##Type_de_traitement=selection En arriere plan;Modeler;Modeler avec creation de fichiers
@@ -22,56 +22,59 @@ Versions :
 ##Azimuth_si_hillshade=number 0.0
 ##Facteurz_si_hillshade=number 10.0
 ##Variable=selection FOND
-##Autre_variable=string 
+##Autre_variable=string
 ##systeme_de_projection=crs EPSG:27562
-##forcage_attribut_fichier_de_sortie=string 
+##forcage_attribut_fichier_de_sortie=string
 
 
-##fichier_de_sortie_maillage=output vector 
+##fichier_de_sortie_maillage=output vector
 
-#unicode behaviour
+# unicode behaviour
 from __future__ import unicode_literals
-#import qgis
-from processing.core.GeoAlgorithmExecutionException import  GeoAlgorithmExecutionException
+
+# import qgis
+from processing.core.GeoAlgorithmExecutionException import GeoAlgorithmExecutionException
 from processing.tools.vector import VectorWriter
-#import numpy
+
+# import numpy
 import numpy as np
-#import matplotlib
+
+# import matplotlib
 import matplotlib
-#import PyQT
+
+# import PyQT
 from PyQt4 import QtCore, QtGui
-#imports divers
+
+# imports divers
 import time
 
 from ..meshlayerparsers.posttelemac_selafin_parser import *
 
-#*************************************************************************
+# *************************************************************************
 
 
 class getCompareValue(QtCore.QObject):
-
-    def __init__(self,layer):
+    def __init__(self, layer):
         QtCore.QObject.__init__(self)
         self.layer = layer
-        #self.slf1 = layer.slf
-        #self.slf2 = SELAFIN(layer.propertiesdialog.lineEdit_5.toPlainText())
-        #self.slf2 = SELAFIN(layer.propertiesdialog.lineEdit_5.text())
+        # self.slf1 = layer.slf
+        # self.slf2 = SELAFIN(layer.propertiesdialog.lineEdit_5.toPlainText())
+        # self.slf2 = SELAFIN(layer.propertiesdialog.lineEdit_5.text())
         self.hydrauparsercompared = PostTelemacSelafinParser()
         self.hydrauparsercompared.loadHydrauFile(layer.propertiesdialog.lineEdit_5.text())
-        self.hydrauparsercompared.setXYTranslation(self.layer.hydrauparser.translatex, self.layer.hydrauparser.translatey)
-        
-        
-        
-        #layer.compare = True
-        
-        #layer.updatevalue.connect(self.updateSelafinValue)
-        self.triinterp=None
-        #self.comparetime = None
-        self.values = None
-        #self.transmitvalues = False
-        #self.var_corresp = var_corresp
+        self.hydrauparsercompared.setXYTranslation(
+            self.layer.hydrauparser.translatex, self.layer.hydrauparser.translatey
+        )
 
-                
+        # layer.compare = True
+
+        # layer.updatevalue.connect(self.updateSelafinValue)
+        self.triinterp = None
+        # self.comparetime = None
+        self.values = None
+        # self.transmitvalues = False
+        # self.var_corresp = var_corresp
+
     def reset_dialog(self):
         self.layer.propertiesdialog.textEdit_2.clear()
         self.layer.propertiesdialog.textEdit_3.clear()
@@ -79,91 +82,89 @@ class getCompareValue(QtCore.QObject):
         self.layer.propertiesdialog.lineEdit.clear()
         self.layer.propertiesdialog.checkBox_6.setCheckState(0)
         self.layer.propertiesdialog.checkBox_6.setEnabled(False)
-        
+
     def oppositeValues(self):
         self.values = -self.values
-        
-    def updateSelafinValue(self,onlyparamtimeunchanged = -1):
+
+    def updateSelafinValue(self, onlyparamtimeunchanged=-1):
         temp1 = []
         lenvarnames = len(self.layer.hydrauparser.parametres)
-        meshx1,meshy1 = self.layer.hydrauparser.getMesh()
+        meshx1, meshy1 = self.layer.hydrauparser.getMesh()
         ikle1 = self.layer.hydrauparser.getIkle()
-        meshx2,meshy2 = self.hydrauparsercompared.getMesh()
+        meshx2, meshy2 = self.hydrauparsercompared.getMesh()
         ikle2 = self.hydrauparsercompared.getIkle()
 
-
         try:
-            #desactive non matching parameters
-            if onlyparamtimeunchanged < 0 : 
-                if (np.array_equal(ikle1 , ikle2) 
-                    and np.array_equal(meshx1 , meshx2) 
-                    and np.array_equal(meshy1 , meshy2)):
-                    
-                    #self.status.emit("fichiers identiques ")
+            # desactive non matching parameters
+            if onlyparamtimeunchanged < 0:
+                if np.array_equal(ikle1, ikle2) and np.array_equal(meshx1, meshx2) and np.array_equal(meshy1, meshy2):
+
+                    # self.status.emit("fichiers identiques ")
                     self.layer.propertiesdialog.textBrowser_2.append("fichiers identiques ")
                     valuetab = []
                     for i in range(lenvarnames):
-                        if self.layer.hydrauparser.parametres[i][3] is not None :
-                            value = self.hydrauparsercompared.getValues(self.layer.time_displayed)[self.layer.hydrauparser.parametres[i][3]] - self.layer.hydrauparser.getValues(self.layer.time_displayed)[i]
+                        if self.layer.hydrauparser.parametres[i][3] is not None:
+                            value = (
+                                self.hydrauparsercompared.getValues(self.layer.time_displayed)[
+                                    self.layer.hydrauparser.parametres[i][3]
+                                ]
+                                - self.layer.hydrauparser.getValues(self.layer.time_displayed)[i]
+                            )
                         else:
-                            value = [np.nan]*len(meshx1)
+                            value = [np.nan] * len(meshx1)
                             value = np.array(value).transpose()
                         valuetab.append(value)
                     self.values = np.array(valuetab)
-                    
+
                     if self.layer.propertiesdialog.comboBox_compare_method.currentIndex() == 1:
                         self.oppositeValues()
-                    
 
                 else:
-                    #self.status.emit("fichiers non egaux")
+                    # self.status.emit("fichiers non egaux")
                     self.layer.propertiesdialog.textBrowser_2.append("fichiers non egaux")
 
-                    #projection of slf2 to slf1
-                    #triinterp
-                    triang = matplotlib.tri.Triangulation(meshx2,meshy2,np.array(ikle2))
+                    # projection of slf2 to slf1
+                    # triinterp
+                    triang = matplotlib.tri.Triangulation(meshx2, meshy2, np.array(ikle2))
                     self.triinterp = []
                     for i in range(lenvarnames):
                         if self.layer.hydrauparser.parametres[i][3] is not None:
-                            self.triinterp.append(matplotlib.tri.LinearTriInterpolator(triang, self.hydrauparsercompared.getValues(self.layer.time_displayed)[self.layer.hydrauparser.parametres[i][3]]))
+                            self.triinterp.append(
+                                matplotlib.tri.LinearTriInterpolator(
+                                    triang,
+                                    self.hydrauparsercompared.getValues(self.layer.time_displayed)[
+                                        self.layer.hydrauparser.parametres[i][3]
+                                    ],
+                                )
+                            )
                         else:
                             self.triinterp.append(None)
                     valuesslf2 = []
                     count = self.layer.hydrauparser.pointcount
-                    #projection for matching parameters
-                    tabtemp=[]
-                    for  j in range(lenvarnames):
+                    # projection for matching parameters
+                    tabtemp = []
+                    for j in range(lenvarnames):
                         if self.layer.hydrauparser.parametres[j][3] is not None:
-                            tabtemp = self.triinterp[j].__call__(meshx1,meshy1)
+                            tabtemp = self.triinterp[j].__call__(meshx1, meshy1)
                         else:
-                            tabtemp = np.array([np.nan]*count)
+                            tabtemp = np.array([np.nan] * count)
                             tabtemp = tabtemp.transpose()
                         valuesslf2.append(tabtemp)
                     temp1 = valuesslf2 - self.layer.hydrauparser.getValues(self.layer.time_displayed)
                     self.values = np.nan_to_num(temp1)
-                    
+
                     if self.layer.propertiesdialog.comboBox_compare_method.currentIndex() == 1:
                         self.oppositeValues()
-                        
-                        
+
                 self.layer.values = self.values
                 self.layer.value = self.values[self.layer.param_displayed]
             else:
                 self.layer.value = self.values[self.layer.param_displayed]
-                
 
-                
         except Exception, e:
-            print str("updateSelafinValue :"+str(e))
-            #self.status.emit("updateSelafinValue :"+str(e))
+            print str("updateSelafinValue :" + str(e))
+            # self.status.emit("updateSelafinValue :"+str(e))
             self.values = None
-            #self.finished.emit()
-                
+            # self.finished.emit()
 
-        #self.comparetime = self.layer.time_displayed
-
-
-
-    
-
-
+        # self.comparetime = self.layer.time_displayed

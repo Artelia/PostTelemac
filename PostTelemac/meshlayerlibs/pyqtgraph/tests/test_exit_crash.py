@@ -11,8 +11,8 @@ app = pg.mkQApp()
 w = pg.{classname}({args})
 """
 
-skipmessage = ('unclear why this test is failing. skipping until someone has'
-               ' time to fix it')
+skipmessage = "unclear why this test is failing. skipping until someone has" " time to fix it"
+
 
 @pytest.mark.skipif(True, reason=skipmessage)
 def test_exit_crash():
@@ -23,9 +23,9 @@ def test_exit_crash():
     path = os.path.dirname(pg.__file__)
 
     initArgs = {
-        'CheckTable': "[]",
-        'ProgressDialog': '"msg"',
-        'VerticalLabel': '"msg"',
+        "CheckTable": "[]",
+        "ProgressDialog": '"msg"',
+        "VerticalLabel": '"msg"',
     }
 
     for name in dir(pg):
@@ -35,7 +35,7 @@ def test_exit_crash():
 
         print(name)
         argstr = initArgs.get(name, "")
-        open(tmp, 'w').write(code.format(path=path, classname=name, args=argstr))
+        open(tmp, "w").write(code.format(path=path, classname=name, args=argstr))
         proc = subprocess.Popen([sys.executable, tmp])
         assert proc.wait() == 0
 

@@ -10,7 +10,9 @@ from .widgets.PlotWidget import *
 from .imageview import *
 from .widgets.GraphicsLayoutWidget import GraphicsLayoutWidget
 from .widgets.GraphicsView import GraphicsView
+
 QAPP = None
+
 
 def mkQApp():
     if QtGui.QApplication.instance() is None:
@@ -24,17 +26,18 @@ class GraphicsWindow(GraphicsLayoutWidget):
     <pyqtgraph.GraphicsLayoutWidget>`. This class is intended for use from 
     the interactive python prompt.
     """
-    def __init__(self, title=None, size=(800,600), **kargs):
+
+    def __init__(self, title=None, size=(800, 600), **kargs):
         mkQApp()
         GraphicsLayoutWidget.__init__(self, **kargs)
         self.resize(*size)
         if title is not None:
             self.setWindowTitle(title)
         self.show()
-        
+
 
 class TabWindow(QtGui.QMainWindow):
-    def __init__(self, title=None, size=(800,600)):
+    def __init__(self, title=None, size=(800, 600)):
         mkQApp()
         QtGui.QMainWindow.__init__(self)
         self.resize(*size)
@@ -43,13 +46,13 @@ class TabWindow(QtGui.QMainWindow):
         if title is not None:
             self.setWindowTitle(title)
         self.show()
-        
+
     def __getattr__(self, attr):
         if hasattr(self.cw, attr):
             return getattr(self.cw, attr)
         else:
             raise NameError(attr)
-    
+
 
 class PlotWindow(PlotWidget):
     def __init__(self, title=None, **kargs):
@@ -57,7 +60,7 @@ class PlotWindow(PlotWidget):
         self.win = QtGui.QMainWindow()
         PlotWidget.__init__(self, **kargs)
         self.win.setCentralWidget(self)
-        for m in ['resize']:
+        for m in ["resize"]:
             setattr(self, m, getattr(self.win, m))
         if title is not None:
             self.win.setWindowTitle(title)
@@ -68,16 +71,16 @@ class ImageWindow(ImageView):
     def __init__(self, *args, **kargs):
         mkQApp()
         self.win = QtGui.QMainWindow()
-        self.win.resize(800,600)
-        if 'title' in kargs:
-            self.win.setWindowTitle(kargs['title'])
-            del kargs['title']
+        self.win.resize(800, 600)
+        if "title" in kargs:
+            self.win.setWindowTitle(kargs["title"])
+            del kargs["title"]
         ImageView.__init__(self, self.win)
         if len(args) > 0 or len(kargs) > 0:
             self.setImage(*args, **kargs)
         self.win.setCentralWidget(self)
-        for m in ['resize']:
+        for m in ["resize"]:
             setattr(self, m, getattr(self.win, m))
-        #for m in ['setImage', 'autoRange', 'addItem', 'removeItem', 'blackLevel', 'whiteLevel', 'imageItem']:
-            #setattr(self, m, getattr(self.cw, m))
+        # for m in ['setImage', 'autoRange', 'addItem', 'removeItem', 'blackLevel', 'whiteLevel', 'imageItem']:
+        # setattr(self, m, getattr(self.cw, m))
         self.win.show()

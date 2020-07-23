@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from ..Qt import QtGui, QtCore
 
-__all__ = ['ProgressDialog']
+__all__ = ["ProgressDialog"]
+
+
 class ProgressDialog(QtGui.QProgressDialog):
     """
     Extends QProgressDialog for use in 'with' statements.
@@ -14,7 +16,18 @@ class ProgressDialog(QtGui.QProgressDialog):
             if dlg.wasCanceled():
                 raise Exception("Processing canceled by user")
     """
-    def __init__(self, labelText, minimum=0, maximum=100, cancelText='Cancel', parent=None, wait=250, busyCursor=False, disable=False):
+
+    def __init__(
+        self,
+        labelText,
+        minimum=0,
+        maximum=100,
+        cancelText="Cancel",
+        parent=None,
+        wait=250,
+        busyCursor=False,
+        disable=False,
+    ):
         """
         ============== ================================================================
         **Arguments:**
@@ -30,7 +43,7 @@ class ProgressDialog(QtGui.QProgressDialog):
                        If ProgressDialog is entered from a non-gui thread, it will
                        always be disabled.
         ============== ================================================================
-        """    
+        """
         isGuiThread = QtCore.QThread.currentThread() == QtCore.QCoreApplication.instance().thread()
         self.disabled = disable or (not isGuiThread)
         if self.disabled:
@@ -38,18 +51,17 @@ class ProgressDialog(QtGui.QProgressDialog):
 
         noCancel = False
         if cancelText is None:
-            cancelText = ''
+            cancelText = ""
             noCancel = True
-            
+
         self.busyCursor = busyCursor
-            
+
         QtGui.QProgressDialog.__init__(self, labelText, cancelText, minimum, maximum, parent)
         self.setMinimumDuration(wait)
         self.setWindowModality(QtCore.Qt.WindowModal)
         self.setValue(self.minimum())
         if noCancel:
             self.setCancelButton(None)
-        
 
     def __enter__(self):
         if self.disabled:
@@ -64,27 +76,26 @@ class ProgressDialog(QtGui.QProgressDialog):
         if self.busyCursor:
             QtGui.QApplication.restoreOverrideCursor()
         self.setValue(self.maximum())
-        
+
     def __iadd__(self, val):
         """Use inplace-addition operator for easy incrementing."""
         if self.disabled:
             return self
-        self.setValue(self.value()+val)
+        self.setValue(self.value() + val)
         return self
 
-
     ## wrap all other functions to make sure they aren't being called from non-gui threads
-    
+
     def setValue(self, val):
         if self.disabled:
             return
         QtGui.QProgressDialog.setValue(self, val)
-        
+
     def setLabelText(self, val):
         if self.disabled:
             return
         QtGui.QProgressDialog.setLabelText(self, val)
-    
+
     def setMaximum(self, val):
         if self.disabled:
             return
@@ -94,7 +105,7 @@ class ProgressDialog(QtGui.QProgressDialog):
         if self.disabled:
             return
         QtGui.QProgressDialog.setMinimum(self, val)
-        
+
     def wasCanceled(self):
         if self.disabled:
             return False
@@ -109,4 +120,3 @@ class ProgressDialog(QtGui.QProgressDialog):
         if self.disabled:
             return 0
         return QtGui.QProgressDialog.minimum(self)
-        

@@ -3,13 +3,7 @@ from pyqtgraph.Qt import QtCore, QtGui
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
 
-testPoints = np.array([
-                       [0, 0, 0],
-                       [1, 0, 0],
-                       [0, 1, 0],
-                       [0, 0, 1],
-                       [-1, -1, 0],
-                       [0, -1, -1]])
+testPoints = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [-1, -1, 0], [0, -1, -1]])
 
 
 def testMatrix():
@@ -26,7 +20,7 @@ def testMatrix():
 
     tr2 = pg.Transform3D(tr)
     assert np.all(tr.matrix() == tr2.matrix())
-    
+
     # This is the most important test:
     # The transition from Transform3D to SRTTransform3D is a tricky one.
     tr3 = pg.SRTTransform3D(tr2)
@@ -35,5 +29,3 @@ def testMatrix():
     assert_array_almost_equal(tr3.getRotation()[1], tr.getRotation()[1])
     assert_array_almost_equal(tr3.getScale(), tr.getScale())
     assert_array_almost_equal(tr3.getTranslation(), tr.getTranslation())
-
-

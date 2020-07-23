@@ -9,6 +9,7 @@
 
 from PySide import QtCore, QtGui
 
+
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
@@ -21,7 +22,7 @@ class Ui_Form(object):
         self.gridLayout.setObjectName("gridLayout")
         self.selDescLabel = QtGui.QLabel(self.selInfoWidget)
         self.selDescLabel.setText("")
-        self.selDescLabel.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
+        self.selDescLabel.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
         self.selDescLabel.setWordWrap(True)
         self.selDescLabel.setObjectName("selDescLabel")
         self.gridLayout.addWidget(self.selDescLabel, 0, 0, 1, 1)
@@ -49,6 +50,7 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         Form.setWindowTitle(QtGui.QApplication.translate("Form", "Form", None, QtGui.QApplication.UnicodeUTF8))
+
 
 from ..flowchart.FlowchartGraphicsView import FlowchartGraphicsView
 from ..widgets.DataTreeWidget import DataTreeWidget

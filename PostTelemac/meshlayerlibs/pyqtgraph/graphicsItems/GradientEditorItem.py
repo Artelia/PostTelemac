@@ -11,26 +11,80 @@ from ..colormap import ColorMap
 from ..python2_3 import cmp
 
 
-__all__ = ['TickSliderItem', 'GradientEditorItem']
+__all__ = ["TickSliderItem", "GradientEditorItem"]
 
-Gradients = OrderedDict([
-    ('thermal', {'ticks': [(0.3333, (185, 0, 0, 255)), (0.6666, (255, 220, 0, 255)), (1, (255, 255, 255, 255)), (0, (0, 0, 0, 255))], 'mode': 'rgb'}),
-    ('flame', {'ticks': [(0.2, (7, 0, 220, 255)), (0.5, (236, 0, 134, 255)), (0.8, (246, 246, 0, 255)), (1.0, (255, 255, 255, 255)), (0.0, (0, 0, 0, 255))], 'mode': 'rgb'}),
-    ('yellowy', {'ticks': [(0.0, (0, 0, 0, 255)), (0.2328863796753704, (32, 0, 129, 255)), (0.8362738179251941, (255, 255, 0, 255)), (0.5257586450247, (115, 15, 255, 255)), (1.0, (255, 255, 255, 255))], 'mode': 'rgb'} ),
-    ('bipolar', {'ticks': [(0.0, (0, 255, 255, 255)), (1.0, (255, 255, 0, 255)), (0.5, (0, 0, 0, 255)), (0.25, (0, 0, 255, 255)), (0.75, (255, 0, 0, 255))], 'mode': 'rgb'}),
-    ('spectrum', {'ticks': [(1.0, (255, 0, 255, 255)), (0.0, (255, 0, 0, 255))], 'mode': 'hsv'}),
-    ('cyclic', {'ticks': [(0.0, (255, 0, 4, 255)), (1.0, (255, 0, 0, 255))], 'mode': 'hsv'}),
-    ('greyclip', {'ticks': [(0.0, (0, 0, 0, 255)), (0.99, (255, 255, 255, 255)), (1.0, (255, 0, 0, 255))], 'mode': 'rgb'}),
-    ('grey', {'ticks': [(0.0, (0, 0, 0, 255)), (1.0, (255, 255, 255, 255))], 'mode': 'rgb'}),
-])
+Gradients = OrderedDict(
+    [
+        (
+            "thermal",
+            {
+                "ticks": [
+                    (0.3333, (185, 0, 0, 255)),
+                    (0.6666, (255, 220, 0, 255)),
+                    (1, (255, 255, 255, 255)),
+                    (0, (0, 0, 0, 255)),
+                ],
+                "mode": "rgb",
+            },
+        ),
+        (
+            "flame",
+            {
+                "ticks": [
+                    (0.2, (7, 0, 220, 255)),
+                    (0.5, (236, 0, 134, 255)),
+                    (0.8, (246, 246, 0, 255)),
+                    (1.0, (255, 255, 255, 255)),
+                    (0.0, (0, 0, 0, 255)),
+                ],
+                "mode": "rgb",
+            },
+        ),
+        (
+            "yellowy",
+            {
+                "ticks": [
+                    (0.0, (0, 0, 0, 255)),
+                    (0.2328863796753704, (32, 0, 129, 255)),
+                    (0.8362738179251941, (255, 255, 0, 255)),
+                    (0.5257586450247, (115, 15, 255, 255)),
+                    (1.0, (255, 255, 255, 255)),
+                ],
+                "mode": "rgb",
+            },
+        ),
+        (
+            "bipolar",
+            {
+                "ticks": [
+                    (0.0, (0, 255, 255, 255)),
+                    (1.0, (255, 255, 0, 255)),
+                    (0.5, (0, 0, 0, 255)),
+                    (0.25, (0, 0, 255, 255)),
+                    (0.75, (255, 0, 0, 255)),
+                ],
+                "mode": "rgb",
+            },
+        ),
+        ("spectrum", {"ticks": [(1.0, (255, 0, 255, 255)), (0.0, (255, 0, 0, 255))], "mode": "hsv"}),
+        ("cyclic", {"ticks": [(0.0, (255, 0, 4, 255)), (1.0, (255, 0, 0, 255))], "mode": "hsv"}),
+        (
+            "greyclip",
+            {"ticks": [(0.0, (0, 0, 0, 255)), (0.99, (255, 255, 255, 255)), (1.0, (255, 0, 0, 255))], "mode": "rgb"},
+        ),
+        ("grey", {"ticks": [(0.0, (0, 0, 0, 255)), (1.0, (255, 255, 255, 255))], "mode": "rgb"}),
+    ]
+)
+
 
 def addGradientListToDocstring():
     """Decorator to add list of current pre-defined gradients to the end of a function docstring."""
-    def dec(fn):
-        fn.__doc__ = fn.__doc__ + str(Gradients.keys()).strip('[').strip(']')
-        return fn
-    return dec
 
+    def dec(fn):
+        fn.__doc__ = fn.__doc__ + str(Gradients.keys()).strip("[").strip("]")
+        return fn
+
+    return dec
 
 
 class TickSliderItem(GraphicsWidget):
@@ -38,8 +92,8 @@ class TickSliderItem(GraphicsWidget):
     """**Bases:** :class:`GraphicsWidget <pyqtgraph.GraphicsWidget>`
     
     A rectangular item with tick marks along its length that can (optionally) be moved by the user."""
-        
-    def __init__(self, orientation='bottom', allowAdd=True, **kargs):
+
+    def __init__(self, orientation="bottom", allowAdd=True, **kargs):
         """
         ==============  =================================================================================
         **Arguments:**
@@ -58,36 +112,31 @@ class TickSliderItem(GraphicsWidget):
         self.ticks = {}
         self.maxDim = 20
         self.allowAdd = allowAdd
-        if 'tickPen' in kargs:
-            self.tickPen = fn.mkPen(kargs['tickPen'])
+        if "tickPen" in kargs:
+            self.tickPen = fn.mkPen(kargs["tickPen"])
         else:
-            self.tickPen = fn.mkPen('w')
-            
-        self.orientations = {
-            'left': (90, 1, 1), 
-            'right': (90, 1, 1), 
-            'top': (0, 1, -1), 
-            'bottom': (0, 1, 1)
-        }
-        
+            self.tickPen = fn.mkPen("w")
+
+        self.orientations = {"left": (90, 1, 1), "right": (90, 1, 1), "top": (0, 1, -1), "bottom": (0, 1, 1)}
+
         self.setOrientation(orientation)
-        #self.setFrameStyle(QtGui.QFrame.NoFrame | QtGui.QFrame.Plain)
-        #self.setBackgroundRole(QtGui.QPalette.NoRole)
-        #self.setMouseTracking(True)
-        
-    #def boundingRect(self):
-        #return self.mapRectFromParent(self.geometry()).normalized()
-        
-    #def shape(self):  ## No idea why this is necessary, but rotated items do not receive clicks otherwise.
-        #p = QtGui.QPainterPath()
-        #p.addRect(self.boundingRect())
-        #return p
-        
+        # self.setFrameStyle(QtGui.QFrame.NoFrame | QtGui.QFrame.Plain)
+        # self.setBackgroundRole(QtGui.QPalette.NoRole)
+        # self.setMouseTracking(True)
+
+    # def boundingRect(self):
+    # return self.mapRectFromParent(self.geometry()).normalized()
+
+    # def shape(self):  ## No idea why this is necessary, but rotated items do not receive clicks otherwise.
+    # p = QtGui.QPainterPath()
+    # p.addRect(self.boundingRect())
+    # return p
+
     def paint(self, p, opt, widget):
-        #p.setPen(fn.mkPen('g', width=3))
-        #p.drawRect(self.boundingRect())
+        # p.setPen(fn.mkPen('g', width=3))
+        # p.drawRect(self.boundingRect())
         return
-        
+
     def keyPressEvent(self, ev):
         ev.ignore()
 
@@ -96,15 +145,14 @@ class TickSliderItem(GraphicsWidget):
             mx = self.maxDim
         else:
             self.maxDim = mx
-            
-        if self.orientation in ['bottom', 'top']:
+
+        if self.orientation in ["bottom", "top"]:
             self.setFixedHeight(mx)
             self.setMaximumWidth(16777215)
         else:
             self.setFixedWidth(mx)
             self.setMaximumHeight(16777215)
-            
-    
+
     def setOrientation(self, orientation):
         ## public
         """Set the orientation of the TickSliderItem.
@@ -121,26 +169,28 @@ class TickSliderItem(GraphicsWidget):
         self.setMaxDim()
         self.resetTransform()
         ort = orientation
-        if ort == 'top':
+        if ort == "top":
             transform = QtGui.QTransform.fromScale(1, -1)
             transform.translate(0, -self.height())
             self.setTransform(transform)
-        elif ort == 'left':
+        elif ort == "left":
             transform = QtGui.QTransform()
             transform.rotate(270)
             transform.scale(1, -1)
             transform.translate(-self.height(), -self.maxDim)
             self.setTransform(transform)
-        elif ort == 'right':
+        elif ort == "right":
             transform = QtGui.QTransform()
             transform.rotate(270)
             transform.translate(-self.height(), 0)
             self.setTransform(transform)
-        elif ort != 'bottom':
-            raise Exception("%s is not a valid orientation. Options are 'left', 'right', 'top', and 'bottom'" %str(ort))
-        
-        self.translate(self.tickSize/2., 0)
-    
+        elif ort != "bottom":
+            raise Exception(
+                "%s is not a valid orientation. Options are 'left', 'right', 'top', and 'bottom'" % str(ort)
+            )
+
+        self.translate(self.tickSize / 2.0, 0)
+
     def addTick(self, x, color=None, movable=True):
         ## public
         """
@@ -153,15 +203,15 @@ class TickSliderItem(GraphicsWidget):
                         white.
         movable         Specifies whether the tick is movable with the mouse.
         ==============  ==================================================================
-        """        
-        
+        """
+
         if color is None:
-            color = QtGui.QColor(255,255,255)
-        tick = Tick(self, [x*self.length, 0], color, movable, self.tickSize, pen=self.tickPen)
+            color = QtGui.QColor(255, 255, 255)
+        tick = Tick(self, [x * self.length, 0], color, movable, self.tickSize, pen=self.tickPen)
         self.ticks[tick] = x
         tick.setParentItem(self)
         return tick
-    
+
     def removeTick(self, tick):
         ## public
         """
@@ -171,71 +221,71 @@ class TickSliderItem(GraphicsWidget):
         tick.setParentItem(None)
         if self.scene() is not None:
             self.scene().removeItem(tick)
-    
+
     def tickMoved(self, tick, pos):
-        #print "tick changed"
+        # print "tick changed"
         ## Correct position of tick if it has left bounds.
         newX = min(max(0, pos.x()), self.length)
         pos.setX(newX)
         tick.setPos(pos)
         self.ticks[tick] = float(newX) / self.length
-    
+
     def tickMoveFinished(self, tick):
         pass
-    
+
     def tickClicked(self, tick, ev):
         if ev.button() == QtCore.Qt.RightButton:
             self.removeTick(tick)
-    
+
     def widgetLength(self):
-        if self.orientation in ['bottom', 'top']:
+        if self.orientation in ["bottom", "top"]:
             return self.width()
         else:
             return self.height()
-    
+
     def resizeEvent(self, ev):
         wlen = max(40, self.widgetLength())
-        self.setLength(wlen-self.tickSize-2)
+        self.setLength(wlen - self.tickSize - 2)
         self.setOrientation(self.orientation)
-        #bounds = self.scene().itemsBoundingRect()
-        #bounds.setLeft(min(-self.tickSize*0.5, bounds.left()))
-        #bounds.setRight(max(self.length + self.tickSize, bounds.right()))
-        #self.setSceneRect(bounds)
-        #self.fitInView(bounds, QtCore.Qt.KeepAspectRatio)
-        
+        # bounds = self.scene().itemsBoundingRect()
+        # bounds.setLeft(min(-self.tickSize*0.5, bounds.left()))
+        # bounds.setRight(max(self.length + self.tickSize, bounds.right()))
+        # self.setSceneRect(bounds)
+        # self.fitInView(bounds, QtCore.Qt.KeepAspectRatio)
+
     def setLength(self, newLen):
-        #private
+        # private
         for t, x in list(self.ticks.items()):
             t.setPos(x * newLen + 1, t.pos().y())
         self.length = float(newLen)
-        
-    #def mousePressEvent(self, ev):
-        #QtGui.QGraphicsView.mousePressEvent(self, ev)
-        #self.ignoreRelease = False
-        #for i in self.items(ev.pos()):
-            #if isinstance(i, Tick):
-                #self.ignoreRelease = True
-                #break
-        ##if len(self.items(ev.pos())) > 0:  ## Let items handle their own clicks
-            ##self.ignoreRelease = True
-        
-    #def mouseReleaseEvent(self, ev):
-        #QtGui.QGraphicsView.mouseReleaseEvent(self, ev)
-        #if self.ignoreRelease:
-            #return
-            
-        #pos = self.mapToScene(ev.pos())
-            
-        #if ev.button() == QtCore.Qt.LeftButton and self.allowAdd:
-            #if pos.x() < 0 or pos.x() > self.length:
-                #return
-            #if pos.y() < 0 or pos.y() > self.tickSize:
-                #return
-            #pos.setX(min(max(pos.x(), 0), self.length))
-            #self.addTick(pos.x()/self.length)
-        #elif ev.button() == QtCore.Qt.RightButton:
-            #self.showMenu(ev)
-            
+
+    # def mousePressEvent(self, ev):
+    # QtGui.QGraphicsView.mousePressEvent(self, ev)
+    # self.ignoreRelease = False
+    # for i in self.items(ev.pos()):
+    # if isinstance(i, Tick):
+    # self.ignoreRelease = True
+    # break
+    ##if len(self.items(ev.pos())) > 0:  ## Let items handle their own clicks
+    ##self.ignoreRelease = True
+
+    # def mouseReleaseEvent(self, ev):
+    # QtGui.QGraphicsView.mouseReleaseEvent(self, ev)
+    # if self.ignoreRelease:
+    # return
+
+    # pos = self.mapToScene(ev.pos())
+
+    # if ev.button() == QtCore.Qt.LeftButton and self.allowAdd:
+    # if pos.x() < 0 or pos.x() > self.length:
+    # return
+    # if pos.y() < 0 or pos.y() > self.tickSize:
+    # return
+    # pos.setX(min(max(pos.x(), 0), self.length))
+    # self.addTick(pos.x()/self.length)
+    # elif ev.button() == QtCore.Qt.RightButton:
+    # self.showMenu(ev)
+
     def mouseClickEvent(self, ev):
         if ev.button() == QtCore.Qt.LeftButton and self.allowAdd:
             pos = ev.pos()
@@ -244,31 +294,31 @@ class TickSliderItem(GraphicsWidget):
             if pos.y() < 0 or pos.y() > self.tickSize:
                 return
             pos.setX(min(max(pos.x(), 0), self.length))
-            self.addTick(pos.x()/self.length)
+            self.addTick(pos.x() / self.length)
         elif ev.button() == QtCore.Qt.RightButton:
             self.showMenu(ev)
 
-        #if  ev.button() == QtCore.Qt.RightButton:
-            #if self.moving:
-                #ev.accept()
-                #self.setPos(self.startPosition)
-                #self.moving = False
-                #self.sigMoving.emit(self)
-                #self.sigMoved.emit(self)
-            #else:
-                #pass
-                #self.view().tickClicked(self, ev)
-                ###remove
+        # if  ev.button() == QtCore.Qt.RightButton:
+        # if self.moving:
+        # ev.accept()
+        # self.setPos(self.startPosition)
+        # self.moving = False
+        # self.sigMoving.emit(self)
+        # self.sigMoved.emit(self)
+        # else:
+        # pass
+        # self.view().tickClicked(self, ev)
+        ###remove
 
     def hoverEvent(self, ev):
         if (not ev.isExit()) and ev.acceptClicks(QtCore.Qt.LeftButton):
             ev.acceptClicks(QtCore.Qt.RightButton)
             ## show ghost tick
-            #self.currentPen = fn.mkPen(255, 0,0)
-        #else:
-            #self.currentPen = self.pen
-        #self.update()
-        
+            # self.currentPen = fn.mkPen(255, 0,0)
+        # else:
+        # self.currentPen = self.pen
+        # self.update()
+
     def showMenu(self, ev):
         pass
 
@@ -287,7 +337,7 @@ class TickSliderItem(GraphicsWidget):
         tick = self.getTick(tick)
         tick.color = color
         tick.update()
-        #tick.setBrush(QtGui.QBrush(QtGui.QColor(tick.color)))
+        # tick.setBrush(QtGui.QBrush(QtGui.QColor(tick.color)))
 
     def setTickValue(self, tick, val):
         ## public
@@ -311,7 +361,7 @@ class TickSliderItem(GraphicsWidget):
         tick.setPos(pos)
         self.ticks[tick] = val
         self.updateGradient()
-        
+
     def tickValue(self, tick):
         ## public
         """Return the value (from 0.0 to 1.0) of the specified tick.
@@ -325,7 +375,7 @@ class TickSliderItem(GraphicsWidget):
         """
         tick = self.getTick(tick)
         return self.ticks[tick]
-        
+
     def getTick(self, tick):
         ## public
         """Return the Tick object at the specified index.
@@ -340,14 +390,14 @@ class TickSliderItem(GraphicsWidget):
             tick = self.listTicks()[tick][0]
         return tick
 
-    #def mouseMoveEvent(self, ev):
-        #QtGui.QGraphicsView.mouseMoveEvent(self, ev)
+    # def mouseMoveEvent(self, ev):
+    # QtGui.QGraphicsView.mouseMoveEvent(self, ev)
 
     def listTicks(self):
         """Return a sorted list of all the Tick objects on the slider."""
         ## public
         ticks = list(self.ticks.items())
-        sortList(ticks, lambda a,b: cmp(a[1], b[1]))  ## see pyqtgraph.python2_3.sortList
+        sortList(ticks, lambda a, b: cmp(a[1], b[1]))  ## see pyqtgraph.python2_3.sortList
         return ticks
 
 
@@ -368,10 +418,10 @@ class GradientEditorItem(TickSliderItem):
     ================================ ===========================================================    
  
     """
-    
+
     sigGradientChanged = QtCore.Signal(object)
     sigGradientChangeFinished = QtCore.Signal(object)
-    
+
     def __init__(self, *args, **kargs):
         """
         Create a new GradientEditorItem. 
@@ -392,32 +442,32 @@ class GradientEditorItem(TickSliderItem):
         self.gradRect = QtGui.QGraphicsRectItem(QtCore.QRectF(0, self.rectSize, 100, self.rectSize))
         self.backgroundRect = QtGui.QGraphicsRectItem(QtCore.QRectF(0, -self.rectSize, 100, self.rectSize))
         self.backgroundRect.setBrush(QtGui.QBrush(QtCore.Qt.DiagCrossPattern))
-        self.colorMode = 'rgb'
-        
+        self.colorMode = "rgb"
+
         TickSliderItem.__init__(self, *args, **kargs)
-        
+
         self.colorDialog = QtGui.QColorDialog()
         self.colorDialog.setOption(QtGui.QColorDialog.ShowAlphaChannel, True)
         self.colorDialog.setOption(QtGui.QColorDialog.DontUseNativeDialog, True)
-        
+
         self.colorDialog.currentColorChanged.connect(self.currentColorChanged)
         self.colorDialog.rejected.connect(self.currentColorRejected)
         self.colorDialog.accepted.connect(self.currentColorAccepted)
-        
+
         self.backgroundRect.setParentItem(self)
         self.gradRect.setParentItem(self)
-        
+
         self.setMaxDim(self.rectSize + self.tickSize)
-        
-        self.rgbAction = QtGui.QAction('RGB', self)
+
+        self.rgbAction = QtGui.QAction("RGB", self)
         self.rgbAction.setCheckable(True)
-        self.rgbAction.triggered.connect(lambda: self.setColorMode('rgb'))
-        self.hsvAction = QtGui.QAction('HSV', self)
+        self.rgbAction.triggered.connect(lambda: self.setColorMode("rgb"))
+        self.hsvAction = QtGui.QAction("HSV", self)
         self.hsvAction.setCheckable(True)
-        self.hsvAction.triggered.connect(lambda: self.setColorMode('hsv'))
-            
+        self.hsvAction.triggered.connect(lambda: self.setColorMode("hsv"))
+
         self.menu = QtGui.QMenu()
-        
+
         ## build context menu of gradients
         l = self.length
         self.length = 100
@@ -442,15 +492,14 @@ class GradientEditorItem(TickSliderItem):
         self.menu.addSeparator()
         self.menu.addAction(self.rgbAction)
         self.menu.addAction(self.hsvAction)
-        
-        
+
         for t in list(self.ticks.keys()):
             self.removeTick(t)
-        self.addTick(0, QtGui.QColor(0,0,0), True)
-        self.addTick(1, QtGui.QColor(255,0,0), True)
-        self.setColorMode('rgb')
+        self.addTick(0, QtGui.QColor(0, 0, 0), True)
+        self.addTick(1, QtGui.QColor(255, 0, 0), True)
+        self.setColorMode("rgb")
         self.updateGradient()
-    
+
     def setOrientation(self, orientation):
         ## public
         """
@@ -466,93 +515,93 @@ class GradientEditorItem(TickSliderItem):
         """
         TickSliderItem.setOrientation(self, orientation)
         self.translate(0, self.rectSize)
-    
+
     def showMenu(self, ev):
-        #private
+        # private
         self.menu.popup(ev.screenPos().toQPoint())
-    
+
     def contextMenuClicked(self, b=None):
-        #private
-        #global Gradients
+        # private
+        # global Gradients
         act = self.sender()
         self.loadPreset(act.name)
-        
+
     @addGradientListToDocstring()
     def loadPreset(self, name):
         """
         Load a predefined gradient. Currently defined gradients are: 
-        """## TODO: provide image with names of defined gradients
-        
-        #global Gradients
+        """  ## TODO: provide image with names of defined gradients
+
+        # global Gradients
         self.restoreState(Gradients[name])
-    
+
     def setColorMode(self, cm):
         """
         Set the color mode for the gradient. Options are: 'hsv', 'rgb'
         
         """
-        
+
         ## public
-        if cm not in ['rgb', 'hsv']:
+        if cm not in ["rgb", "hsv"]:
             raise Exception("Unknown color mode %s. Options are 'rgb' and 'hsv'." % str(cm))
-        
+
         try:
             self.rgbAction.blockSignals(True)
             self.hsvAction.blockSignals(True)
-            self.rgbAction.setChecked(cm == 'rgb')
-            self.hsvAction.setChecked(cm == 'hsv')
+            self.rgbAction.setChecked(cm == "rgb")
+            self.hsvAction.setChecked(cm == "hsv")
         finally:
             self.rgbAction.blockSignals(False)
             self.hsvAction.blockSignals(False)
         self.colorMode = cm
         self.updateGradient()
-        
+
     def colorMap(self):
         """Return a ColorMap object representing the current state of the editor."""
-        if self.colorMode == 'hsv':
-            raise NotImplementedError('hsv colormaps not yet supported')
+        if self.colorMode == "hsv":
+            raise NotImplementedError("hsv colormaps not yet supported")
         pos = []
         color = []
-        for t,x in self.listTicks():
+        for t, x in self.listTicks():
             pos.append(x)
             c = t.color
             color.append([c.red(), c.green(), c.blue(), c.alpha()])
         return ColorMap(np.array(pos), np.array(color, dtype=np.ubyte))
-        
+
     def updateGradient(self):
-        #private
+        # private
         self.gradient = self.getGradient()
         self.gradRect.setBrush(QtGui.QBrush(self.gradient))
         self.sigGradientChanged.emit(self)
-        
+
     def setLength(self, newLen):
-        #private (but maybe public)
+        # private (but maybe public)
         TickSliderItem.setLength(self, newLen)
         self.backgroundRect.setRect(1, -self.rectSize, newLen, self.rectSize)
         self.gradRect.setRect(1, -self.rectSize, newLen, self.rectSize)
         self.updateGradient()
-        
+
     def currentColorChanged(self, color):
-        #private
+        # private
         if color.isValid() and self.currentTick is not None:
             self.setTickColor(self.currentTick, color)
             self.updateGradient()
-            
+
     def currentColorRejected(self):
-        #private
+        # private
         self.setTickColor(self.currentTick, self.currentTickColor)
         self.updateGradient()
-        
+
     def currentColorAccepted(self):
         self.sigGradientChangeFinished.emit(self)
-        
+
     def tickClicked(self, tick, ev):
-        #private
+        # private
         if ev.button() == QtCore.Qt.LeftButton:
             self.raiseColorDialog(tick)
         elif ev.button() == QtCore.Qt.RightButton:
             self.raiseTickContextMenu(tick, ev)
-            
+
     def raiseColorDialog(self, tick):
         if not tick.colorChangeAllowed:
             return
@@ -560,41 +609,42 @@ class GradientEditorItem(TickSliderItem):
         self.currentTickColor = tick.color
         self.colorDialog.setCurrentColor(tick.color)
         self.colorDialog.open()
-        
+
     def raiseTickContextMenu(self, tick, ev):
         self.tickMenu = TickMenu(tick, self)
         self.tickMenu.popup(ev.screenPos().toQPoint())
-    
+
     def tickMoved(self, tick, pos):
-        #private
+        # private
         TickSliderItem.tickMoved(self, tick, pos)
         self.updateGradient()
 
     def tickMoveFinished(self, tick):
         self.sigGradientChangeFinished.emit(self)
-    
 
     def getGradient(self):
         """Return a QLinearGradient object."""
-        g = QtGui.QLinearGradient(QtCore.QPointF(0,0), QtCore.QPointF(self.length,0))
-        if self.colorMode == 'rgb':
+        g = QtGui.QLinearGradient(QtCore.QPointF(0, 0), QtCore.QPointF(self.length, 0))
+        if self.colorMode == "rgb":
             ticks = self.listTicks()
-            g.setStops([(x, QtGui.QColor(t.color)) for t,x in ticks])
-        elif self.colorMode == 'hsv':  ## HSV mode is approximated for display by interpolating 10 points between each stop
+            g.setStops([(x, QtGui.QColor(t.color)) for t, x in ticks])
+        elif (
+            self.colorMode == "hsv"
+        ):  ## HSV mode is approximated for display by interpolating 10 points between each stop
             ticks = self.listTicks()
             stops = []
             stops.append((ticks[0][1], ticks[0][0].color))
-            for i in range(1,len(ticks)):
-                x1 = ticks[i-1][1]
+            for i in range(1, len(ticks)):
+                x1 = ticks[i - 1][1]
                 x2 = ticks[i][1]
-                dx = (x2-x1) / 10.
-                for j in range(1,10):
-                    x = x1 + dx*j
+                dx = (x2 - x1) / 10.0
+                for j in range(1, 10):
+                    x = x1 + dx * j
                     stops.append((x, self.getColor(x)))
                 stops.append((x2, self.getColor(x2)))
             g.setStops(stops)
         return g
-        
+
     def getColor(self, x, toQColor=True):
         """
         Return a color for a given value.
@@ -618,43 +668,43 @@ class GradientEditorItem(TickSliderItem):
                 return QtGui.QColor(c)  # always copy colors before handing them out
             else:
                 return (c.red(), c.green(), c.blue(), c.alpha())
-            
+
         x2 = ticks[0][1]
-        for i in range(1,len(ticks)):
+        for i in range(1, len(ticks)):
             x1 = x2
             x2 = ticks[i][1]
             if x1 <= x and x2 >= x:
                 break
-                
-        dx = (x2-x1)
+
+        dx = x2 - x1
         if dx == 0:
-            f = 0.
+            f = 0.0
         else:
-            f = (x-x1) / dx
-        c1 = ticks[i-1][0].color
+            f = (x - x1) / dx
+        c1 = ticks[i - 1][0].color
         c2 = ticks[i][0].color
-        if self.colorMode == 'rgb':
-            r = c1.red() * (1.-f) + c2.red() * f
-            g = c1.green() * (1.-f) + c2.green() * f
-            b = c1.blue() * (1.-f) + c2.blue() * f
-            a = c1.alpha() * (1.-f) + c2.alpha() * f
+        if self.colorMode == "rgb":
+            r = c1.red() * (1.0 - f) + c2.red() * f
+            g = c1.green() * (1.0 - f) + c2.green() * f
+            b = c1.blue() * (1.0 - f) + c2.blue() * f
+            a = c1.alpha() * (1.0 - f) + c2.alpha() * f
             if toQColor:
                 return QtGui.QColor(int(r), int(g), int(b), int(a))
             else:
-                return (r,g,b,a)
-        elif self.colorMode == 'hsv':
-            h1,s1,v1,_ = c1.getHsv()
-            h2,s2,v2,_ = c2.getHsv()
-            h = h1 * (1.-f) + h2 * f
-            s = s1 * (1.-f) + s2 * f
-            v = v1 * (1.-f) + v2 * f
+                return (r, g, b, a)
+        elif self.colorMode == "hsv":
+            h1, s1, v1, _ = c1.getHsv()
+            h2, s2, v2, _ = c2.getHsv()
+            h = h1 * (1.0 - f) + h2 * f
+            s = s1 * (1.0 - f) + s2 * f
+            v = v1 * (1.0 - f) + v2 * f
             c = QtGui.QColor()
-            c.setHsv(h,s,v)
+            c.setHsv(h, s, v)
             if toQColor:
                 return c
             else:
                 return (c.red(), c.green(), c.blue(), c.alpha())
-                    
+
     def getLookupTable(self, nPts, alpha=None):
         """
         Return an RGB(A) lookup table (ndarray). 
@@ -669,27 +719,27 @@ class GradientEditorItem(TickSliderItem):
         if alpha is None:
             alpha = self.usesAlpha()
         if alpha:
-            table = np.empty((nPts,4), dtype=np.ubyte)
+            table = np.empty((nPts, 4), dtype=np.ubyte)
         else:
-            table = np.empty((nPts,3), dtype=np.ubyte)
-            
+            table = np.empty((nPts, 3), dtype=np.ubyte)
+
         for i in range(nPts):
-            x = float(i)/(nPts-1)
+            x = float(i) / (nPts - 1)
             color = self.getColor(x, toQColor=False)
-            table[i] = color[:table.shape[1]]
-            
+            table[i] = color[: table.shape[1]]
+
         return table
-    
+
     def usesAlpha(self):
         """Return True if any ticks have an alpha < 255"""
-        
+
         ticks = self.listTicks()
         for t in ticks:
             if t[0].color.alpha() < 255:
                 return True
-            
+
         return False
-            
+
     def isLookupTrivial(self):
         """Return True if the gradient has exactly two stops in it: black at 0.0 and white at 1.0"""
         ticks = self.listTicks()
@@ -699,16 +749,15 @@ class GradientEditorItem(TickSliderItem):
             return False
         c1 = fn.colorTuple(ticks[0][0].color)
         c2 = fn.colorTuple(ticks[1][0].color)
-        if c1 != (0,0,0,255) or c2 != (255,255,255,255):
+        if c1 != (0, 0, 0, 255) or c2 != (255, 255, 255, 255):
             return False
         return True
 
-
     def mouseReleaseEvent(self, ev):
-        #private
+        # private
         TickSliderItem.mouseReleaseEvent(self, ev)
         self.updateGradient()
-        
+
     def addTick(self, x, color=None, movable=True, finish=True):
         """
         Add a tick to the gradient. Return the tick.
@@ -721,26 +770,23 @@ class GradientEditorItem(TickSliderItem):
         movable         Specifies whether the tick is movable with the mouse.
         ==============  ==================================================================
         """
-        
-        
+
         if color is None:
             color = self.getColor(x)
         t = TickSliderItem.addTick(self, x, color=color, movable=movable)
         t.colorChangeAllowed = True
         t.removeAllowed = True
-        
+
         if finish:
             self.sigGradientChangeFinished.emit(self)
         return t
-
 
     def removeTick(self, tick, finish=True):
         TickSliderItem.removeTick(self, tick)
         if finish:
             self.updateGradient()
             self.sigGradientChangeFinished.emit(self)
-        
-        
+
     def saveState(self):
         """
         Return a dictionary with parameters for rebuilding the gradient. Keys will include:
@@ -753,9 +799,9 @@ class GradientEditorItem(TickSliderItem):
         for t in self.ticks:
             c = t.color
             ticks.append((self.ticks[t], (c.red(), c.green(), c.blue(), c.alpha())))
-        state = {'mode': self.colorMode, 'ticks': ticks}
+        state = {"mode": self.colorMode, "ticks": ticks}
         return state
-        
+
     def restoreState(self, state):
         """
         Restore the gradient specified in state.
@@ -772,20 +818,20 @@ class GradientEditorItem(TickSliderItem):
         ==============  ====================================================================
         """
         ## public
-        self.setColorMode(state['mode'])
+        self.setColorMode(state["mode"])
         for t in list(self.ticks.keys()):
             self.removeTick(t, finish=False)
-        for t in state['ticks']:
+        for t in state["ticks"]:
             c = QtGui.QColor(*t[1])
             self.addTick(t[0], c, finish=False)
         self.updateGradient()
         self.sigGradientChangeFinished.emit(self)
-        
+
     def setColorMap(self, cm):
-        self.setColorMode('rgb')
+        self.setColorMode("rgb")
         for t in list(self.ticks.keys()):
             self.removeTick(t, finish=False)
-        colors = cm.getColors(mode='qcolor')
+        colors = cm.getColors(mode="qcolor")
         for i in range(len(cm.pos)):
             x = cm.pos[i]
             c = colors[i]
@@ -795,7 +841,7 @@ class GradientEditorItem(TickSliderItem):
 
 
 class Tick(QtGui.QGraphicsWidget):  ## NOTE: Making this a subclass of GraphicsObject instead results in
-                                    ## activating this bug: https://bugreports.qt-project.org/browse/PYSIDE-86
+    ## activating this bug: https://bugreports.qt-project.org/browse/PYSIDE-86
     ## private class
 
     # When making Tick a subclass of QtGui.QGraphicsObject as origin,
@@ -804,21 +850,21 @@ class Tick(QtGui.QGraphicsWidget):  ## NOTE: Making this a subclass of GraphicsO
 
     sigMoving = QtCore.Signal(object)
     sigMoved = QtCore.Signal(object)
-    
-    def __init__(self, view, pos, color, movable=True, scale=10, pen='w'):
+
+    def __init__(self, view, pos, color, movable=True, scale=10, pen="w"):
         self.movable = movable
         self.moving = False
         self.view = weakref.ref(view)
         self.scale = scale
         self.color = color
         self.pen = fn.mkPen(pen)
-        self.hoverPen = fn.mkPen(255,255,0)
+        self.hoverPen = fn.mkPen(255, 255, 0)
         self.currentPen = self.pen
-        self.pg = QtGui.QPainterPath(QtCore.QPointF(0,0))
-        self.pg.lineTo(QtCore.QPointF(-scale/3**0.5, scale))
-        self.pg.lineTo(QtCore.QPointF(scale/3**0.5, scale))
+        self.pg = QtGui.QPainterPath(QtCore.QPointF(0, 0))
+        self.pg.lineTo(QtCore.QPointF(-scale / 3 ** 0.5, scale))
+        self.pg.lineTo(QtCore.QPointF(scale / 3 ** 0.5, scale))
         self.pg.closeSubpath()
-        
+
         QtGui.QGraphicsWidget.__init__(self)
         self.setPos(pos[0], pos[1])
         if self.movable:
@@ -828,17 +874,16 @@ class Tick(QtGui.QGraphicsWidget):  ## NOTE: Making this a subclass of GraphicsO
 
     def boundingRect(self):
         return self.pg.boundingRect()
-    
+
     def shape(self):
         return self.pg
 
     def paint(self, p, *args):
         p.setRenderHints(QtGui.QPainter.Antialiasing)
         p.fillPath(self.pg, fn.mkBrush(self.color))
-        
+
         p.setPen(self.currentPen)
         p.drawPath(self.pg)
-
 
     def mouseDragEvent(self, ev):
         if self.movable and ev.button() == QtCore.Qt.LeftButton:
@@ -847,13 +892,13 @@ class Tick(QtGui.QGraphicsWidget):  ## NOTE: Making this a subclass of GraphicsO
                 self.cursorOffset = self.pos() - self.mapToParent(ev.buttonDownPos())
                 self.startPosition = self.pos()
             ev.accept()
-            
+
             if not self.moving:
                 return
-                
+
             newPos = self.cursorOffset + self.mapToParent(ev.pos())
             newPos.setY(self.pos().y())
-            
+
             self.setPos(newPos)
             self.view().tickMoved(self, newPos)
             self.sigMoving.emit(self)
@@ -863,7 +908,7 @@ class Tick(QtGui.QGraphicsWidget):  ## NOTE: Making this a subclass of GraphicsO
                 self.view().tickMoveFinished(self)
 
     def mouseClickEvent(self, ev):
-        if  ev.button() == QtCore.Qt.RightButton and self.moving:
+        if ev.button() == QtCore.Qt.RightButton and self.moving:
             ev.accept()
             self.setPos(self.startPosition)
             self.view().tickMoved(self, self.startPosition)
@@ -882,60 +927,58 @@ class Tick(QtGui.QGraphicsWidget):  ## NOTE: Making this a subclass of GraphicsO
         else:
             self.currentPen = self.pen
         self.update()
-        
+
 
 class TickMenu(QtGui.QMenu):
-    
     def __init__(self, tick, sliderItem):
         QtGui.QMenu.__init__(self)
-        
+
         self.tick = weakref.ref(tick)
         self.sliderItem = weakref.ref(sliderItem)
-        
+
         self.removeAct = self.addAction("Remove Tick", lambda: self.sliderItem().removeTick(tick))
         if (not self.tick().removeAllowed) or len(self.sliderItem().ticks) < 3:
             self.removeAct.setEnabled(False)
-            
+
         positionMenu = self.addMenu("Set Position")
         w = QtGui.QWidget()
         l = QtGui.QGridLayout()
         w.setLayout(l)
-        
+
         value = sliderItem.tickValue(tick)
         self.fracPosSpin = SpinBox()
         self.fracPosSpin.setOpts(value=value, bounds=(0.0, 1.0), step=0.01, decimals=2)
-        #self.dataPosSpin = SpinBox(value=dataVal)
-        #self.dataPosSpin.setOpts(decimals=3, siPrefix=True)
-                
-        l.addWidget(QtGui.QLabel("Position:"), 0,0)
+        # self.dataPosSpin = SpinBox(value=dataVal)
+        # self.dataPosSpin.setOpts(decimals=3, siPrefix=True)
+
+        l.addWidget(QtGui.QLabel("Position:"), 0, 0)
         l.addWidget(self.fracPosSpin, 0, 1)
-        #l.addWidget(QtGui.QLabel("Position (data units):"), 1, 0)
-        #l.addWidget(self.dataPosSpin, 1,1)
-        
-        #if self.sliderItem().dataParent is None:
+        # l.addWidget(QtGui.QLabel("Position (data units):"), 1, 0)
+        # l.addWidget(self.dataPosSpin, 1,1)
+
+        # if self.sliderItem().dataParent is None:
         #    self.dataPosSpin.setEnabled(False)
-        
+
         a = QtGui.QWidgetAction(self)
         a.setDefaultWidget(w)
-        positionMenu.addAction(a)        
-        
+        positionMenu.addAction(a)
+
         self.fracPosSpin.sigValueChanging.connect(self.fractionalValueChanged)
-        #self.dataPosSpin.valueChanged.connect(self.dataValueChanged)
-        
+        # self.dataPosSpin.valueChanged.connect(self.dataValueChanged)
+
         colorAct = self.addAction("Set Color", lambda: self.sliderItem().raiseColorDialog(self.tick()))
         if not self.tick().colorChangeAllowed:
             colorAct.setEnabled(False)
 
     def fractionalValueChanged(self, x):
         self.sliderItem().setTickValue(self.tick(), self.fracPosSpin.value())
-        #if self.sliderItem().dataParent is not None:
+        # if self.sliderItem().dataParent is not None:
         #    self.dataPosSpin.blockSignals(True)
         #    self.dataPosSpin.setValue(self.sliderItem().tickDataValue(self.tick()))
         #    self.dataPosSpin.blockSignals(False)
-            
-    #def dataValueChanged(self, val):
+
+    # def dataValueChanged(self, val):
     #    self.sliderItem().setTickValue(self.tick(), val, dataUnits=True)
     #    self.fracPosSpin.blockSignals(True)
     #    self.fracPosSpin.setValue(self.sliderItem().tickValue(self.tick()))
     #    self.fracPosSpin.blockSignals(False)
-
