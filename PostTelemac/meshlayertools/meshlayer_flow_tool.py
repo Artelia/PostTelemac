@@ -30,7 +30,7 @@ from qgis.PyQt import uic, QtCore, QtGui
 try:
     from qgis.PyQt.QtGui import QVBoxLayout
 except:
-    from qgis.PyQt.QtWidgets import QVBoxLayout
+    from qgis.PyQt.QtWidgets import QVBoxLayout, QApplication
 
 try:
     import shapely
