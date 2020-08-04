@@ -274,12 +274,14 @@ class runGetMax(QtCore.QObject):
                 if self.intensite:
                     val_intensite = np.power(np.power(u, 2) + np.power(v, 2), 0.5)
                     var_max = np.vstack((var_max, val_intensite))
+
                 if self.direction:
+                    np.seterr(divide='ignore', invalid='ignore')
                     val_direction = (
                         np.arctan2(u, v) * 360.0 / (2.0 * math.pi)
                         + np.minimum(np.arctan2(u, v), 0.0) / np.arctan2(u, v) * 360.0
                     )
-
+                    np.seterr(divide='warn', invalid='warn')
                     ## Dans la creation des directions il peut y avoir des divisions par 0
                     ## Ceci entraine la creation de nan (not a number)
                     ## On va alors remplacer tous ces nan par 0.
