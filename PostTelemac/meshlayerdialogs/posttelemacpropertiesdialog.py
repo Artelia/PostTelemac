@@ -421,7 +421,7 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
         if tempname:
             if extension is not None:
                 software = extension.split(" ")[0]
-            timestart = time.clock()
+            timestart = time.perf_counter()
             self.loaddirectory = os.path.dirname(tempname)
             QtCore.QSettings().setValue("posttelemac/lastdirectory", self.loaddirectory)
             self.meshlayer.clearParameters()
@@ -432,7 +432,7 @@ class PostTelemacPropertiesDialog(QDockWidget, FORM_CLASS):
                     self.tr("File ")
                     + str(nom)
                     + self.tr(" loaded in ")
-                    + str(round(time.clock() - timestart, 1))
+                    + str(round(time.perf_counter() - timestart, 1))
                     + " s"
                 )
         else:
