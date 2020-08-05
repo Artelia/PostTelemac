@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class PlotData(object):
     """
     Class used for managing plot data
@@ -15,10 +18,9 @@ class PlotData(object):
       - cached downsampling
       - cached min / max / hasnan / isuniform
     """
-
     def __init__(self):
         self.fields = {}
-
+        
         self.maxVals = {}  ## cache for max/min
         self.minVals = {}
 
@@ -32,17 +34,17 @@ class PlotData(object):
 
     def __getitem__(self, field):
         return self.fields[field]
-
+    
     def __setitem__(self, field, val):
         self.fields[field] = val
-
+    
     def max(self, field):
         mx = self.maxVals.get(field, None)
         if mx is None:
             mx = np.max(self[field])
             self.maxVals[field] = mx
         return mx
-
+    
     def min(self, field):
         mn = self.minVals.get(field, None)
         if mn is None:

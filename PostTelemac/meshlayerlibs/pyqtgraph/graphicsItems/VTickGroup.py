@@ -1,17 +1,14 @@
-if __name__ == "__main__":
+if __name__ == '__main__':
     import os, sys
-
     path = os.path.abspath(os.path.dirname(__file__))
-    sys.path.insert(0, os.path.join(path, "..", ".."))
+    sys.path.insert(0, os.path.join(path, '..', '..'))
 
 from ..Qt import QtGui, QtCore
 from .. import functions as fn
 import weakref
 from .UIGraphicsItem import UIGraphicsItem
 
-__all__ = ["VTickGroup"]
-
-
+__all__ = ['VTickGroup']
 class VTickGroup(UIGraphicsItem):
     """
     **Bases:** :class:`UIGraphicsItem <pyqtgraph.UIGraphicsItem>`
@@ -20,7 +17,6 @@ class VTickGroup(UIGraphicsItem):
     but have x coordinates relative to the data within the view.
     
     """
-
     def __init__(self, xvals=None, yrange=None, pen=None):
         """
         ==============  ===================================================================
@@ -37,24 +33,24 @@ class VTickGroup(UIGraphicsItem):
             yrange = [0, 1]
         if xvals is None:
             xvals = []
-
+            
         UIGraphicsItem.__init__(self)
-
+            
         if pen is None:
             pen = (200, 200, 200)
-
+            
         self.path = QtGui.QGraphicsPathItem()
-
+        
         self.ticks = []
         self.xvals = []
-        self.yrange = [0, 1]
+        self.yrange = [0,1]
         self.setPen(pen)
         self.setYRange(yrange)
         self.setXVals(xvals)
-
+        
     def setPen(self, *args, **kwargs):
         """Set the pen to use for drawing ticks. Can be specified as any arguments valid
-        for :func:`mkPen<pyqtgraph.mkPen>`"""
+        for :func:`mkPen<pyqtgraph.mkPen>`"""        
         self.pen = fn.mkPen(*args, **kwargs)
 
     def setXVals(self, vals):
@@ -67,35 +63,37 @@ class VTickGroup(UIGraphicsItem):
         """
         self.xvals = vals
         self.rebuildTicks()
-        # self.valid = False
-
+        #self.valid = False
+        
     def setYRange(self, vals):
         """Set the y range [low, high] that the ticks are drawn on. 0 is the bottom of 
         the view, 1 is the top."""
         self.yrange = vals
         self.rebuildTicks()
-
+        
     def dataBounds(self, *args, **kargs):
         return None  ## item should never affect view autoscaling
-
+            
     def yRange(self):
         return self.yrange
-
+            
     def rebuildTicks(self):
         self.path = QtGui.QPainterPath()
         yrange = self.yRange()
         for x in self.xvals:
-            self.path.moveTo(x, 0.0)
-            self.path.lineTo(x, 1.0)
-
+            self.path.moveTo(x, 0.)
+            self.path.lineTo(x, 1.)
+        
     def paint(self, p, *args):
         UIGraphicsItem.paint(self, p, *args)
-
+        
         br = self.boundingRect()
         h = br.height()
         br.setY(br.y() + self.yrange[0] * h)
-        br.setHeight(h - (1.0 - self.yrange[1]) * h)
+        br.setHeight((self.yrange[1] - self.yrange[0]) * h)
         p.translate(0, br.y())
         p.scale(1.0, br.height())
         p.setPen(self.pen)
         p.drawPath(self.path)
+
+    

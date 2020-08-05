@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file './pyqtgraph/canvas/TransformGuiTemplate.ui'
+# Form implementation generated from reading ui file 'pyqtgraph/canvas/TransformGuiTemplate.ui'
 #
-# Created: Mon Dec 23 10:10:52 2013
-#      by: pyside-uic 0.2.14 running on PySide 1.1.2
+# Created: Wed Nov  9 17:57:16 2016
+#      by: pyside-uic 0.2.15 running on PySide 1.2.2
 #
 # WARNING! All changes made in this file will be lost!
 
 from PySide import QtCore, QtGui
-
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -47,15 +46,10 @@ class Ui_Form(object):
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
-        Form.setWindowTitle(QtGui.QApplication.translate("Form", "Form", None, QtGui.QApplication.UnicodeUTF8))
-        self.translateLabel.setText(
-            QtGui.QApplication.translate("Form", "Translate:", None, QtGui.QApplication.UnicodeUTF8)
-        )
+        Form.setWindowTitle(QtGui.QApplication.translate("Form", "PyQtGraph", None, QtGui.QApplication.UnicodeUTF8))
+        self.translateLabel.setText(QtGui.QApplication.translate("Form", "Translate:", None, QtGui.QApplication.UnicodeUTF8))
         self.rotateLabel.setText(QtGui.QApplication.translate("Form", "Rotate:", None, QtGui.QApplication.UnicodeUTF8))
         self.scaleLabel.setText(QtGui.QApplication.translate("Form", "Scale:", None, QtGui.QApplication.UnicodeUTF8))
-        self.mirrorImageBtn.setText(
-            QtGui.QApplication.translate("Form", "Mirror", None, QtGui.QApplication.UnicodeUTF8)
-        )
-        self.reflectImageBtn.setText(
-            QtGui.QApplication.translate("Form", "Reflect", None, QtGui.QApplication.UnicodeUTF8)
-        )
+        self.mirrorImageBtn.setText(QtGui.QApplication.translate("Form", "Mirror", None, QtGui.QApplication.UnicodeUTF8))
+        self.reflectImageBtn.setText(QtGui.QApplication.translate("Form", "Reflect", None, QtGui.QApplication.UnicodeUTF8))
+

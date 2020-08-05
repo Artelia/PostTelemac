@@ -9,7 +9,6 @@
 
 from PySide import QtCore, QtGui
 
-
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
@@ -56,17 +55,12 @@ class Ui_Form(object):
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
-        Form.setWindowTitle(QtGui.QApplication.translate("Form", "Form", None, QtGui.QApplication.UnicodeUTF8))
+        Form.setWindowTitle(QtGui.QApplication.translate("Form", "PyQtGraph", None, QtGui.QApplication.UnicodeUTF8))
         self.loadBtn.setText(QtGui.QApplication.translate("Form", "Load..", None, QtGui.QApplication.UnicodeUTF8))
         self.saveBtn.setText(QtGui.QApplication.translate("Form", "Save", None, QtGui.QApplication.UnicodeUTF8))
         self.saveAsBtn.setText(QtGui.QApplication.translate("Form", "As..", None, QtGui.QApplication.UnicodeUTF8))
-        self.reloadBtn.setText(
-            QtGui.QApplication.translate("Form", "Reload Libs", None, QtGui.QApplication.UnicodeUTF8)
-        )
-        self.showChartBtn.setText(
-            QtGui.QApplication.translate("Form", "Flowchart", None, QtGui.QApplication.UnicodeUTF8)
-        )
-
+        self.reloadBtn.setText(QtGui.QApplication.translate("Form", "Reload Libs", None, QtGui.QApplication.UnicodeUTF8))
+        self.showChartBtn.setText(QtGui.QApplication.translate("Form", "Flowchart", None, QtGui.QApplication.UnicodeUTF8))
 
 from ..widgets.TreeWidget import TreeWidget
 from ..widgets.FeedbackButton import FeedbackButton

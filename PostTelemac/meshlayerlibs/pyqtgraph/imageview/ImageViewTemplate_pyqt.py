@@ -12,23 +12,16 @@ from ..Qt import QtCore, QtGui
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
-
     def _fromUtf8(s):
         return s
 
-
 try:
     _encoding = QtGui.QApplication.UnicodeUTF8
-
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig, _encoding)
-
-
 except AttributeError:
-
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
-
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -120,18 +113,18 @@ class Ui_Form(object):
         self.normXBlurSpin.setObjectName(_fromUtf8("normXBlurSpin"))
         self.gridLayout_2.addWidget(self.normXBlurSpin, 2, 2, 1, 1)
         self.label_8 = QtGui.QLabel(self.normGroup)
-        self.label_8.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
+        self.label_8.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_8.setObjectName(_fromUtf8("label_8"))
         self.gridLayout_2.addWidget(self.label_8, 2, 1, 1, 1)
         self.label_9 = QtGui.QLabel(self.normGroup)
-        self.label_9.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
+        self.label_9.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_9.setObjectName(_fromUtf8("label_9"))
         self.gridLayout_2.addWidget(self.label_9, 2, 3, 1, 1)
         self.normYBlurSpin = QtGui.QDoubleSpinBox(self.normGroup)
         self.normYBlurSpin.setObjectName(_fromUtf8("normYBlurSpin"))
         self.gridLayout_2.addWidget(self.normYBlurSpin, 2, 4, 1, 1)
         self.label_10 = QtGui.QLabel(self.normGroup)
-        self.label_10.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
+        self.label_10.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_10.setObjectName(_fromUtf8("label_10"))
         self.gridLayout_2.addWidget(self.label_10, 2, 5, 1, 1)
         self.normOffRadio = QtGui.QRadioButton(self.normGroup)
@@ -153,7 +146,7 @@ class Ui_Form(object):
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
-        Form.setWindowTitle(_translate("Form", "Form", None))
+        Form.setWindowTitle(_translate("Form", "PyQtGraph", None))
         self.roiBtn.setText(_translate("Form", "ROI", None))
         self.menuBtn.setText(_translate("Form", "Menu", None))
         self.normGroup.setTitle(_translate("Form", "Normalization", None))
@@ -169,7 +162,6 @@ class Ui_Form(object):
         self.normOffRadio.setText(_translate("Form", "Off", None))
         self.normTimeRangeCheck.setText(_translate("Form", "Time range", None))
         self.normFrameCheck.setText(_translate("Form", "Frame", None))
-
 
 from ..widgets.HistogramLUTWidget import HistogramLUTWidget
 from ..widgets.GraphicsView import GraphicsView

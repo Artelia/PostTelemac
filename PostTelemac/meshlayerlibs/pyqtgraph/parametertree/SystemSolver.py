@@ -1,5 +1,6 @@
 from ..pgcollections import OrderedDict
 import numpy as np
+import copy
 
 
 class SystemSolver(object):
@@ -70,9 +71,15 @@ class SystemSolver(object):
     defaultState = OrderedDict()
 
     def __init__(self):
-        self.__dict__["_vars"] = OrderedDict()
-        self.__dict__["_currentGets"] = set()
+        self.__dict__['_vars'] = OrderedDict()
+        self.__dict__['_currentGets'] = set()
         self.reset()
+        
+    def copy(self):
+        sys = type(self)()
+        sys.__dict__['_vars'] = copy.deepcopy(self.__dict__['_vars'])
+        sys.__dict__['_currentGets'] = copy.deepcopy(self.__dict__['_currentGets'])
+        return sys
 
     def reset(self):
         """
@@ -86,7 +93,7 @@ class SystemSolver(object):
         if name in self._vars:
             return self.get(name)
         raise AttributeError(name)
-
+    
     def __setattr__(self, name, value):
         """
         Set the value of a state variable. 
@@ -102,14 +109,14 @@ class SystemSolver(object):
             elif isinstance(value, tuple) and self._vars[name][1] is not np.ndarray:
                 self.set(name, None, value)
             else:
-                self.set(name, value, "fixed")
+                self.set(name, value, 'fixed')
         else:
             # also allow setting any other pre-existing attribute
             if hasattr(self, name):
                 object.__setattr__(self, name, value)
             else:
                 raise AttributeError(name)
-
+        
     def get(self, name):
         """
         Return the value for parameter *name*. 
@@ -120,12 +127,12 @@ class SystemSolver(object):
         If no value can be determined, then raise RuntimeError.
         """
         if name in self._currentGets:
-            raise RuntimeError("Cyclic dependency while calculating '%s'." % name)
+                raise RuntimeError("Cyclic dependency while calculating '%s'." % name)
         self._currentGets.add(name)
         try:
             v = self._vars[name][0]
             if v is None:
-                cfunc = getattr(self, "_" + name, None)
+                cfunc = getattr(self, '_' + name, None)
                 if cfunc is None:
                     v = None
                 else:
@@ -135,9 +142,9 @@ class SystemSolver(object):
                 v = self.set(name, v)
         finally:
             self._currentGets.remove(name)
-
+        
         return v
-
+    
     def set(self, name, value=None, constraint=True):
         """
         Set a variable *name* to *value*. The actual set value is returned (in
@@ -162,51 +169,62 @@ class SystemSolver(object):
         """
         var = self._vars[name]
         if constraint is None:
-            if "n" not in var[3]:
+            if 'n' not in var[3]:
                 raise TypeError("Empty constraints not allowed for '%s'" % name)
             var[2] = constraint
-        elif constraint == "fixed":
-            if "f" not in var[3]:
+        elif constraint == 'fixed':
+            if 'f' not in var[3]:
                 raise TypeError("Fixed constraints not allowed for '%s'" % name)
+            # This is nice, but not reliable because sometimes there is 1 DOF but we set 2
+            # values simultaneously. 
+            # if var[2] is None:
+            #     try:
+            #         self.get(name)
+            #         # has already been computed by the system; adding a fixed constraint
+            #         # would overspecify the system.
+            #         raise ValueError("Cannot fix parameter '%s'; system would become overconstrained." % name)
+            #     except RuntimeError:
+            #         pass
             var[2] = constraint
         elif isinstance(constraint, tuple):
-            if "r" not in var[3]:
+            if 'r' not in var[3]:
                 raise TypeError("Range constraints not allowed for '%s'" % name)
             assert len(constraint) == 2
             var[2] = constraint
         elif constraint is not True:
             raise TypeError("constraint must be None, True, 'fixed', or tuple. (got %s)" % constraint)
-
+        
         # type checking / massaging
-        if var[1] is np.ndarray:
+        if var[1] is np.ndarray and value is not None:
             value = np.array(value, dtype=float)
         elif var[1] in (int, float, tuple) and value is not None:
             value = var[1](value)
-
+            
         # constraint checks
         if constraint is True and not self.check_constraint(name, value):
             raise ValueError("Setting %s = %s violates constraint %s" % (name, value, var[2]))
 
         # invalidate other dependent values
-        if var[0] is not None:
-            # todo: we can make this more clever..(and might need to)
+        if var[0] is not None or value is None:
+            # todo: we can make this more clever..(and might need to) 
             # we just know that a value of None cannot have dependencies
-            # (because if anyone else had asked for this value, it wouldn't be
+            # (because if anyone else had asked for this value, it wouldn't be 
             # None anymore)
             self.resetUnfixed()
-
+            
         var[0] = value
         return value
-
+    
     def check_constraint(self, name, value):
         c = self._vars[name][2]
         if c is None or value is None:
             return True
         if isinstance(c, tuple):
-            return (c[0] is None or c[0] <= value) and (c[1] is None or c[1] >= value)
+            return ((c[0] is None or c[0] <= value) and
+                    (c[1] is None or c[1] >= value))
         else:
             return value == c
-
+    
     def saveState(self):
         """
         Return a serializable description of the solver's current state.
@@ -215,7 +233,7 @@ class SystemSolver(object):
         for name, var in self._vars.items():
             state[name] = (var[0], var[2])
         return state
-
+    
     def restoreState(self, state):
         """
         Restore the state of all values and constraints in the solver.
@@ -223,31 +241,59 @@ class SystemSolver(object):
         self.reset()
         for name, var in state.items():
             self.set(name, var[0], var[1])
-
+    
     def resetUnfixed(self):
         """
         For any variable that does not have a fixed value, reset
         its value to None.
         """
         for var in self._vars.values():
-            if var[2] != "fixed":
+            if var[2] != 'fixed':
                 var[0] = None
-
+                
     def solve(self):
         for k in self._vars:
             getattr(self, k)
+                
+    def checkOverconstraint(self):
+        """Check whether the system is overconstrained. If so, return the name of
+        the first overconstrained parameter.
+
+        Overconstraints occur when any fixed parameter can be successfully computed by the system.
+        (Ideally, all parameters are either fixed by the user or constrained by the
+        system, but never both).
+        """
+        for k,v in self._vars.items():
+            if v[2] == 'fixed' and 'n' in v[3]:
+                oldval = v[:]
+                self.set(k, None, None)
+                try:
+                    self.get(k)
+                    return k
+                except RuntimeError:
+                    pass
+                finally:
+                    self._vars[k] = oldval
+
+        return False
+
+
+
 
     def __repr__(self):
         state = OrderedDict()
         for name, var in self._vars.items():
-            if var[2] == "fixed":
+            if var[2] == 'fixed':
                 state[name] = var[0]
-        state = ", ".join(["%s=%s" % (n, v) for n, v in state.items()])
+        state = ', '.join(["%s=%s" % (n, v) for n,v in state.items()])
         return "<%s %s>" % (self.__class__.__name__, state)
 
 
-if __name__ == "__main__":
 
+
+
+if __name__ == '__main__':
+    
     class Camera(SystemSolver):
         """
         Consider a simple SLR camera. The variables we will consider that 
@@ -295,40 +341,42 @@ if __name__ == "__main__":
         is exactly what we will implement in this example class.
         """
 
-        defaultState = OrderedDict(
-            [
-                # Field stop aperture
-                ("aperture", [None, float, None, "nf"]),
-                # Duration that shutter is held open.
-                ("shutter", [None, float, None, "nf"]),
-                # ISO (sensitivity) value. 100, 200, 400, 800, 1600..
-                ("iso", [None, int, None, "nf"]),
-                # Flash is a value indicating the brightness of the flash. A table
-                # is used to decide on "balanced" settings for each flash level:
-                #   0: no flash
-                #   1: s=1/60,  a=2.0, iso=100
-                #   2: s=1/60,  a=4.0, iso=100   ..and so on..
-                ("flash", [None, float, None, "nf"]),
-                # exposure is a value indicating how many stops brighter (+1) or
-                # darker (-1) the photographer would like the photo to appear from
-                # the 'balanced' settings indicated by the light meter (see below).
-                ("exposure", [None, float, None, "f"]),
-                # Let's define this as an external light meter (not affected by
-                # aperture) with logarithmic output. We arbitrarily choose the
-                # following settings as "well balanced" for each light meter value:
-                #   -1: s=1/60,  a=2.0, iso=100
-                #    0: s=1/60,  a=4.0, iso=100
-                #    1: s=1/120, a=4.0, iso=100    ..and so on..
-                # Note that the only allowed constraint mode is (f)ixed, since the
-                # camera never _computes_ the light meter value, it only reads it.
-                ("lightMeter", [None, float, None, "f"]),
-                # Indicates the camera's final decision on how it thinks the photo will
-                # look, given the chosen settings. This value is _only_ determined
-                # automatically.
-                ("balance", [None, float, None, "n"]),
-            ]
-        )
-
+        defaultState = OrderedDict([
+            # Field stop aperture
+            ('aperture', [None, float, None, 'nf']),
+            # Duration that shutter is held open. 
+            ('shutter', [None, float, None, 'nf']),
+            # ISO (sensitivity) value. 100, 200, 400, 800, 1600.. 
+            ('iso', [None, int, None, 'nf']),
+            
+            # Flash is a value indicating the brightness of the flash. A table
+            # is used to decide on "balanced" settings for each flash level:
+            #   0: no flash
+            #   1: s=1/60,  a=2.0, iso=100
+            #   2: s=1/60,  a=4.0, iso=100   ..and so on..
+            ('flash', [None, float, None, 'nf']),
+            
+            # exposure is a value indicating how many stops brighter (+1) or
+            # darker (-1) the photographer would like the photo to appear from
+            # the 'balanced' settings indicated by the light meter (see below).
+            ('exposure', [None, float, None, 'f']),
+            
+            # Let's define this as an external light meter (not affected by 
+            # aperture) with logarithmic output. We arbitrarily choose the
+            # following settings as "well balanced" for each light meter value:
+            #   -1: s=1/60,  a=2.0, iso=100
+            #    0: s=1/60,  a=4.0, iso=100
+            #    1: s=1/120, a=4.0, iso=100    ..and so on..
+            # Note that the only allowed constraint mode is (f)ixed, since the
+            # camera never _computes_ the light meter value, it only reads it.
+            ('lightMeter', [None, float, None, 'f']),  
+            
+            # Indicates the camera's final decision on how it thinks the photo will 
+            # look, given the chosen settings. This value is _only_ determined
+            # automatically.
+            ('balance', [None, float, None, 'n']),
+            ])
+        
         def _aperture(self):
             """
             Determine aperture automatically under a variety of conditions.
@@ -336,19 +384,21 @@ if __name__ == "__main__":
             iso = self.iso
             exp = self.exposure
             light = self.lightMeter
-
+            
             try:
                 # shutter-priority mode
-                sh = self.shutter  # this raises RuntimeError if shutter has not
-                # been specified
-                ap = 4.0 * (sh / (1.0 / 60.0)) * (iso / 100.0) * (2 ** exp) * (2 ** light)
+                sh = self.shutter   # this raises RuntimeError if shutter has not
+                                   # been specified
+                ap = 4.0 * (sh / (1./60.)) * (iso / 100.) * (2 ** exp) * (2 ** light)
                 ap = np.clip(ap, 2.0, 16.0)
             except RuntimeError:
                 # program mode; we can select a suitable shutter
                 # value at the same time.
-                sh = 1.0 / 60.0
+                sh = (1./60.)
                 raise
-
+            
+            
+            
             return ap
 
         def _balance(self):
@@ -357,17 +407,18 @@ if __name__ == "__main__":
             sh = self.shutter
             ap = self.aperture
             fl = self.flash
-
-            bal = (4.0 / ap) * (sh / (1.0 / 60.0)) * (iso / 100.0) * (2 ** light)
+            
+            bal = (4.0 / ap) * (sh / (1./60.)) * (iso / 100.) * (2 ** light)
             return np.log2(bal)
-
+    
     camera = Camera()
-
+    
     camera.iso = 100
     camera.exposure = 0
     camera.lightMeter = 2
-    camera.shutter = 1.0 / 60.0
+    camera.shutter = 1./60.
     camera.flash = 0
-
+    
     camera.solve()
     print(camera.saveState())
+    

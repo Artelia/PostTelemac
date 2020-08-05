@@ -9,7 +9,6 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
@@ -57,13 +56,12 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
-        Form.setWindowTitle(_translate("Form", "Form"))
+        Form.setWindowTitle(_translate("Form", "PyQtGraph"))
         self.loadBtn.setText(_translate("Form", "Load.."))
         self.saveBtn.setText(_translate("Form", "Save"))
         self.saveAsBtn.setText(_translate("Form", "As.."))
         self.reloadBtn.setText(_translate("Form", "Reload Libs"))
         self.showChartBtn.setText(_translate("Form", "Flowchart"))
-
 
 from ..widgets.FeedbackButton import FeedbackButton
 from ..widgets.TreeWidget import TreeWidget

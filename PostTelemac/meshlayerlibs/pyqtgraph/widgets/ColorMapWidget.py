@@ -4,8 +4,7 @@ import numpy as np
 from ..pgcollections import OrderedDict
 from .. import functions as fn
 
-__all__ = ["ColorMapWidget"]
-
+__all__ = ['ColorMapWidget']
 
 class ColorMapWidget(ptree.ParameterTree):
     """
@@ -18,17 +17,16 @@ class ColorMapWidget(ptree.ParameterTree):
     For simpler color mapping using a single gradient editor, see 
     :class:`GradientWidget <pyqtgraph.GradientWidget>`
     """
-
     sigColorMapChanged = QtCore.Signal(object)
-
+    
     def __init__(self, parent=None):
         ptree.ParameterTree.__init__(self, parent=parent, showHeader=False)
-
+        
         self.params = ColorMapParameter()
         self.setParameters(self.params)
         self.params.sigTreeStateChanged.connect(self.mapChanged)
-
-        ## wrap a couple methods
+        
+        ## wrap a couple methods 
         self.setFields = self.params.setFields
         self.map = self.params.map
 
@@ -43,31 +41,46 @@ class ColorMapWidget(ptree.ParameterTree):
 
     def restoreState(self, state):
         self.params.restoreState(state)
+        
+    def addColorMap(self, name):
+        """Add a new color mapping and return the created parameter.
+        """
+        return self.params.addNew(name)
 
 
 class ColorMapParameter(ptree.types.GroupParameter):
     sigColorMapChanged = QtCore.Signal(object)
-
+    
     def __init__(self):
         self.fields = {}
-        ptree.types.GroupParameter.__init__(self, name="Color Map", addText="Add Mapping..", addList=[])
+        ptree.types.GroupParameter.__init__(self, name='Color Map', addText='Add Mapping..', addList=[])
         self.sigTreeStateChanged.connect(self.mapChanged)
-
+        
     def mapChanged(self):
         self.sigColorMapChanged.emit(self)
-
+        
     def addNew(self, name):
-        mode = self.fields[name].get("mode", "range")
-        if mode == "range":
+        fieldSpec = self.fields[name]
+        
+        mode = fieldSpec.get('mode', 'range')        
+        if mode == 'range':
             item = RangeColorMapItem(name, self.fields[name])
-        elif mode == "enum":
+        elif mode == 'enum':
             item = EnumColorMapItem(name, self.fields[name])
+
+        defaults = fieldSpec.get('defaults', {})
+        for k, v in defaults.items():
+            if k == 'colormap':
+                item.setValue(v)
+            else:
+                item[k] = v
+
         self.addChild(item)
         return item
-
+        
     def fieldNames(self):
-        return self.fields.keys()
-
+        return list(self.fields.keys())
+    
     def setFields(self, fields):
         """
         Set the list of fields to be used by the mapper. 
@@ -87,15 +100,20 @@ class ColorMapParameter(ptree.types.GroupParameter):
         values         List of unique values for which the user may assign a 
                        color when mode=='enum'. Optionally may specify a dict 
                        instead {value: name}.
+        defaults       Dict of default values to apply to color map items when
+                       they are created. Valid keys are 'colormap' to provide
+                       a default color map, or otherwise they a string or tuple
+                       indicating the parameter to be set, such as 'Operation' or
+                       ('Channels..', 'Red').
         ============== ============================================================
         """
         self.fields = OrderedDict(fields)
-        # self.fields = fields
-        # self.fields.sort()
+        #self.fields = fields
+        #self.fields.sort()
         names = self.fieldNames()
         self.setAddList(names)
-
-    def map(self, data, mode="byte"):
+        
+    def map(self, data, mode='byte'):
         """
         Return an array of colors corresponding to *data*. 
         
@@ -111,160 +129,140 @@ class ColorMapParameter(ptree.types.GroupParameter):
         if isinstance(data, dict):
             data = np.array([tuple(data.values())], dtype=[(k, float) for k in data.keys()])
 
-        colors = np.zeros((len(data), 4))
+        colors = np.zeros((len(data),4))
         for item in self.children():
-            if not item["Enabled"]:
+            if not item['Enabled']:
                 continue
-            chans = item.param("Channels..")
+            chans = item.param('Channels..')
             mask = np.empty((len(data), 4), dtype=bool)
-            for i, f in enumerate(["Red", "Green", "Blue", "Alpha"]):
-                mask[:, i] = chans[f]
-
+            for i,f in enumerate(['Red', 'Green', 'Blue', 'Alpha']):
+                mask[:,i] = chans[f]
+            
             colors2 = item.map(data)
-
-            op = item["Operation"]
-            if op == "Add":
+            
+            op = item['Operation']
+            if op == 'Add':
                 colors[mask] = colors[mask] + colors2[mask]
-            elif op == "Multiply":
+            elif op == 'Multiply':
                 colors[mask] *= colors2[mask]
-            elif op == "Overlay":
-                a = colors2[:, 3:4]
-                c3 = colors * (1 - a) + colors2 * a
-                c3[:, 3:4] = colors[:, 3:4] + (1 - colors[:, 3:4]) * a
+            elif op == 'Overlay':
+                a = colors2[:,3:4]
+                c3 = colors * (1-a) + colors2 * a
+                c3[:,3:4] = colors[:,3:4] + (1-colors[:,3:4]) * a
                 colors = c3
-            elif op == "Set":
-                colors[mask] = colors2[mask]
-
+            elif op == 'Set':
+                colors[mask] = colors2[mask]            
+                
         colors = np.clip(colors, 0, 1)
-        if mode == "byte":
+        if mode == 'byte':
             colors = (colors * 255).astype(np.ubyte)
-
+        
         return colors
-
+            
     def saveState(self):
         items = OrderedDict()
         for item in self:
-            itemState = item.saveState(filter="user")
-            itemState["field"] = item.fieldName
+            itemState = item.saveState(filter='user')
+            itemState['field'] = item.fieldName
             items[item.name()] = itemState
-        state = {"fields": self.fields, "items": items}
+        state = {'fields': self.fields, 'items': items}
         return state
 
     def restoreState(self, state):
-        if "fields" in state:
-            self.setFields(state["fields"])
-        for itemState in state["items"]:
-            item = self.addNew(itemState["field"])
+        if 'fields' in state:
+            self.setFields(state['fields'])
+        for name, itemState in state['items'].items():
+            item = self.addNew(itemState['field'])
             item.restoreState(itemState)
-
-
+        
+    
 class RangeColorMapItem(ptree.types.SimpleParameter):
-    mapType = "range"
-
+    mapType = 'range'
+    
     def __init__(self, name, opts):
         self.fieldName = name
-        units = opts.get("units", "")
-        ptree.types.SimpleParameter.__init__(
-            self,
-            name=name,
-            autoIncrementName=True,
-            type="colormap",
-            removable=True,
-            renamable=True,
+        units = opts.get('units', '')
+        ptree.types.SimpleParameter.__init__(self, 
+            name=name, autoIncrementName=True, type='colormap', removable=True, renamable=True, 
             children=[
-                # dict(name="Field", type='list', value=name, values=fields),
-                dict(name="Min", type="float", value=0.0, suffix=units, siPrefix=True),
-                dict(name="Max", type="float", value=1.0, suffix=units, siPrefix=True),
-                dict(name="Operation", type="list", value="Overlay", values=["Overlay", "Add", "Multiply", "Set"]),
-                dict(
-                    name="Channels..",
-                    type="group",
-                    expanded=False,
-                    children=[
-                        dict(name="Red", type="bool", value=True),
-                        dict(name="Green", type="bool", value=True),
-                        dict(name="Blue", type="bool", value=True),
-                        dict(name="Alpha", type="bool", value=True),
-                    ],
-                ),
-                dict(name="Enabled", type="bool", value=True),
-                dict(name="NaN", type="color"),
-            ],
-        )
+                #dict(name="Field", type='list', value=name, values=fields),
+                dict(name='Min', type='float', value=0.0, suffix=units, siPrefix=True),
+                dict(name='Max', type='float', value=1.0, suffix=units, siPrefix=True),
+                dict(name='Operation', type='list', value='Overlay', values=['Overlay', 'Add', 'Multiply', 'Set']),
+                dict(name='Channels..', type='group', expanded=False, children=[
+                    dict(name='Red', type='bool', value=True),
+                    dict(name='Green', type='bool', value=True),
+                    dict(name='Blue', type='bool', value=True),
+                    dict(name='Alpha', type='bool', value=True),
+                    ]),
+                dict(name='Enabled', type='bool', value=True),
+                dict(name='NaN', type='color'),
+            ])
 
     def map(self, data):
         data = data[self.fieldName]
-
-        scaled = np.clip((data - self["Min"]) / (self["Max"] - self["Min"]), 0, 1)
+        
+        scaled = np.clip((data-self['Min']) / (self['Max']-self['Min']), 0, 1)
         cmap = self.value()
-        colors = cmap.map(scaled, mode="float")
-
+        colors = cmap.map(scaled, mode='float')
+        
         mask = np.isnan(data) | np.isinf(data)
-        nanColor = self["NaN"]
-        nanColor = (nanColor.red() / 255.0, nanColor.green() / 255.0, nanColor.blue() / 255.0, nanColor.alpha() / 255.0)
+        nanColor = self['NaN']
+        nanColor = (nanColor.red()/255., nanColor.green()/255., nanColor.blue()/255., nanColor.alpha()/255.)
         colors[mask] = nanColor
-
-        return colors
-
+        
+        return colors        
 
 class EnumColorMapItem(ptree.types.GroupParameter):
-    mapType = "enum"
-
+    mapType = 'enum'
+    
     def __init__(self, name, opts):
         self.fieldName = name
-        vals = opts.get("values", [])
+        vals = opts.get('values', [])
         if isinstance(vals, list):
-            vals = OrderedDict([(v, str(v)) for v in vals])
-        childs = [{"name": v, "type": "color"} for v in vals]
-
+            vals = OrderedDict([(v,str(v)) for v in vals])
+        childs = [{'name': v, 'type': 'color'} for v in vals]
+        
         childs = []
-        for val, vname in vals.items():
-            ch = ptree.Parameter.create(name=vname, type="color")
+        for val,vname in vals.items():
+            ch = ptree.Parameter.create(name=vname, type='color')
             ch.maskValue = val
             childs.append(ch)
-
-        ptree.types.GroupParameter.__init__(
-            self,
-            name=name,
-            autoIncrementName=True,
-            removable=True,
-            renamable=True,
+        
+        ptree.types.GroupParameter.__init__(self, 
+            name=name, autoIncrementName=True, removable=True, renamable=True, 
             children=[
-                dict(name="Values", type="group", children=childs),
-                dict(name="Operation", type="list", value="Overlay", values=["Overlay", "Add", "Multiply", "Set"]),
-                dict(
-                    name="Channels..",
-                    type="group",
-                    expanded=False,
-                    children=[
-                        dict(name="Red", type="bool", value=True),
-                        dict(name="Green", type="bool", value=True),
-                        dict(name="Blue", type="bool", value=True),
-                        dict(name="Alpha", type="bool", value=True),
-                    ],
-                ),
-                dict(name="Enabled", type="bool", value=True),
-                dict(name="Default", type="color"),
-            ],
-        )
-
+                dict(name='Values', type='group', children=childs),
+                dict(name='Operation', type='list', value='Overlay', values=['Overlay', 'Add', 'Multiply', 'Set']),
+                dict(name='Channels..', type='group', expanded=False, children=[
+                    dict(name='Red', type='bool', value=True),
+                    dict(name='Green', type='bool', value=True),
+                    dict(name='Blue', type='bool', value=True),
+                    dict(name='Alpha', type='bool', value=True),
+                    ]),
+                dict(name='Enabled', type='bool', value=True),
+                dict(name='Default', type='color'),
+            ])
+    
     def map(self, data):
         data = data[self.fieldName]
         colors = np.empty((len(data), 4))
-        default = np.array(fn.colorTuple(self["Default"])) / 255.0
+        default = np.array(fn.colorTuple(self['Default'])) / 255.
         colors[:] = default
-
-        for v in self.param("Values"):
+        
+        for v in self.param('Values'):
             mask = data == v.maskValue
-            c = np.array(fn.colorTuple(v.value())) / 255.0
+            c = np.array(fn.colorTuple(v.value())) / 255.
             colors[mask] = c
-        # scaled = np.clip((data-self['Min']) / (self['Max']-self['Min']), 0, 1)
-        # cmap = self.value()
-        # colors = cmap.map(scaled, mode='float')
-
-        # mask = np.isnan(data) | np.isinf(data)
-        # nanColor = self['NaN']
-        # nanColor = (nanColor.red()/255., nanColor.green()/255., nanColor.blue()/255., nanColor.alpha()/255.)
-        # colors[mask] = nanColor
-
+        #scaled = np.clip((data-self['Min']) / (self['Max']-self['Min']), 0, 1)
+        #cmap = self.value()
+        #colors = cmap.map(scaled, mode='float')
+        
+        #mask = np.isnan(data) | np.isinf(data)
+        #nanColor = self['NaN']
+        #nanColor = (nanColor.red()/255., nanColor.green()/255., nanColor.blue()/255., nanColor.alpha()/255.)
+        #colors[mask] = nanColor
+        
         return colors
+
+

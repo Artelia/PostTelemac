@@ -9,7 +9,6 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
@@ -61,6 +60,5 @@ class Ui_Form(object):
         self.closeBtn.setText(_translate("Form", "Close"))
         self.label_3.setText(_translate("Form", "Export options"))
         self.copyBtn.setText(_translate("Form", "Copy"))
-
 
 from ..parametertree import ParameterTree

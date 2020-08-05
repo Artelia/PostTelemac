@@ -2,13 +2,13 @@ from ..Qt import QtCore, QtGui
 from ..widgets.TreeWidget import TreeWidget
 import os, weakref, re
 from .ParameterItem import ParameterItem
-
-# import functions as fn
-
+#import functions as fn
+        
+            
 
 class ParameterTree(TreeWidget):
     """Widget used to display or control data from a hierarchy of Parameters"""
-
+    
     def __init__(self, parent=None, showHeader=True):
         """
         ============== ========================================================
@@ -28,9 +28,11 @@ class ParameterTree(TreeWidget):
         self.header().setResizeMode(QtGui.QHeaderView.ResizeToContents)
         self.setHeaderHidden(not showHeader)
         self.itemChanged.connect(self.itemChangedEvent)
+        self.itemExpanded.connect(self.itemExpandedEvent)
+        self.itemCollapsed.connect(self.itemCollapsedEvent)
         self.lastSel = None
         self.setRootIsDecorated(False)
-
+        
     def setParameters(self, param, showTop=True):
         """
         Set the top-level :class:`Parameter <pyqtgraph.parametertree.Parameter>`
@@ -45,7 +47,7 @@ class ParameterTree(TreeWidget):
         """
         self.clear()
         self.addParameters(param, showTop=showTop)
-
+        
     def addParameters(self, param, root=None, depth=0, showTop=True):
         """
         Adds one top-level :class:`Parameter <pyqtgraph.parametertree.Parameter>`
@@ -66,22 +68,22 @@ class ParameterTree(TreeWidget):
             root = self.invisibleRootItem()
             ## Hide top-level item
             if not showTop:
-                item.setText(0, "")
-                item.setSizeHint(0, QtCore.QSize(1, 1))
-                item.setSizeHint(1, QtCore.QSize(1, 1))
+                item.setText(0, '')
+                item.setSizeHint(0, QtCore.QSize(1,1))
+                item.setSizeHint(1, QtCore.QSize(1,1))
                 depth -= 1
         root.addChild(item)
         item.treeWidgetChanged()
-
+            
         for ch in param:
-            self.addParameters(ch, root=item, depth=depth + 1)
+            self.addParameters(ch, root=item, depth=depth+1)
 
     def clear(self):
         """
         Remove all parameters from the tree.        
         """
-        self.invisibleRootItem().takeChildren()
-
+        self.invisibleRootItem().takeChildren()        
+            
     def focusNext(self, item, forward=True):
         """Give input focus to the next (or previous) item after *item*
         """
@@ -104,21 +106,21 @@ class ParameterTree(TreeWidget):
             if forward:
                 index = 0
             else:
-                index = root.childCount() - 1
+                index = root.childCount()-1
         else:
             if forward:
                 index = root.indexOfChild(startItem) + 1
             else:
                 index = root.indexOfChild(startItem) - 1
-
+            
         if forward:
             inds = list(range(index, root.childCount()))
         else:
             inds = list(range(index, -1, -1))
-
+            
         for i in inds:
             item = root.child(i)
-            if hasattr(item, "isFocusable") and item.isFocusable():
+            if hasattr(item, 'isFocusable') and item.isFocusable():
                 return item
             else:
                 item = self.nextFocusableChild(item, forward=forward)
@@ -128,13 +130,21 @@ class ParameterTree(TreeWidget):
 
     def contextMenuEvent(self, ev):
         item = self.currentItem()
-        if hasattr(item, "contextMenuEvent"):
+        if hasattr(item, 'contextMenuEvent'):
             item.contextMenuEvent(ev)
-
+            
     def itemChangedEvent(self, item, col):
-        if hasattr(item, "columnChangedEvent"):
+        if hasattr(item, 'columnChangedEvent'):
             item.columnChangedEvent(col)
-
+    
+    def itemExpandedEvent(self, item):
+        if hasattr(item, 'expandedChangedEvent'):
+            item.expandedChangedEvent(True)
+    
+    def itemCollapsedEvent(self, item):
+        if hasattr(item, 'expandedChangedEvent'):
+            item.expandedChangedEvent(False)
+            
     def selectionChanged(self, *args):
         sel = self.selectedItems()
         if len(sel) != 1:
@@ -145,10 +155,10 @@ class ParameterTree(TreeWidget):
             self.lastSel = None
             return
         self.lastSel = sel[0]
-        if hasattr(sel[0], "selected"):
+        if hasattr(sel[0], 'selected'):
             sel[0].selected(True)
         return TreeWidget.selectionChanged(self, *args)
-
+        
     def wheelEvent(self, ev):
         self.clearSelection()
         return TreeWidget.wheelEvent(self, ev)

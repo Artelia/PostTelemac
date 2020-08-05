@@ -5,7 +5,7 @@ from ..Qt import QtGui, QtCore
 import numpy as np
 from .. import getConfigOption
 
-__all__ = ["GraphItem"]
+__all__ = ['GraphItem']
 
 
 class GraphItem(GraphicsObject):
@@ -21,9 +21,9 @@ class GraphItem(GraphicsObject):
         self.adjacency = None
         self.pos = None
         self.picture = None
-        self.pen = "default"
+        self.pen = 'default'
         self.setData(**kwds)
-
+        
     def setData(self, **kwds):
         """
         Change the data displayed by the graph. 
@@ -53,22 +53,22 @@ class GraphItem(GraphicsObject):
                         etc.)
         ==============  =======================================================================
         """
-        if "adj" in kwds:
-            self.adjacency = kwds.pop("adj")
-            if self.adjacency.dtype.kind not in "iu":
+        if 'adj' in kwds:
+            self.adjacency = kwds.pop('adj')
+            if self.adjacency.dtype.kind not in 'iu':
                 raise Exception("adjacency array must have int or unsigned type.")
             self._update()
-        if "pos" in kwds:
-            self.pos = kwds["pos"]
+        if 'pos' in kwds:
+            self.pos = kwds['pos']
             self._update()
-        if "pen" in kwds:
-            self.setPen(kwds.pop("pen"))
+        if 'pen' in kwds:
+            self.setPen(kwds.pop('pen'))
             self._update()
-
-        if "symbolPen" in kwds:
-            kwds["pen"] = kwds.pop("symbolPen")
-        if "symbolBrush" in kwds:
-            kwds["brush"] = kwds.pop("symbolBrush")
+            
+        if 'symbolPen' in kwds:    
+            kwds['pen'] = kwds.pop('symbolPen')
+        if 'symbolBrush' in kwds:    
+            kwds['brush'] = kwds.pop('symbolBrush')
         self.scatter.setData(**kwds)
         self.informViewBoundsChanged()
 
@@ -99,7 +99,7 @@ class GraphItem(GraphicsObject):
         self.picture = QtGui.QPicture()
         if self.pen is None or self.pos is None or self.adjacency is None:
             return
-
+        
         p = QtGui.QPainter(self.picture)
         try:
             pts = self.pos[self.adjacency]
@@ -111,20 +111,16 @@ class GraphItem(GraphicsObject):
                     if np.any(pen != lastPen):
                         lastPen = pen
                         if pen.dtype.fields is None:
-                            p.setPen(fn.mkPen(color=(pen[0], pen[1], pen[2], pen[3]), width=1))
+                            p.setPen(fn.mkPen(color=(pen[0], pen[1], pen[2], pen[3]), width=1))                            
                         else:
-                            p.setPen(
-                                fn.mkPen(
-                                    color=(pen["red"], pen["green"], pen["blue"], pen["alpha"]), width=pen["width"]
-                                )
-                            )
+                            p.setPen(fn.mkPen(color=(pen['red'], pen['green'], pen['blue'], pen['alpha']), width=pen['width']))
                     p.drawLine(QtCore.QPointF(*pts[i][0]), QtCore.QPointF(*pts[i][1]))
             else:
-                if pen == "default":
-                    pen = getConfigOption("foreground")
+                if pen == 'default':
+                    pen = getConfigOption('foreground')
                 p.setPen(fn.mkPen(pen))
-                pts = pts.reshape((pts.shape[0] * pts.shape[1], pts.shape[2]))
-                path = fn.arrayToQPath(x=pts[:, 0], y=pts[:, 1], connect="pairs")
+                pts = pts.reshape((pts.shape[0]*pts.shape[1], pts.shape[2]))
+                path = fn.arrayToQPath(x=pts[:,0], y=pts[:,1], connect='pairs')
                 p.drawPath(path)
         finally:
             p.end()
@@ -132,15 +128,20 @@ class GraphItem(GraphicsObject):
     def paint(self, p, *args):
         if self.picture == None:
             self.generatePicture()
-        if getConfigOption("antialias") is True:
+        if getConfigOption('antialias') is True:
             p.setRenderHint(p.Antialiasing)
         self.picture.play(p)
-
+        
     def boundingRect(self):
         return self.scatter.boundingRect()
-
+        
     def dataBounds(self, *args, **kwds):
         return self.scatter.dataBounds(*args, **kwds)
-
+    
     def pixelPadding(self):
         return self.scatter.pixelPadding()
+        
+        
+        
+        
+

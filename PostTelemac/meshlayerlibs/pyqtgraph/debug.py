@@ -2,7 +2,7 @@
 """
 debug.py - Functions to aid in debugging 
 Copyright 2010  Luke Campagnola
-Distributed under MIT/X11 license. See license.txt for more infomation.
+Distributed under MIT/X11 license. See license.txt for more information.
 """
 
 from __future__ import print_function
@@ -15,13 +15,10 @@ from .util.mutex import Mutex
 from .util import cprint
 
 __ftraceDepth = 0
-
-
 def ftrace(func):
     """Decorator used for marking the beginning and end of function calls.
     Automatically indents nested calls.
     """
-
     def w(*args, **kargs):
         global __ftraceDepth
         pfx = "  " * __ftraceDepth
@@ -33,7 +30,6 @@ def ftrace(func):
             __ftraceDepth -= 1
         print(pfx + func.__name__ + " done")
         return rv
-
     return w
 
 
@@ -41,26 +37,25 @@ class Tracer(object):
     """
     Prints every function enter/exit. Useful for debugging crashes / lockups.
     """
-
     def __init__(self):
         self.count = 0
         self.stack = []
 
     def trace(self, frame, event, arg):
         self.count += 1
-        # If it has been a long time since we saw the top of the stack,
+        # If it has been a long time since we saw the top of the stack, 
         # print a reminder
         if self.count % 1000 == 0:
             print("----- current stack: -----")
             for line in self.stack:
                 print(line)
-        if event == "call":
-            line = "  " * len(self.stack) + ">> " + self.frameInfo(frame)
+        if event == 'call':
+            line = "  " * len(self.stack) + ">> " + self.frameInfo(frame) 
             print(line)
             self.stack.append(line)
-        elif event == "return":
+        elif event == 'return':
             self.stack.pop()
-            line = "  " * len(self.stack) + "<< " + self.frameInfo(frame)
+            line = "  " * len(self.stack) + "<< " + self.frameInfo(frame) 
             print(line)
             if len(self.stack) == 0:
                 self.count = 0
@@ -80,10 +75,10 @@ class Tracer(object):
         callfr = sys._getframe(3)
         callline = "%s %d" % (callfr.f_code.co_name, callfr.f_lineno)
         args, _, _, value_dict = inspect.getargvalues(fr)
-        if len(args) and args[0] == "self":
-            instance = value_dict.get("self", None)
+        if len(args) and args[0] == 'self':
+            instance = value_dict.get('self', None)
             if instance is not None:
-                cls = getattr(instance, "__class__", None)
+                cls = getattr(instance, '__class__', None)
                 if cls is not None:
                     funcname = cls.__name__ + "." + funcname
         return "%s: %s %s: %s" % (callline, filename, lineno, funcname)
@@ -91,48 +86,46 @@ class Tracer(object):
 
 def warnOnException(func):
     """Decorator that catches/ignores exceptions and prints a stack trace."""
-
     def w(*args, **kwds):
         try:
             func(*args, **kwds)
         except:
-            printExc("Ignored exception:")
-
+            printExc('Ignored exception:')
     return w
 
 
-def getExc(indent=4, prefix="|  ", skip=1):
+def getExc(indent=4, prefix='|  ', skip=1):
     lines = formatException(*sys.exc_info(), skip=skip)
     lines2 = []
     for l in lines:
-        lines2.extend(l.strip("\n").split("\n"))
-    lines3 = [" " * indent + prefix + l for l in lines2]
-    return "\n".join(lines3)
+        lines2.extend(l.strip('\n').split('\n'))
+    lines3 = [" "*indent + prefix + l for l in lines2]
+    return '\n'.join(lines3)
 
 
-def printExc(msg="", indent=4, prefix="|"):
+def printExc(msg='', indent=4, prefix='|'):
     """Print an error message followed by an indented exception backtrace
     (This function is intended to be called within except: blocks)"""
-    exc = getExc(indent, prefix + "  ", skip=2)
+    exc = getExc(indent, prefix + '  ', skip=2)
     print("[%s]  %s\n" % (time.strftime("%H:%M:%S"), msg))
-    print(" " * indent + prefix + "=" * 30 + ">>")
+    print(" "*indent + prefix + '='*30 + '>>')
     print(exc)
-    print(" " * indent + prefix + "=" * 30 + "<<")
+    print(" "*indent + prefix + '='*30 + '<<')
 
-
-def printTrace(msg="", indent=4, prefix="|"):
+    
+def printTrace(msg='', indent=4, prefix='|'):
     """Print an error message followed by an indented stack trace"""
     trace = backtrace(1)
-    # exc = getExc(indent, prefix + '  ')
+    #exc = getExc(indent, prefix + '  ')
     print("[%s]  %s\n" % (time.strftime("%H:%M:%S"), msg))
-    print(" " * indent + prefix + "=" * 30 + ">>")
-    for line in trace.split("\n"):
-        print(" " * indent + prefix + " " + line)
-    print(" " * indent + prefix + "=" * 30 + "<<")
-
+    print(" "*indent + prefix + '='*30 + '>>')
+    for line in trace.split('\n'):
+        print(" "*indent + prefix + " " + line)
+    print(" "*indent + prefix + '='*30 + '<<')
+    
 
 def backtrace(skip=0):
-    return "".join(traceback.format_stack()[: -(skip + 1)])
+    return ''.join(traceback.format_stack()[:-(skip+1)])    
 
 
 def formatException(exctype, value, tb, skip=0):
@@ -145,7 +138,7 @@ def formatException(exctype, value, tb, skip=0):
     signal.
     """
     lines = traceback.format_exception(exctype, value, tb)
-    lines = [lines[0]] + traceback.format_stack()[: -(skip + 1)] + ["  --- exception caught here ---\n"] + lines[1:]
+    lines = [lines[0]] + traceback.format_stack()[:-(skip+1)] + ['  --- exception caught here ---\n'] + lines[1:]
     return lines
 
 
@@ -155,18 +148,19 @@ def printException(exctype, value, traceback):
     Set `sys.excepthook = printException` to ensure that exceptions caught
     inside Qt signal handlers are printed with their full stack trace.
     """
-    print("".join(formatException(exctype, value, traceback, skip=1)))
+    print(''.join(formatException(exctype, value, traceback, skip=1)))
 
-
-def listObjs(regex="Q", typ=None):
+    
+def listObjs(regex='Q', typ=None):
     """List all objects managed by python gc with class name matching regex.
     Finds 'Q...' classes by default."""
     if typ is not None:
         return [x for x in gc.get_objects() if isinstance(x, typ)]
     else:
         return [x for x in gc.get_objects() if re.match(regex, type(x).__name__)]
+        
 
-
+    
 def findRefPath(startObj, endObj, maxLen=8, restart=True, seen={}, path=None, ignore=None):
     """Determine all paths of object references from startObj to endObj"""
     refs = []
@@ -177,32 +171,32 @@ def findRefPath(startObj, endObj, maxLen=8, restart=True, seen={}, path=None, ig
     ignore[id(sys._getframe())] = None
     ignore[id(path)] = None
     ignore[id(seen)] = None
-    prefix = " " * (8 - maxLen)
-    # print prefix + str(map(type, path))
+    prefix = " "*(8-maxLen)
+    #print prefix + str(map(type, path))
     prefix += " "
     if restart:
-        # gc.collect()
+        #gc.collect()
         seen.clear()
     gc.collect()
     newRefs = [r for r in gc.get_referrers(endObj) if id(r) not in ignore]
     ignore[id(newRefs)] = None
-    # fo = allFrameObjs()
-    # newRefs = []
-    # for r in gc.get_referrers(endObj):
-    # try:
-    # if r not in fo:
-    # newRefs.append(r)
-    # except:
-    # newRefs.append(r)
-
+    #fo = allFrameObjs()
+    #newRefs = []
+    #for r in gc.get_referrers(endObj):
+        #try:
+            #if r not in fo:
+                #newRefs.append(r)
+        #except:
+            #newRefs.append(r)            
+        
     for r in newRefs:
-        # print prefix+"->"+str(type(r))
-        if type(r).__name__ in ["frame", "function", "listiterator"]:
-            # print prefix+"  FRAME"
+        #print prefix+"->"+str(type(r))
+        if type(r).__name__ in ['frame', 'function', 'listiterator']:
+            #print prefix+"  FRAME"
             continue
         try:
-            if any([r is x for x in path]):
-                # print prefix+"  LOOP", objChainString([r]+path)
+            if any([r is x for x in  path]):
+                #print prefix+"  LOOP", objChainString([r]+path)
                 continue
         except:
             print(r)
@@ -210,10 +204,10 @@ def findRefPath(startObj, endObj, maxLen=8, restart=True, seen={}, path=None, ig
             raise
         if r is startObj:
             refs.append([r])
-            print(refPathString([startObj] + path))
+            print(refPathString([startObj]+path))
             continue
         if maxLen == 0:
-            # print prefix+"  END:", objChainString([r]+path)
+            #print prefix+"  END:", objChainString([r]+path)
             continue
         ## See if we have already searched this node.
         ## If not, recurse.
@@ -223,22 +217,22 @@ def findRefPath(startObj, endObj, maxLen=8, restart=True, seen={}, path=None, ig
             if cache[0] >= maxLen:
                 tree = cache[1]
                 for p in tree:
-                    print(refPathString(p + path))
+                    print(refPathString(p+path))
         except KeyError:
             pass
-
+        
         ignore[id(tree)] = None
         if tree is None:
-            tree = findRefPath(startObj, r, maxLen - 1, restart=False, path=[r] + path, ignore=ignore)
+            tree = findRefPath(startObj, r, maxLen-1, restart=False, path=[r]+path, ignore=ignore)
             seen[id(r)] = [maxLen, tree]
         ## integrate any returned results
         if len(tree) == 0:
-            # print prefix+"  EMPTY TREE"
+            #print prefix+"  EMPTY TREE"
             continue
         else:
             for p in tree:
-                refs.append(p + [r])
-        # seen[id(r)] = [maxLen, refs]
+                refs.append(p+[r])
+        #seen[id(r)] = [maxLen, refs]
     return refs
 
 
@@ -259,7 +253,7 @@ def objString(obj):
                 return obj[:]
         elif isinstance(obj, ndarray):
             return "<ndarray %s %s>" % (str(obj.dtype), str(obj.shape))
-        elif hasattr(obj, "__len__"):
+        elif hasattr(obj, '__len__'):
             if len(obj) > 5:
                 return "<%s [%s,...]>" % (type(obj).__name__, ",".join([type(o).__name__ for o in obj[:5]]))
             else:
@@ -269,24 +263,23 @@ def objString(obj):
     except:
         return str(type(obj))
 
-
 def refPathString(chain):
     """Given a list of adjacent objects in a reference path, print the 'natural' path
     names (ie, attribute names, keys, and indexes) that follow from one object to the next ."""
     s = objString(chain[0])
     i = 0
-    while i < len(chain) - 1:
-        # print " -> ", i
+    while i < len(chain)-1:
+        #print " -> ", i
         i += 1
-        o1 = chain[i - 1]
+        o1 = chain[i-1]
         o2 = chain[i]
         cont = False
         if isinstance(o1, list) or isinstance(o1, tuple):
             if any([o2 is x for x in o1]):
                 s += "[%d]" % o1.index(o2)
                 continue
-        # print "  not list"
-        if isinstance(o2, dict) and hasattr(o1, "__dict__") and o2 == o1.__dict__:
+        #print "  not list"
+        if isinstance(o2, dict) and hasattr(o1, '__dict__') and o2 == o1.__dict__:
             i += 1
             if i >= len(chain):
                 s += ".__dict__"
@@ -294,10 +287,10 @@ def refPathString(chain):
             o3 = chain[i]
             for k in o2:
                 if o2[k] is o3:
-                    s += ".%s" % k
+                    s += '.%s' % k
                     cont = True
                     continue
-        # print "  not __dict__"
+        #print "  not __dict__"
         if isinstance(o1, dict):
             try:
                 if o2 in o1:
@@ -310,88 +303,90 @@ def refPathString(chain):
                     s += "[%s]" % objString(k)
                     cont = True
                     continue
-        # print "  not dict"
-        # for k in dir(o1):  ## Not safe to request attributes like this.
-        # if getattr(o1, k) is o2:
-        # s += ".%s" % k
-        # cont = True
-        # continue
-        # print "  not attr"
+        #print "  not dict"
+        #for k in dir(o1):  ## Not safe to request attributes like this.
+            #if getattr(o1, k) is o2:
+                #s += ".%s" % k
+                #cont = True
+                #continue
+        #print "  not attr"
         if cont:
             continue
         s += " ? "
         sys.stdout.flush()
     return s
 
-
+    
 def objectSize(obj, ignore=None, verbose=False, depth=0, recursive=False):
     """Guess how much memory an object is using"""
-    ignoreTypes = ["MethodType", "UnboundMethodType", "BuiltinMethodType", "FunctionType", "BuiltinFunctionType"]
+    ignoreTypes = ['MethodType', 'UnboundMethodType', 'BuiltinMethodType', 'FunctionType', 'BuiltinFunctionType']
     ignoreTypes = [getattr(types, key) for key in ignoreTypes if hasattr(types, key)]
-    ignoreRegex = re.compile("(method-wrapper|Flag|ItemChange|Option|Mode)")
-
+    ignoreRegex = re.compile('(method-wrapper|Flag|ItemChange|Option|Mode)')
+    
+    
     if ignore is None:
         ignore = {}
-
-    indent = "  " * depth
-
+        
+    indent = '  '*depth
+    
     try:
         hash(obj)
         hsh = obj
     except:
         hsh = "%s:%d" % (str(type(obj)), id(obj))
-
+        
     if hsh in ignore:
         return 0
     ignore[hsh] = 1
-
+    
     try:
         size = sys.getsizeof(obj)
     except TypeError:
         size = 0
-
+        
     if isinstance(obj, ndarray):
         try:
             size += len(obj.data)
         except:
             pass
-
+            
+        
     if recursive:
         if type(obj) in [list, tuple]:
             if verbose:
-                print(indent + "list:")
+                print(indent+"list:")
             for o in obj:
-                s = objectSize(o, ignore=ignore, verbose=verbose, depth=depth + 1)
+                s = objectSize(o, ignore=ignore, verbose=verbose, depth=depth+1)
                 if verbose:
-                    print(indent + "  +", s)
+                    print(indent+'  +', s)
                 size += s
         elif isinstance(obj, dict):
             if verbose:
-                print(indent + "list:")
+                print(indent+"list:")
             for k in obj:
-                s = objectSize(obj[k], ignore=ignore, verbose=verbose, depth=depth + 1)
+                s = objectSize(obj[k], ignore=ignore, verbose=verbose, depth=depth+1)
                 if verbose:
-                    print(indent + "  +", k, s)
+                    print(indent+'  +', k, s)
                 size += s
-        # elif isinstance(obj, QtCore.QObject):
-        # try:
-        # childs = obj.children()
-        # if verbose:
-        # print indent+"Qt children:"
-        # for ch in childs:
-        # s = objectSize(obj, ignore=ignore, verbose=verbose, depth=depth+1)
-        # size += s
-        # if verbose:
-        # print indent + '  +', ch.objectName(), s
-
-        # except:
-        # pass
-        # if isinstance(obj, types.InstanceType):
+        #elif isinstance(obj, QtCore.QObject):
+            #try:
+                #childs = obj.children()
+                #if verbose:
+                    #print indent+"Qt children:"
+                #for ch in childs:
+                    #s = objectSize(obj, ignore=ignore, verbose=verbose, depth=depth+1)
+                    #size += s
+                    #if verbose:
+                        #print indent + '  +', ch.objectName(), s
+                    
+            #except:
+                #pass
+    #if isinstance(obj, types.InstanceType):
         gc.collect()
         if verbose:
-            print(indent + "attrs:")
+            print(indent+'attrs:')
         for k in dir(obj):
-            if k in ["__dict__"]:
+            if k in ['__dict__']:
                 continue
             o = getattr(obj, k)
             if type(o) in ignoreTypes:
@@ -399,22 +394,21 @@ def objectSize(obj, ignore=None, verbose=False, depth=0, recursive=False):
             strtyp = str(type(o))
             if ignoreRegex.search(strtyp):
                 continue
-            # if isinstance(o, types.ObjectType) and strtyp == "<type 'method-wrapper'>":
-            # continue
-
-            # if verbose:
-            # print indent, k, '?'
+            #if isinstance(o, types.ObjectType) and strtyp == "<type 'method-wrapper'>":
+                #continue
+            
+            #if verbose:
+                #print indent, k, '?'
             refs = [r for r in gc.get_referrers(o) if type(r) != types.FrameType]
             if len(refs) == 1:
-                s = objectSize(o, ignore=ignore, verbose=verbose, depth=depth + 1)
+                s = objectSize(o, ignore=ignore, verbose=verbose, depth=depth+1)
                 size += s
                 if verbose:
                     print(indent + "  +", k, s)
-            # else:
-            # if verbose:
-            # print indent + '  -', k, len(refs)
+            #else:
+                #if verbose:
+                    #print indent + '  -', k, len(refs)
     return size
-
 
 class GarbageWatcher(object):
     """
@@ -429,18 +423,17 @@ class GarbageWatcher(object):
         
     
     """
-
     def __init__(self):
         self.objs = weakref.WeakValueDictionary()
         self.allNames = []
-
+        
     def add(self, obj, name):
         self.objs[name] = obj
         self.allNames.append(name)
-
+        
     def __setitem__(self, name, obj):
         self.add(obj, name)
-
+        
     def check(self):
         """Print a list of all watched objects and whether they have been collected."""
         gc.collect()
@@ -451,9 +444,11 @@ class GarbageWatcher(object):
             alive.append(k)
         print("Deleted objects:", dead)
         print("Live objects:", alive)
-
+        
     def __getitem__(self, item):
         return self.objs[item]
+
+    
 
 
 class Profiler(object):
@@ -488,42 +483,38 @@ class Profiler(object):
 
     _profilers = os.environ.get("PYQTGRAPHPROFILE", None)
     _profilers = _profilers.split(",") if _profilers is not None else []
-
+    
     _depth = 0
     _msgs = []
     disable = False  # set this flag to disable all or individual profilers at runtime
-
+    
     class DisabledProfiler(object):
         def __init__(self, *args, **kwds):
             pass
-
         def __call__(self, *args):
             pass
-
         def finish(self):
             pass
-
         def mark(self, msg=None):
             pass
-
     _disabledProfiler = DisabledProfiler()
-
-    def __new__(cls, msg=None, disabled="env", delayed=True):
+        
+    def __new__(cls, msg=None, disabled='env', delayed=True):
         """Optionally create a new profiler based on caller's qualname.
         """
-        if disabled is True or (disabled == "env" and len(cls._profilers) == 0):
+        if disabled is True or (disabled == 'env' and len(cls._profilers) == 0):
             return cls._disabledProfiler
-
+                        
         # determine the qualified name of the caller function
         caller_frame = sys._getframe(1)
         try:
             caller_object_type = type(caller_frame.f_locals["self"])
-        except KeyError:  # we are in a regular function
-            qualifier = caller_frame.f_globals["__name__"].split(".", 1)[1]
-        else:  # we are in a method
+        except KeyError: # we are in a regular function
+            qualifier = caller_frame.f_globals["__name__"].split(".", 1)[-1]
+        else: # we are in a method
             qualifier = caller_object_type.__name__
         func_qualname = qualifier + "." + caller_frame.f_code.co_name
-        if disabled == "env" and func_qualname not in cls._profilers:  # don't do anything
+        if disabled == 'env' and func_qualname not in cls._profilers: # don't do anything
             return cls._disabledProfiler
         # create an actual profiling object
         cls._depth += 1
@@ -545,9 +536,10 @@ class Profiler(object):
             msg = str(self._markCount)
         self._markCount += 1
         newTime = ptime.time()
-        self._newMsg("  %s: %0.4f ms", msg, (newTime - self._lastTime) * 1000)
+        self._newMsg("  %s: %0.4f ms", 
+                     msg, (newTime - self._lastTime) * 1000)
         self._lastTime = newTime
-
+        
     def mark(self, msg=None):
         self(msg)
 
@@ -561,59 +553,57 @@ class Profiler(object):
 
     def __del__(self):
         self.finish()
-
+    
     def finish(self, msg=None):
         """Add a final message; flush the message list if no parent profiler.
         """
         if self._finished or self.disable:
-            return
+            return        
         self._finished = True
         if msg is not None:
             self(msg)
-        self._newMsg("< Exiting %s, total time: %0.4f ms", self._name, (ptime.time() - self._firstTime) * 1000)
+        self._newMsg("< Exiting %s, total time: %0.4f ms", 
+                     self._name, (ptime.time() - self._firstTime) * 1000)
         type(self)._depth -= 1
         if self._depth < 1:
             self.flush()
-
+        
     def flush(self):
         if self._msgs:
-            print("\n".join([m[0] % m[1] for m in self._msgs]))
+            print("\n".join([m[0]%m[1] for m in self._msgs]))
             type(self)._msgs = []
 
 
-def profile(code, name="profile_run", sort="cumulative", num=30):
+def profile(code, name='profile_run', sort='cumulative', num=30):
     """Common-use for cProfile"""
     cProfile.run(code, name)
     stats = pstats.Stats(name)
     stats.sort_stats(sort)
     stats.print_stats(num)
     return stats
-
-
+        
+        
+  
 #### Code for listing (nearly) all objects in the known universe
 #### http://utcc.utoronto.ca/~cks/space/blog/python/GetAllObjects
 # Recursively expand slist's objects
 # into olist, using seen to track
 # already processed objects.
 def _getr(slist, olist, first=True):
-    i = 0
+    i = 0 
     for e in slist:
-
+        
         oid = id(e)
         typ = type(e)
-        if (
-            oid in olist or typ is int
-        ):  ## or e in olist:     ## since we're excluding all ints, there is no longer a need to check for olist keys
+        if oid in olist or typ is int:    ## or e in olist:     ## since we're excluding all ints, there is no longer a need to check for olist keys
             continue
         olist[oid] = e
-        if first and (i % 1000) == 0:
+        if first and (i%1000) == 0:
             gc.collect()
         tl = gc.get_referents(e)
         if tl:
             _getr(tl, olist, first=False)
-        i += 1
-
-
+        i += 1        
 # The public function.
 def get_all_objects():
     """Return a list of all live Python objects (excluding int and long), not including the list itself."""
@@ -621,7 +611,7 @@ def get_all_objects():
     gcl = gc.get_objects()
     olist = {}
     _getr(gcl, olist)
-
+    
     del olist[id(olist)]
     del olist[id(gcl)]
     del olist[id(sys._getframe())]
@@ -633,8 +623,10 @@ def lookup(oid, objects=None):
     if objects is None:
         objects = get_all_objects()
     return objects[oid]
-
-
+        
+        
+                    
+        
 class ObjTracker(object):
     """
     Tracks all objects under the sun, reporting the changes between snapshots: what objects are created, deleted, and persistent.
@@ -655,34 +647,36 @@ class ObjTracker(object):
                                                
         describeObj(arrays[0])    ## See if we can determine who has references to this array
     """
-
-    allObjs = {}  ## keep track of all objects created and stored within class instances
+    
+    
+    allObjs = {} ## keep track of all objects created and stored within class instances
     allObjs[id(allObjs)] = None
-
+    
     def __init__(self):
-        self.startRefs = {}  ## list of objects that exist when the tracker is initialized {oid: weakref}
-        ##   (If it is not possible to weakref the object, then the value is None)
-        self.startCount = {}
-        self.newRefs = {}  ## list of objects that have been created since initialization
-        self.persistentRefs = {}  ## list of objects considered 'persistent' when the last diff() was called
+        self.startRefs = {}        ## list of objects that exist when the tracker is initialized {oid: weakref}
+                                   ##   (If it is not possible to weakref the object, then the value is None)
+        self.startCount = {}       
+        self.newRefs = {}          ## list of objects that have been created since initialization
+        self.persistentRefs = {}   ## list of objects considered 'persistent' when the last diff() was called
         self.objTypes = {}
-
+            
         ObjTracker.allObjs[id(self)] = None
         self.objs = [self.__dict__, self.startRefs, self.startCount, self.newRefs, self.persistentRefs, self.objTypes]
         self.objs.append(self.objs)
         for v in self.objs:
             ObjTracker.allObjs[id(v)] = None
-
+            
         self.start()
 
     def findNew(self, regex):
         """Return all objects matching regex that were considered 'new' when the last diff() was run."""
         return self.findTypes(self.newRefs, regex)
-
+    
     def findPersistent(self, regex):
         """Return all objects matching regex that were considered 'persistent' when the last diff() was run."""
         return self.findTypes(self.persistentRefs, regex)
-
+        
+    
     def start(self):
         """
         Remember the current set of objects as the comparison for all future calls to diff()
@@ -697,16 +691,16 @@ class ObjTracker(object):
             self.rememberRef(r)
         self.startCount.clear()
         self.startCount.update(count)
-        # self.newRefs.clear()
-        # self.newRefs.update(refs)
+        #self.newRefs.clear()
+        #self.newRefs.update(refs)
 
     def diff(self, **kargs):
         """
         Compute all differences between the current object set and the reference set.
         Print a set of reports for created, deleted, and persistent objects
         """
-        refs, count, objs = self.collect()  ## refs contains the list of ALL objects
-
+        refs, count, objs = self.collect()   ## refs contains the list of ALL objects
+        
         ## Which refs have disappeared since call to start()  (these are only displayed once, then forgotten.)
         delRefs = {}
         for i in list(self.startRefs.keys()):
@@ -719,21 +713,19 @@ class ObjTracker(object):
                 delRefs[i] = self.newRefs[i]
                 del self.newRefs[i]
                 self.forgetRef(delRefs[i])
-        # print "deleted:", len(delRefs)
-
+        #print "deleted:", len(delRefs)
+                
         ## Which refs have appeared since call to start() or diff()
-        persistentRefs = {}  ## created since start(), but before last diff()
-        createRefs = {}  ## created since last diff()
+        persistentRefs = {}      ## created since start(), but before last diff()
+        createRefs = {}          ## created since last diff()
         for o in refs:
-            if o not in self.startRefs:
-                if o not in self.newRefs:
-                    createRefs[o] = refs[o]  ## object has been created since last diff()
+            if o not in self.startRefs:       
+                if o not in self.newRefs:     
+                    createRefs[o] = refs[o]          ## object has been created since last diff()
                 else:
-                    persistentRefs[o] = refs[
-                        o
-                    ]  ## object has been created since start(), but before last diff() (persistent)
-        # print "new:", len(newRefs)
-
+                    persistentRefs[o] = refs[o]      ## object has been created since start(), but before last diff() (persistent)
+        #print "new:", len(newRefs)
+                
         ## self.newRefs holds the entire set of objects created since start()
         for r in self.newRefs:
             self.forgetRef(self.newRefs[r])
@@ -742,12 +734,13 @@ class ObjTracker(object):
         self.newRefs.update(createRefs)
         for r in self.newRefs:
             self.rememberRef(self.newRefs[r])
-        # print "created:", len(createRefs)
-
+        #print "created:", len(createRefs)
+        
         ## self.persistentRefs holds all objects considered persistent.
         self.persistentRefs.clear()
         self.persistentRefs.update(persistentRefs)
-
+        
+                
         print("----------- Count changes since start: ----------")
         c1 = count.copy()
         for k in self.startCount:
@@ -758,37 +751,38 @@ class ObjTracker(object):
             if c1[t] == 0:
                 continue
             num = "%d" % c1[t]
-            print("  " + num + " " * (10 - len(num)) + str(t))
-
+            print("  " + num + " "*(10-len(num)) + str(t))
+            
         print("-----------  %d Deleted since last diff: ------------" % len(delRefs))
         self.report(delRefs, objs, **kargs)
         print("-----------  %d Created since last diff: ------------" % len(createRefs))
         self.report(createRefs, objs, **kargs)
         print("-----------  %d Created since start (persistent): ------------" % len(persistentRefs))
         self.report(persistentRefs, objs, **kargs)
-
+        
+        
     def __del__(self):
         self.startRefs.clear()
         self.startCount.clear()
         self.newRefs.clear()
         self.persistentRefs.clear()
-
+        
         del ObjTracker.allObjs[id(self)]
         for v in self.objs:
             del ObjTracker.allObjs[id(v)]
-
+            
     @classmethod
     def isObjVar(cls, o):
         return type(o) is cls or id(o) in cls.allObjs
-
+            
     def collect(self):
         print("Collecting list of all objects...")
         gc.collect()
         objs = get_all_objects()
         frame = sys._getframe()
-        del objs[id(frame)]  ## ignore the current frame
+        del objs[id(frame)]  ## ignore the current frame 
         del objs[id(frame.f_code)]
-
+        
         ignoreTypes = [int]
         refs = {}
         count = {}
@@ -798,7 +792,7 @@ class ObjTracker(object):
             oid = id(o)
             if ObjTracker.isObjVar(o) or typ in ignoreTypes:
                 continue
-
+            
             try:
                 ref = weakref.ref(obj)
             except:
@@ -809,19 +803,20 @@ class ObjTracker(object):
             self.objTypes[oid] = typStr
             ObjTracker.allObjs[id(typStr)] = None
             count[typ] = count.get(typ, 0) + 1
-
+            
         print("All objects: %d   Tracked objects: %d" % (len(objs), len(refs)))
         return refs, count, objs
-
+        
     def forgetRef(self, ref):
         if ref is not None:
             del ObjTracker.allObjs[id(ref)]
-
+        
     def rememberRef(self, ref):
         ## Record the address of the weakref object so it is not included in future object counts.
         if ref is not None:
             ObjTracker.allObjs[id(ref)] = None
-
+            
+        
     def lookup(self, oid, ref, objs=None):
         if ref is None or ref() is None:
             try:
@@ -831,11 +826,12 @@ class ObjTracker(object):
         else:
             obj = ref()
         return obj
-
+                    
+                    
     def report(self, refs, allobjs=None, showIDs=False):
         if allobjs is None:
             allobjs = get_all_objects()
-
+        
         count = {}
         rev = {}
         for oid in refs:
@@ -847,17 +843,17 @@ class ObjTracker(object):
             if typ not in rev:
                 rev[typ] = []
             rev[typ].append(oid)
-            c = count.get(typ, [0, 0])
-            count[typ] = [c[0] + 1, c[1] + objectSize(obj)]
+            c = count.get(typ, [0,0])
+            count[typ] =  [c[0]+1, c[1]+objectSize(obj)]
         typs = list(count.keys())
         typs.sort(key=lambda a: count[a][1])
-
+        
         for t in typs:
             line = "  %d\t%d\t%s" % (count[t][0], count[t][1], t)
             if showIDs:
-                line += "\t" + ",".join(map(str, rev[t]))
+                line += "\t"+",".join(map(str,rev[t]))
             print(line)
-
+        
     def findTypes(self, refs, regex):
         allObjs = get_all_objects()
         ids = {}
@@ -867,8 +863,10 @@ class ObjTracker(object):
             if r.search(self.objTypes[k]):
                 objs.append(self.lookup(k, refs[k], allObjs))
         return objs
+        
 
-
+    
+    
 def describeObj(obj, depth=4, path=None, ignore=None):
     """
     Trace all reference paths backward, printing a list of different ways this object can be accessed.
@@ -877,24 +875,24 @@ def describeObj(obj, depth=4, path=None, ignore=None):
     if path is None:
         path = [obj]
     if ignore is None:
-        ignore = {}  ## holds IDs of objects used within the function.
+        ignore = {}   ## holds IDs of objects used within the function.
     ignore[id(sys._getframe())] = None
     ignore[id(path)] = None
     gc.collect()
     refs = gc.get_referrers(obj)
     ignore[id(refs)] = None
-    printed = False
+    printed=False
     for ref in refs:
         if id(ref) in ignore:
             continue
         if id(ref) in list(map(id, path)):
-            print("Cyclic reference: " + refPathString([ref] + path))
+            print("Cyclic reference: " + refPathString([ref]+path))
             printed = True
             continue
-        newPath = [ref] + path
+        newPath = [ref]+path
         if len(newPath) >= depth:
             refStr = refPathString(newPath)
-            if "[_]" not in refStr:  ## ignore '_' references generated by the interactive shell
+            if '[_]' not in refStr:           ## ignore '_' references generated by the interactive shell
                 print(refStr)
             printed = True
         else:
@@ -902,17 +900,17 @@ def describeObj(obj, depth=4, path=None, ignore=None):
             printed = True
     if not printed:
         print("Dead end: " + refPathString(path))
-
-
+        
+    
+    
 def typeStr(obj):
     """Create a more useful type string by making <instance> types report their class."""
     typ = type(obj)
-    if typ == getattr(types, "InstanceType", None):
+    if typ == getattr(types, 'InstanceType', None):
         return "<instance of %s>" % obj.__class__.__name__
     else:
         return str(typ)
-
-
+    
 def searchRefs(obj, *args):
     """Pseudo-interactive function for tracing references backward.
     **Arguments:**
@@ -942,37 +940,34 @@ def searchRefs(obj, *args):
     ignore[id(refs)] = None
     refs = [r for r in refs if id(r) not in ignore]
     for a in args:
-
-        # fo = allFrameObjs()
-        # refs = [r for r in refs if r not in fo]
-
+        
+        #fo = allFrameObjs()
+        #refs = [r for r in refs if r not in fo]
+        
         if type(a) is int:
             obj = refs[a]
             gc.collect()
             refs = gc.get_referrers(obj)
             ignore[id(refs)] = None
             refs = [r for r in refs if id(r) not in ignore]
-        elif a == "t":
+        elif a == 't':
             print(list(map(typeStr, refs)))
-        elif a == "i":
+        elif a == 'i':
             print(list(map(id, refs)))
-        elif a == "l":
-
+        elif a == 'l':
             def slen(o):
-                if hasattr(o, "__len__"):
+                if hasattr(o, '__len__'):
                     return len(o)
                 else:
                     return None
-
             print(list(map(slen, refs)))
-        elif a == "o":
+        elif a == 'o':
             print(obj)
-        elif a == "ro":
+        elif a == 'ro':
             return obj
-        elif a == "rr":
+        elif a == 'rr':
             return refs
-
-
+    
 def allFrameObjs():
     """Return list of frame objects in current stack. Useful if you want to ignore these objects in refernece searches"""
     f = sys._getframe()
@@ -980,13 +975,13 @@ def allFrameObjs():
     while f is not None:
         objs.append(f)
         objs.append(f.f_code)
-        # objs.append(f.f_locals)
-        # objs.append(f.f_globals)
-        # objs.append(f.f_builtins)
+        #objs.append(f.f_locals)
+        #objs.append(f.f_globals)
+        #objs.append(f.f_builtins)
         f = f.f_back
     return objs
-
-
+        
+    
 def findObj(regex):
     """Return a list of objects whose typeStr matches regex"""
     allObjs = get_all_objects()
@@ -997,22 +992,23 @@ def findObj(regex):
         if r.search(typeStr(obj)):
             objs.append(obj)
     return objs
+    
 
 
 def listRedundantModules():
     """List modules that have been imported more than once via different paths."""
     mods = {}
     for name, mod in sys.modules.items():
-        if not hasattr(mod, "__file__"):
+        if not hasattr(mod, '__file__'):
             continue
         mfile = os.path.abspath(mod.__file__)
-        if mfile[-1] == "c":
+        if mfile[-1] == 'c':
             mfile = mfile[:-1]
         if mfile in mods:
             print("module at %s has 2 names: %s, %s" % (mfile, name, mods[mfile]))
         else:
             mods[mfile] = name
-
+            
 
 def walkQObjectTree(obj, counts=None, verbose=False, depth=0):
     """
@@ -1021,9 +1017,9 @@ def walkQObjectTree(obj, counts=None, verbose=False, depth=0):
     immediately rather than stumbling upon them later.
     Prints a count of the objects encountered, for fun. (or is it?)
     """
-
+    
     if verbose:
-        print("  " * depth + typeStr(obj))
+        print("  "*depth + typeStr(obj))
     report = False
     if counts is None:
         counts = {}
@@ -1034,19 +1030,16 @@ def walkQObjectTree(obj, counts=None, verbose=False, depth=0):
     except KeyError:
         counts[typ] = 1
     for child in obj.children():
-        walkQObjectTree(child, counts, verbose, depth + 1)
-
+        walkQObjectTree(child, counts, verbose, depth+1)
+        
     return counts
 
-
 QObjCache = {}
-
-
 def qObjectReport(verbose=False):
     """Generate a report counting all QObjects and their types"""
     global qObjCache
     count = {}
-    for obj in findObj("PyQt"):
+    for obj in findObj('PyQt'):
         if isinstance(obj, QtCore.QObject):
             oid = id(obj)
             if oid not in QObjCache:
@@ -1059,69 +1052,67 @@ def qObjectReport(verbose=False):
             print("check obj", oid, str(QObjCache[oid]))
             if obj.parent() is None:
                 walkQObjectTree(obj, count, verbose)
-
+            
     typs = list(count.keys())
     typs.sort()
     for t in typs:
         print(count[t], "\t", t)
-
+        
 
 class PrintDetector(object):
     """Find code locations that print to stdout."""
-
     def __init__(self):
         self.stdout = sys.stdout
         sys.stdout = self
-
+    
     def remove(self):
         sys.stdout = self.stdout
-
+        
     def __del__(self):
         self.remove()
-
+    
     def write(self, x):
         self.stdout.write(x)
         traceback.print_stack()
-
+        
     def flush(self):
         self.stdout.flush()
 
 
 def listQThreads():
     """Prints Thread IDs (Qt's, not OS's) for all QThreads."""
-    thr = findObj("[Tt]hread")
+    thr = findObj('[Tt]hread')
     thr = [t for t in thr if isinstance(t, QtCore.QThread)]
     import sip
-
     for t in thr:
         print("--> ", t)
         print("     Qt ID: 0x%x" % sip.unwrapinstance(t))
 
 
-def pretty(data, indent=""):
+def pretty(data, indent=''):
     """Format nested dict/list/tuple structures into a more human-readable string
     This function is a bit better than pprint for displaying OrderedDicts.
     """
     ret = ""
     ind2 = indent + "    "
     if isinstance(data, dict):
-        ret = indent + "{\n"
-        for k, v in data.iteritems():
+        ret = indent+"{\n"
+        for k, v in data.items():
             ret += ind2 + repr(k) + ":  " + pretty(v, ind2).strip() + "\n"
-        ret += indent + "}\n"
+        ret += indent+"}\n"
     elif isinstance(data, list) or isinstance(data, tuple):
         s = repr(data)
         if len(s) < 40:
             ret += indent + s
         else:
             if isinstance(data, list):
-                d = "[]"
+                d = '[]'
             else:
-                d = "()"
-            ret = indent + d[0] + "\n"
+                d = '()'
+            ret = indent+d[0]+"\n"
             for i, v in enumerate(data):
                 ret += ind2 + str(i) + ":  " + pretty(v, ind2).strip() + "\n"
-            ret += indent + d[1] + "\n"
+            ret += indent+d[1]+"\n"
     else:
         ret += indent + repr(data)
     return ret
@@ -1132,7 +1123,6 @@ class ThreadTrace(object):
     Used to debug freezing by starting a new thread that reports on the 
     location of other threads periodically.
     """
-
     def __init__(self, interval=10.0):
         self.interval = interval
         self.lock = Mutex()
@@ -1156,15 +1146,30 @@ class ThreadTrace(object):
             with self.lock:
                 if self._stop is True:
                     return
-
+                    
             print("\n=============  THREAD FRAMES:  ================")
             for id, frame in sys._current_frames().items():
                 if id == threading.current_thread().ident:
                     continue
-                print("<< thread %d >>" % id)
+
+                # try to determine a thread name
+                try:
+                    name = threading._active.get(id, None)
+                except:
+                    name = None
+                if name is None:
+                    try:
+                        # QThread._names must be manually set by thread creators.
+                        name = QtCore.QThread._names.get(id)
+                    except:
+                        name = None
+                if name is None:
+                    name = "???"
+
+                print("<< thread %d \"%s\" >>" % (id, name))
                 traceback.print_stack(frame)
             print("===============================================\n")
-
+            
             time.sleep(self.interval)
 
 
@@ -1174,13 +1179,12 @@ class ThreadColor(object):
 
     *stream* must be 'stdout' or 'stderr'.
     """
-
     colors = {}
     lock = Mutex()
 
     def __init__(self, stream):
         self.stream = getattr(sys, stream)
-        self.err = stream == "stderr"
+        self.err = stream == 'stderr'
         setattr(sys, stream, self)
 
     def write(self, msg):
@@ -1197,3 +1201,23 @@ class ThreadColor(object):
             c = (len(self.colors) % 15) + 1
             self.colors[tid] = c
         return self.colors[tid]
+
+
+def enableFaulthandler():
+    """ Enable faulthandler for all threads. 
+    
+    If the faulthandler package is available, this function disables and then 
+    re-enables fault handling for all threads (this is necessary to ensure any
+    new threads are handled correctly), and returns True.
+
+    If faulthandler is not available, then returns False.
+    """
+    try:
+        import faulthandler
+        # necessary to disable first or else new threads may not be handled.
+        faulthandler.disable()
+        faulthandler.enable(all_threads=True)
+        return True
+    except ImportError:
+        return False
+

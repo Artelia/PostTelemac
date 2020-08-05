@@ -12,23 +12,16 @@ from PyQt4 import QtCore, QtGui
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
-
     def _fromUtf8(s):
         return s
 
-
 try:
     _encoding = QtGui.QApplication.UnicodeUTF8
-
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig, _encoding)
-
-
 except AttributeError:
-
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
-
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -76,13 +69,12 @@ class Ui_Form(object):
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
-        Form.setWindowTitle(_translate("Form", "Form", None))
+        Form.setWindowTitle(_translate("Form", "PyQtGraph", None))
         self.loadBtn.setText(_translate("Form", "Load..", None))
         self.saveBtn.setText(_translate("Form", "Save", None))
         self.saveAsBtn.setText(_translate("Form", "As..", None))
         self.reloadBtn.setText(_translate("Form", "Reload Libs", None))
         self.showChartBtn.setText(_translate("Form", "Flowchart", None))
-
 
 from ..widgets.TreeWidget import TreeWidget
 from ..widgets.FeedbackButton import FeedbackButton

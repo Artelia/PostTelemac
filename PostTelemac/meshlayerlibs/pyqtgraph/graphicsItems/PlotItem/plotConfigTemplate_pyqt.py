@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file './pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate.ui'
+# Form implementation generated from reading ui file 'pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate.ui'
 #
-# Created: Mon Dec 23 10:10:51 2013
-#      by: PyQt4 UI code generator 4.10
+# Created: Fri Mar 31 10:35:34 2017
+#      by: PyQt4 UI code generator 4.11.3
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -12,23 +12,16 @@ from PyQt4 import QtCore, QtGui
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
-
     def _fromUtf8(s):
         return s
 
-
 try:
     _encoding = QtGui.QApplication.UnicodeUTF8
-
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig, _encoding)
-
-
 except AttributeError:
-
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
-
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -91,19 +84,27 @@ class Ui_Form(object):
         self.downsampleSpin.setObjectName(_fromUtf8("downsampleSpin"))
         self.gridLayout_4.addWidget(self.downsampleSpin, 1, 1, 1, 1)
         self.transformGroup = QtGui.QFrame(Form)
-        self.transformGroup.setGeometry(QtCore.QRect(0, 0, 154, 79))
+        self.transformGroup.setGeometry(QtCore.QRect(10, 10, 171, 101))
         self.transformGroup.setObjectName(_fromUtf8("transformGroup"))
         self.gridLayout = QtGui.QGridLayout(self.transformGroup)
+        self.gridLayout.setMargin(0)
+        self.gridLayout.setSpacing(0)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
-        self.fftCheck = QtGui.QCheckBox(self.transformGroup)
-        self.fftCheck.setObjectName(_fromUtf8("fftCheck"))
-        self.gridLayout.addWidget(self.fftCheck, 0, 0, 1, 1)
-        self.logXCheck = QtGui.QCheckBox(self.transformGroup)
-        self.logXCheck.setObjectName(_fromUtf8("logXCheck"))
-        self.gridLayout.addWidget(self.logXCheck, 1, 0, 1, 1)
         self.logYCheck = QtGui.QCheckBox(self.transformGroup)
         self.logYCheck.setObjectName(_fromUtf8("logYCheck"))
         self.gridLayout.addWidget(self.logYCheck, 2, 0, 1, 1)
+        self.logXCheck = QtGui.QCheckBox(self.transformGroup)
+        self.logXCheck.setObjectName(_fromUtf8("logXCheck"))
+        self.gridLayout.addWidget(self.logXCheck, 1, 0, 1, 1)
+        self.fftCheck = QtGui.QCheckBox(self.transformGroup)
+        self.fftCheck.setObjectName(_fromUtf8("fftCheck"))
+        self.gridLayout.addWidget(self.fftCheck, 0, 0, 1, 1)
+        self.derivativeCheck = QtGui.QCheckBox(self.transformGroup)
+        self.derivativeCheck.setObjectName(_fromUtf8("derivativeCheck"))
+        self.gridLayout.addWidget(self.derivativeCheck, 3, 0, 1, 1)
+        self.phasemapCheck = QtGui.QCheckBox(self.transformGroup)
+        self.phasemapCheck.setObjectName(_fromUtf8("phasemapCheck"))
+        self.gridLayout.addWidget(self.phasemapCheck, 4, 0, 1, 1)
         self.pointsGroup = QtGui.QGroupBox(Form)
         self.pointsGroup.setGeometry(QtCore.QRect(10, 550, 234, 58))
         self.pointsGroup.setCheckable(True)
@@ -155,78 +156,32 @@ class Ui_Form(object):
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
-        Form.setWindowTitle(_translate("Form", "Form", None))
-        self.averageGroup.setToolTip(
-            _translate(
-                "Form",
-                "Display averages of the curves displayed in this plot. The parameter list allows you to choose parameters to average over (if any are available).",
-                None,
-            )
-        )
+        Form.setWindowTitle(_translate("Form", "PyQtGraph", None))
+        self.averageGroup.setToolTip(_translate("Form", "Display averages of the curves displayed in this plot. The parameter list allows you to choose parameters to average over (if any are available).", None))
         self.averageGroup.setTitle(_translate("Form", "Average", None))
-        self.clipToViewCheck.setToolTip(
-            _translate(
-                "Form",
-                "Plot only the portion of each curve that is visible. This assumes X values are uniformly spaced.",
-                None,
-            )
-        )
+        self.clipToViewCheck.setToolTip(_translate("Form", "Plot only the portion of each curve that is visible. This assumes X values are uniformly spaced.", None))
         self.clipToViewCheck.setText(_translate("Form", "Clip to View", None))
-        self.maxTracesCheck.setToolTip(
-            _translate(
-                "Form",
-                "If multiple curves are displayed in this plot, check this box to limit the number of traces that are displayed.",
-                None,
-            )
-        )
+        self.maxTracesCheck.setToolTip(_translate("Form", "If multiple curves are displayed in this plot, check this box to limit the number of traces that are displayed.", None))
         self.maxTracesCheck.setText(_translate("Form", "Max Traces:", None))
         self.downsampleCheck.setText(_translate("Form", "Downsample", None))
-        self.peakRadio.setToolTip(
-            _translate(
-                "Form",
-                "Downsample by drawing a saw wave that follows the min and max of the original data. This method produces the best visual representation of the data but is slower.",
-                None,
-            )
-        )
+        self.peakRadio.setToolTip(_translate("Form", "Downsample by drawing a saw wave that follows the min and max of the original data. This method produces the best visual representation of the data but is slower.", None))
         self.peakRadio.setText(_translate("Form", "Peak", None))
-        self.maxTracesSpin.setToolTip(
-            _translate(
-                "Form",
-                'If multiple curves are displayed in this plot, check "Max Traces" and set this value to limit the number of traces that are displayed.',
-                None,
-            )
-        )
-        self.forgetTracesCheck.setToolTip(
-            _translate(
-                "Form",
-                "If MaxTraces is checked, remove curves from memory after they are hidden (saves memory, but traces can not be un-hidden).",
-                None,
-            )
-        )
+        self.maxTracesSpin.setToolTip(_translate("Form", "If multiple curves are displayed in this plot, check \"Max Traces\" and set this value to limit the number of traces that are displayed.", None))
+        self.forgetTracesCheck.setToolTip(_translate("Form", "If MaxTraces is checked, remove curves from memory after they are hidden (saves memory, but traces can not be un-hidden).", None))
         self.forgetTracesCheck.setText(_translate("Form", "Forget hidden traces", None))
         self.meanRadio.setToolTip(_translate("Form", "Downsample by taking the mean of N samples.", None))
         self.meanRadio.setText(_translate("Form", "Mean", None))
-        self.subsampleRadio.setToolTip(
-            _translate(
-                "Form", "Downsample by taking the first of N samples. This method is fastest and least accurate.", None
-            )
-        )
+        self.subsampleRadio.setToolTip(_translate("Form", "Downsample by taking the first of N samples. This method is fastest and least accurate.", None))
         self.subsampleRadio.setText(_translate("Form", "Subsample", None))
-        self.autoDownsampleCheck.setToolTip(
-            _translate(
-                "Form",
-                "Automatically downsample data based on the visible range. This assumes X values are uniformly spaced.",
-                None,
-            )
-        )
+        self.autoDownsampleCheck.setToolTip(_translate("Form", "Automatically downsample data based on the visible range. This assumes X values are uniformly spaced.", None))
         self.autoDownsampleCheck.setText(_translate("Form", "Auto", None))
-        self.downsampleSpin.setToolTip(
-            _translate("Form", "Downsample data before plotting. (plot every Nth sample)", None)
-        )
+        self.downsampleSpin.setToolTip(_translate("Form", "Downsample data before plotting. (plot every Nth sample)", None))
         self.downsampleSpin.setSuffix(_translate("Form", "x", None))
-        self.fftCheck.setText(_translate("Form", "Power Spectrum (FFT)", None))
-        self.logXCheck.setText(_translate("Form", "Log X", None))
         self.logYCheck.setText(_translate("Form", "Log Y", None))
+        self.logXCheck.setText(_translate("Form", "Log X", None))
+        self.fftCheck.setText(_translate("Form", "Power Spectrum (FFT)", None))
+        self.derivativeCheck.setText(_translate("Form", "dy/dx", None))
+        self.phasemapCheck.setText(_translate("Form", "Y vs. Y\'", None))
         self.pointsGroup.setTitle(_translate("Form", "Points", None))
         self.autoPointsCheck.setText(_translate("Form", "Auto", None))
         self.xGridCheck.setText(_translate("Form", "Show X Grid", None))
@@ -234,3 +189,4 @@ class Ui_Form(object):
         self.label.setText(_translate("Form", "Opacity", None))
         self.alphaGroup.setTitle(_translate("Form", "Alpha", None))
         self.autoAlphaCheck.setText(_translate("Form", "Auto", None))
+

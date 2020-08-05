@@ -1,14 +1,14 @@
 from ..pgcollections import OrderedDict
 from .Node import Node
 
-
 def isNodeClass(cls):
     try:
         if not issubclass(cls, Node):
             return False
     except:
         return False
-    return hasattr(cls, "nodeName")
+    return hasattr(cls, 'nodeName')
+
 
 
 class NodeLibrary:
@@ -20,7 +20,7 @@ class NodeLibrary:
     def __init__(self):
         self.nodeList = OrderedDict()
         self.nodeTree = OrderedDict()
-
+        
     def addNodeType(self, nodeClass, paths, override=False):
         """
         Register a new node type. If the type's name is already in use,
@@ -37,11 +37,11 @@ class NodeLibrary:
         """
         if not isNodeClass(nodeClass):
             raise Exception("Object %s is not a Node subclass" % str(nodeClass))
-
+        
         name = nodeClass.nodeName
         if not override and name in self.nodeList:
             raise Exception("Node type name '%s' is already registered." % name)
-
+        
         self.nodeList[name] = nodeClass
         for path in paths:
             root = self.nodeTree
@@ -72,7 +72,7 @@ class NodeLibrary:
     @staticmethod
     def treeCopy(tree):
         copy = OrderedDict()
-        for k, v in tree.items():
+        for k,v in tree.items():
             if isNodeClass(v):
                 copy[k] = v
             else:

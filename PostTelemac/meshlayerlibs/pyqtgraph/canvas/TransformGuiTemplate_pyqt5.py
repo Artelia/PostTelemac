@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file './pyqtgraph/canvas/TransformGuiTemplate.ui'
+# Form implementation generated from reading ui file 'pyqtgraph/canvas/TransformGuiTemplate.ui'
 #
-# Created: Wed Mar 26 15:09:28 2014
-#      by: PyQt5 UI code generator 5.0.1
+# Created by: PyQt5 UI code generator 5.5.1
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -20,8 +18,8 @@ class Ui_Form(object):
         sizePolicy.setHeightForWidth(Form.sizePolicy().hasHeightForWidth())
         Form.setSizePolicy(sizePolicy)
         self.verticalLayout = QtWidgets.QVBoxLayout(Form)
-        self.verticalLayout.setSpacing(1)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout.setSpacing(1)
         self.verticalLayout.setObjectName("verticalLayout")
         self.translateLabel = QtWidgets.QLabel(Form)
         self.translateLabel.setObjectName("translateLabel")
@@ -48,9 +46,10 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
-        Form.setWindowTitle(_translate("Form", "Form"))
+        Form.setWindowTitle(_translate("Form", "PyQtGraph"))
         self.translateLabel.setText(_translate("Form", "Translate:"))
         self.rotateLabel.setText(_translate("Form", "Rotate:"))
         self.scaleLabel.setText(_translate("Form", "Scale:"))
         self.mirrorImageBtn.setText(_translate("Form", "Mirror"))
         self.reflectImageBtn.setText(_translate("Form", "Reflect"))
+
