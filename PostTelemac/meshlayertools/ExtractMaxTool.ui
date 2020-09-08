@@ -46,7 +46,7 @@
    <item row="1" column="0">
     <widget class="QCheckBox" name="checkBox_11">
      <property name="text">
-      <string>Compute real max velcity</string>
+      <string>Compute real max velocity</string>
      </property>
      <property name="checked">
       <bool>true</bool>
@@ -56,7 +56,7 @@
    <item row="2" column="0">
     <widget class="QCheckBox" name="checkBox_9">
      <property name="text">
-      <string>compute water arrival for H &gt;</string>
+      <string>Compute water arrival for H &gt;</string>
      </property>
      <property name="checked">
       <bool>true</bool>
@@ -73,7 +73,7 @@
    <item row="3" column="0">
     <widget class="QCheckBox" name="checkBox_10">
      <property name="text">
-      <string>compute flood duration for H &gt;</string>
+      <string>Compute flood duration for H &gt;</string>
      </property>
      <property name="checked">
       <bool>true</bool>

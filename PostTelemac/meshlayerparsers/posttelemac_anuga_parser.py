@@ -22,7 +22,7 @@ Versions :
 """
 
 import numpy as np
-import gdal
+import osgeo.gdal
 import subprocess
 from .posttelemac_abstract_parser import PostTelemacAbstractParser
 
