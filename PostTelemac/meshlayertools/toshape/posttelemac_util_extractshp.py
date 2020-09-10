@@ -364,10 +364,8 @@ class SelafinContour2Shp(QtCore.QObject):
         for collection in triplotcontourf.collections:
             vl1temp1 = QgsVectorLayer("Multipolygon?crs=" + str(self.slf_crs), "temporary_poly_outer ", "memory")
             pr1 = vl1temp1.dataProvider()
-            index1 = QgsSpatialIndex()
             vl2temp1 = QgsVectorLayer("Multipolygon?crs=" + str(self.slf_crs), "temporary_poly_inner ", "memory")
             pr2 = vl2temp1.dataProvider()
-            index2 = QgsSpatialIndex()
             vl1temp1.startEditing()
             vl2temp1.startEditing()
             for path in collection.get_paths():
@@ -382,6 +380,7 @@ class SelafinContour2Shp(QtCore.QObject):
                         else:
                             pr2.addFeatures([fet])
                             vl2temp1.commitChanges()
+        index2 = QgsSpatialIndex(vl2temp1.getFeatures())               
         return (vl1temp1, vl2temp1, index2)
 
     def get_outerinner(self, geom1):
@@ -432,7 +431,7 @@ class SelafinContour2Shp(QtCore.QObject):
                     geomshpapely = loads(f1.geometry().asWkb())
                     resulttemp = self.repairPolygon(geomshpapely)
                     if resulttemp != None:
-                        geom3 = [QgsPoint(point[0], point[1]) for point in list(resulttemp.exterior.coords)]
+                        geom3 = [QgsPointXY(point[0], point[1]) for point in list(resulttemp.exterior.coords)]
                         geom2 = QgsGeometry.fromPolygon([geom3])
                         f1geom = geom2
                         self.writeOutput(ctime() + " - geometry correction")
@@ -453,8 +452,8 @@ class SelafinContour2Shp(QtCore.QObject):
                 f2geom = allfeatures2[id].geometry()
                 if len(f2geom.validateGeometry()) != 0:
                     f2geom = f2geom.buffer(0.00, 5)
-
                 tab.append([f2geom.area(), f2geom])
+
             if len(tab) > 0:
                 tab.sort(reverse=True)
                 # Iteration pour enlever les inner des outers - coeur du script
@@ -462,7 +461,6 @@ class SelafinContour2Shp(QtCore.QObject):
                     try:
                         if int(k) % 100 == 0 and k != 0:
                             self.verboseOutput(self.slf_param[1], lvltemp1, f1.id(), counttotal, k, len(ids))
-
                         if tab[k][0] >= fet1surface:
                             continue
                         else:
@@ -514,9 +512,14 @@ class SelafinContour2Shp(QtCore.QObject):
     def do_ring(self, geom3):
         ring = []
         polygon = geom3.asPolygon()[0]
-        for i in range(len(polygon)):
-            ring.append(QgsPoint(polygon[i][0], polygon[i][1]))
-        ring.append(QgsPoint(polygon[0][0], polygon[0][1]))
+        if sys.version_info.major == 2:
+            for i in range(len(polygon)):
+                ring.append(QgsPoint(polygon[i][0], polygon[i][1]))
+            ring.append(QgsPoint(polygon[0][0], polygon[0][1]))
+        if sys.version_info.major == 3:
+            for i in range(len(polygon)):
+                ring.append(QgsPointXY(polygon[i][0], polygon[i][1]))
+            ring.append(QgsPointXY(polygon[0][0], polygon[0][1]))
         return ring
 
     def repairPolygon(self, geometry):

@@ -12,7 +12,7 @@ about= Post treatment of open Telemac results (and Anuga , HECRAS 2D as experime
 qgisMinimumVersion=3.0
 qgisMaximumVersion=3.99
 description=Post Treatment for Telemac (and Anuga , HECRAS 2D as experimental)
-version=1.1.4
+version=1.1.5
 author=Artelia Eau et Environnement
 email=patrice.verchere@arteliagroup.com
 
@@ -22,6 +22,7 @@ email=patrice.verchere@arteliagroup.com
 
 # Uncomment the following line and add your changelog:
 changelog= 
+    1.1.5 : Fix ToShape contour creation (rings were not process)
     1.1.4 : Fix Samplingtool
     1.1.3 : Update pyqtgraph
     1.1.2 : Fix deprecation warning and numpy true_divide warning
