@@ -20,22 +20,23 @@ Impl
 
  ***************************************************************************/
 """
-#unicode behaviour
+# unicode behaviour
 from __future__ import unicode_literals
-#from PyQt4 import uic, QtGui
+
+# from PyQt4 import uic, QtGui
 from qgis.PyQt import uic, QtCore, QtGui
+
 try:
     from qgis.PyQt.QtGui import QDialog
 except:
     from qgis.PyQt.QtWidgets import QDialog
-    
+
 import os
 
-FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__),'..', 'ui', 'XY_translation_dialog.ui'))
+FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "..", "ui", "XY_translation_dialog.ui"))
+
 
 class xyTranslationDialog(QDialog, FORM_CLASS):
-
     def __init__(self, parent=None):
         """Constructor."""
         super(xyTranslationDialog, self).__init__(parent)
@@ -44,21 +45,21 @@ class xyTranslationDialog(QDialog, FORM_CLASS):
         self.ytranslate = None
 
         self.finished.connect(self.dialogIsFinished)
-        
-    def setXandY(self,xtranslate = 0, ytranslate = 0):
+
+    def setXandY(self, xtranslate=0, ytranslate=0):
         self.xtranslate = xtranslate
         self.ytranslate = ytranslate
         self.doubleSpinBox_x.setValue(self.xtranslate)
         self.doubleSpinBox_y.setValue(self.ytranslate)
-        
+
     def dialogIsFinished(self):
         """
         return level list
         return color array like this : [stop in 0 < stop > 1 ,r,g,b]
         """
-        if (self.result() == 1):
+        if self.result() == 1:
             self.xtranslate = self.doubleSpinBox_x.value()
             self.ytranslate = self.doubleSpinBox_y.value()
-            return (self.xtranslate,self.ytranslate)
+            return (self.xtranslate, self.ytranslate)
         else:
-            return (None,None)
+            return (None, None)

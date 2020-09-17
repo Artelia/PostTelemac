@@ -37,6 +37,7 @@ class TriRefiner(object):
           interpolated values of the field at the refined triangulation nodes.
 
     """
+
     def __init__(self, triangulation):
         if not isinstance(triangulation, Triangulation):
             raise ValueError("Expected a Triangulation object")
@@ -52,11 +53,12 @@ class UniformTriRefiner(TriRefiner):
     triangulation : :class:`~matplotlib.tri.Triangulation`
                      The encapsulated triangulation (to be refined)
     """
-#    See Also
-#    --------
-#    :class:`~matplotlib.tri.CubicTriInterpolator` and
-#    :class:`~matplotlib.tri.TriAnalyzer`.
-#    """
+
+    #    See Also
+    #    --------
+    #    :class:`~matplotlib.tri.CubicTriInterpolator` and
+    #    :class:`~matplotlib.tri.TriAnalyzer`.
+    #    """
     def __init__(self, triangulation):
         TriRefiner.__init__(self, triangulation)
 
@@ -100,8 +102,7 @@ class UniformTriRefiner(TriRefiner):
         # triangulation.
         ancestors = np.arange(ntri, dtype=np.int32)
         for _ in range(subdiv):
-            refi_triangulation, ancestors = self._refine_triangulation_once(
-                refi_triangulation, ancestors)
+            refi_triangulation, ancestors = self._refine_triangulation_once(refi_triangulation, ancestors)
         refi_npts = refi_triangulation.x.shape[0]
         refi_triangles = refi_triangulation.triangles
 
@@ -110,7 +111,7 @@ class UniformTriRefiner(TriRefiner):
             # We have to initialize found_index with -1 because some nodes
             # may very well belong to no triangle at all, e.g., in case of
             # Delaunay Triangulation with DuplicatePointWarning.
-            found_index = - np.ones(refi_npts, dtype=np.int32)
+            found_index = -np.ones(refi_npts, dtype=np.int32)
             tri_mask = self._triangulation.mask
             if tri_mask is None:
                 found_index[refi_triangles] = np.repeat(ancestors, 3)
@@ -121,10 +122,8 @@ class UniformTriRefiner(TriRefiner):
                 # So we impose the numbering from masked ancestors first,
                 # then overwrite it with unmasked ancestor numbers.
                 ancestor_mask = tri_mask[ancestors]
-                found_index[refi_triangles[ancestor_mask, :]
-                            ] = np.repeat(ancestors[ancestor_mask], 3)
-                found_index[refi_triangles[~ancestor_mask, :]
-                            ] = np.repeat(ancestors[~ancestor_mask], 3)
+                found_index[refi_triangles[ancestor_mask, :]] = np.repeat(ancestors[ancestor_mask], 3)
+                found_index[refi_triangles[~ancestor_mask, :]] = np.repeat(ancestors[~ancestor_mask], 3)
             return refi_triangulation, found_index
         else:
             return refi_triangulation
@@ -167,18 +166,14 @@ class UniformTriRefiner(TriRefiner):
 
         """
         if triinterpolator is None:
-            interp = matplotlib.tri.CubicTriInterpolator(
-                self._triangulation, z)
+            interp = matplotlib.tri.CubicTriInterpolator(self._triangulation, z)
         else:
-            if not isinstance(triinterpolator,
-                              matplotlib.tri.TriInterpolator):
+            if not isinstance(triinterpolator, matplotlib.tri.TriInterpolator):
                 raise ValueError("Expected a TriInterpolator object")
             interp = triinterpolator
 
-        refi_tri, found_index = self.refine_triangulation(
-            subdiv=subdiv, return_tri_index=True)
-        refi_z = interp._interpolate_multikeys(
-            refi_tri.x, refi_tri.y, tri_index=found_index)[0]
+        refi_tri, found_index = self.refine_triangulation(subdiv=subdiv, return_tri_index=True)
+        refi_z = interp._interpolate_multikeys(refi_tri.x, refi_tri.y, tri_index=found_index)[0]
         return refi_tri, refi_z
 
     @staticmethod
@@ -217,14 +212,14 @@ class UniformTriRefiner(TriRefiner):
             if np.shape(ancestors) != (ntri,):
                 raise ValueError(
                     "Incompatible shapes provide for triangulation"
-                    ".masked_triangles and ancestors: {0} and {1}".format(
-                        np.shape(triangles), np.shape(ancestors)))
+                    ".masked_triangles and ancestors: {0} and {1}".format(np.shape(triangles), np.shape(ancestors))
+                )
 
         # Initiating tables refi_x and refi_y of the refined triangulation
         # points
         # hint: each apex is shared by 2 masked_triangles except the borders.
         borders = np.sum(neighbors == -1)
-        added_pts = (3*ntri + borders) / 2
+        added_pts = (3 * ntri + borders) / 2
         refi_npts = npts + added_pts
         refi_x = np.zeros(refi_npts)
         refi_y = np.zeros(refi_npts)
@@ -243,22 +238,24 @@ class UniformTriRefiner(TriRefiner):
         # (can be -1 if border edge)
         # For slave and master we will identify the apex pointing to the edge
         # start
-        edge_elems = np.ravel(np.vstack([np.arange(ntri, dtype=np.int32),
-                                         np.arange(ntri, dtype=np.int32),
-                                         np.arange(ntri, dtype=np.int32)]))
-        edge_apexes = np.ravel(np.vstack([np.zeros(ntri, dtype=np.int32),
-                                          np.ones(ntri, dtype=np.int32),
-                                          np.ones(ntri, dtype=np.int32)*2]))
+        edge_elems = np.ravel(
+            np.vstack(
+                [np.arange(ntri, dtype=np.int32), np.arange(ntri, dtype=np.int32), np.arange(ntri, dtype=np.int32)]
+            )
+        )
+        edge_apexes = np.ravel(
+            np.vstack(
+                [np.zeros(ntri, dtype=np.int32), np.ones(ntri, dtype=np.int32), np.ones(ntri, dtype=np.int32) * 2]
+            )
+        )
         edge_neighbors = neighbors[edge_elems, edge_apexes]
-        mask_masters = (edge_elems > edge_neighbors)
+        mask_masters = edge_elems > edge_neighbors
 
         # Identifying the "masters" and adding to refi_x, refi_y vec
         masters = edge_elems[mask_masters]
         apex_masters = edge_apexes[mask_masters]
-        x_add = (x[triangles[masters, apex_masters]] +
-                 x[triangles[masters, (apex_masters+1) % 3]]) * 0.5
-        y_add = (y[triangles[masters, apex_masters]] +
-                 y[triangles[masters, (apex_masters+1) % 3]]) * 0.5
+        x_add = (x[triangles[masters, apex_masters]] + x[triangles[masters, (apex_masters + 1) % 3]]) * 0.5
+        y_add = (y[triangles[masters, apex_masters]] + y[triangles[masters, (apex_masters + 1) % 3]]) * 0.5
         refi_x[npts:] = x_add
         refi_y[npts:] = y_add
 
@@ -277,11 +274,10 @@ class UniformTriRefiner(TriRefiner):
         new_pt_midside = np.empty([ntri, 3], dtype=np.int32)
         cum_sum = npts
         for imid in range(3):
-            mask_st_loc = (imid == apex_masters)
+            mask_st_loc = imid == apex_masters
             n_masters_loc = np.sum(mask_st_loc)
             elem_masters_loc = masters[mask_st_loc]
-            new_pt_midside[:, imid][elem_masters_loc] = np.arange(
-                n_masters_loc, dtype=np.int32) + cum_sum
+            new_pt_midside[:, imid][elem_masters_loc] = np.arange(n_masters_loc, dtype=np.int32) + cum_sum
             cum_sum += n_masters_loc
 
         # Now dealing with slave elems.
@@ -291,27 +287,17 @@ class UniformTriRefiner(TriRefiner):
         mask_slaves = np.logical_not(mask_masters)
         slaves = edge_elems[mask_slaves]
         slaves_masters = edge_neighbors[mask_slaves]
-        diff_table = np.abs(neighbors[slaves_masters, :] -
-                            np.outer(slaves, np.ones(3, dtype=np.int32)))
+        diff_table = np.abs(neighbors[slaves_masters, :] - np.outer(slaves, np.ones(3, dtype=np.int32)))
         slave_masters_apex = np.argmin(diff_table, axis=1)
         slaves_apex = edge_apexes[mask_slaves]
-        new_pt_midside[slaves, slaves_apex] = new_pt_midside[
-            slaves_masters, slave_masters_apex]
+        new_pt_midside[slaves, slaves_apex] = new_pt_midside[slaves_masters, slave_masters_apex]
 
         # Builds the 4 child masked_triangles
-        child_triangles = np.empty([ntri*4, 3], dtype=np.int32)
-        child_triangles[0::4, :] = np.vstack([
-            new_pt_corner[:, 0], new_pt_midside[:, 0],
-            new_pt_midside[:, 2]]).T
-        child_triangles[1::4, :] = np.vstack([
-            new_pt_corner[:, 1], new_pt_midside[:, 1],
-            new_pt_midside[:, 0]]).T
-        child_triangles[2::4, :] = np.vstack([
-            new_pt_corner[:, 2], new_pt_midside[:, 2],
-            new_pt_midside[:, 1]]).T
-        child_triangles[3::4, :] = np.vstack([
-            new_pt_midside[:, 0], new_pt_midside[:, 1],
-            new_pt_midside[:, 2]]).T
+        child_triangles = np.empty([ntri * 4, 3], dtype=np.int32)
+        child_triangles[0::4, :] = np.vstack([new_pt_corner[:, 0], new_pt_midside[:, 0], new_pt_midside[:, 2]]).T
+        child_triangles[1::4, :] = np.vstack([new_pt_corner[:, 1], new_pt_midside[:, 1], new_pt_midside[:, 0]]).T
+        child_triangles[2::4, :] = np.vstack([new_pt_corner[:, 2], new_pt_midside[:, 2], new_pt_midside[:, 1]]).T
+        child_triangles[3::4, :] = np.vstack([new_pt_midside[:, 0], new_pt_midside[:, 1], new_pt_midside[:, 2]]).T
         child_triangulation = Triangulation(refi_x, refi_y, child_triangles)
 
         # Builds the child mask

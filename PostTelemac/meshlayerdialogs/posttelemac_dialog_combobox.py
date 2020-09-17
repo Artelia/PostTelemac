@@ -32,41 +32,41 @@ The plug-in creates new attributes in the existing shapefile.
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 """
-from  qgis.PyQt import QtCore, QtGui, uic
-try:        #qt4
+from qgis.PyQt import QtCore, QtGui, uic
+
+try:  # qt4
     from qgis.PyQt.QtGui import QDialog, QComboBox, QVBoxLayout, QDialogButtonBox, QLabel
-except:     #qt5
-    from qgis.PyQt.QtWidgets import  QDialog, QComboBox, QVBoxLayout, QDialogButtonBox, QLabel
+except:  # qt5
+    from qgis.PyQt.QtWidgets import QDialog, QComboBox, QVBoxLayout, QDialogButtonBox, QLabel
 import os
 from qgis.core import *
 
 
 class postTelemacComboboxDialog(QDialog):
-    
-    def __init__(self,  parent = None):
+    def __init__(self, parent=None):
         super(postTelemacComboboxDialog, self).__init__(parent)
         # Set up the user interface from Designer.
         # After setupUI you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots - see
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
-        #self.setupUi(self)
+        # self.setupUi(self)
         self.layout = QVBoxLayout()
         self.label = QLabel()
         self.combobox = QComboBox()
         self.dlgbuttonbox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        
+
         self.layout.addWidget(self.label)
         self.layout.addWidget(self.combobox)
         self.layout.addWidget(self.dlgbuttonbox)
         self.setLayout(self.layout)
-        
+
         self.dlgbuttonbox.accepted.connect(self.accept)
         self.dlgbuttonbox.rejected.connect(self.reject)
-        
-        #self.loadvalues(ldp)
-        
-    def loadValues(self,ldp):
+
+        # self.loadvalues(ldp)
+
+    def loadValues(self, ldp):
 
         self.combobox.clear()
         self.combobox.addItems(ldp)

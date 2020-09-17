@@ -17,25 +17,27 @@
 ***************************************************************************
 """
 
-__author__ = 'Victor Olaya'
-__date__ = 'July 2013'
-__copyright__ = '(C) 2013, Victor Olaya'
+__author__ = "Victor Olaya"
+__date__ = "July 2013"
+__copyright__ = "(C) 2013, Victor Olaya"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = '$Format:%H$'
+__revision__ = "$Format:%H$"
 
 from processing.core.AlgorithmProvider import AlgorithmProvider
 from processing.core.ProcessingConfig import Setting, ProcessingConfig
-#from exampleprovider.ExampleAlgorithm import ExampleAlgorithm
+
+# from exampleprovider.ExampleAlgorithm import ExampleAlgorithm
 from ExampleAlgorithm import ExampleAlgorithm
 from shp_contour_Algorithm import ShpContourAlgorithm
-#ExampleAlgorithmProvider
+
+# ExampleAlgorithmProvider
 
 
 class PostTelemacProvider(AlgorithmProvider):
 
-    MY_DUMMY_SETTING = 'MY_DUMMY_SETTING'
+    MY_DUMMY_SETTING = "MY_DUMMY_SETTING"
 
     def __init__(self):
         AlgorithmProvider.__init__(self)
@@ -45,7 +47,7 @@ class PostTelemacProvider(AlgorithmProvider):
 
         # Load algorithms
         self.alglist = [ShpContourAlgorithm()]
-        
+
         for alg in self.alglist:
             alg.provider = self
 
@@ -58,26 +60,27 @@ class PostTelemacProvider(AlgorithmProvider):
         deactivating the algorithms in the provider.
         """
         AlgorithmProvider.initializeSettings(self)
-        
+
         """
         ProcessingConfig.addSetting(Setting('Example algorithms',
             PostTelemacProvider.MY_DUMMY_SETTING,
             'Example setting', 'Default value'))
         """
-        
-        ProcessingConfig.addSetting(Setting('PostTelemac algorithms',
-            PostTelemacProvider.MY_DUMMY_SETTING,
-            'PostTelemac setting', 'Default value'))
+
+        ProcessingConfig.addSetting(
+            Setting(
+                "PostTelemac algorithms", PostTelemacProvider.MY_DUMMY_SETTING, "PostTelemac setting", "Default value"
+            )
+        )
 
     def unload(self):
         """Setting should be removed here, so they do not appear anymore
         when the plugin is unloaded.
         """
-        
+
         AlgorithmProvider.unload(self)
-        
-        ProcessingConfig.removeSetting(
-            PostTelemacProvider.MY_DUMMY_SETTING)
+
+        ProcessingConfig.removeSetting(PostTelemacProvider.MY_DUMMY_SETTING)
 
     def getName(self):
         """This is the name that will appear on the toolbox group.
@@ -85,12 +88,12 @@ class PostTelemacProvider(AlgorithmProvider):
         It is also used to create the command line name of all the
         algorithms from this provider.
         """
-        return 'PostTelamac provider'
+        return "PostTelamac provider"
 
     def getDescription(self):
         """This is the provired full name.
         """
-        return 'PostTelemac algorithms'
+        return "PostTelemac algorithms"
 
     def getIcon(self):
         """We return the default icon.

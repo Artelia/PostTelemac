@@ -20,31 +20,32 @@ Versions :
 
  ***************************************************************************/
 """
-#unicode behaviour
+# unicode behaviour
 from __future__ import unicode_literals
-#standart libraries import
+
+# standart libraries import
 import numpy as np
-#import divers
+
+# import divers
 from ..mpldatacursor import datacursor
 from selectlinetool import SelectLineTool
-#import local libs
-#from posttelemac_util_animation import *
-#from ..toshape.posttelemac_util_extractshp import *
-#from ..toshape.posttelemac_util_extractmesh import *
-#from ..toshape.posttelemac_util_extractpts import *
-#from posttelemac_util_graphtemp import *
-#from posttelemac_util_flow import *
-#from posttelemac_util_volume import *
-#from posttelemac_util_get_max import *
-#from posttelemac_util_getcomparevalue import *
-#from posttelemac_util_rasterize import *
+
+# import local libs
+# from posttelemac_util_animation import *
+# from ..toshape.posttelemac_util_extractshp import *
+# from ..toshape.posttelemac_util_extractmesh import *
+# from ..toshape.posttelemac_util_extractpts import *
+# from posttelemac_util_graphtemp import *
+# from posttelemac_util_flow import *
+# from posttelemac_util_volume import *
+# from posttelemac_util_get_max import *
+# from posttelemac_util_getcomparevalue import *
+# from posttelemac_util_rasterize import *
 from PyQt4 import uic, QtCore, QtGui
 
 
-
-class PostTelemacUtils():
-
-    def __init__(self,layer):
+class PostTelemacUtils:
+    def __init__(self, layer):
         self.selafinlayer = layer
         self.graphtempactive = False
         self.datac = []
@@ -52,29 +53,27 @@ class PostTelemacUtils():
         self.rubberband.setWidth(2)
         self.rubberband.setColor(QColor(Qt.red))
         self.rubberbandpoint = QgsRubberBand(self.selafinlayer.canvas, QGis.Point)
-        #self.rubberbandpoint.setWidth(2)
+        # self.rubberbandpoint.setWidth(2)
         self.rubberbandpoint.setColor(QColor(Qt.red))
         self.clickTool = QgsMapToolEmitPoint(self.selafinlayer.canvas)
-        self.tool = None                        #the activated map tool
-        self.layerindex = None                  #for selection mode
-        self.previousLayer = None               #for selection mode
+        self.tool = None  # the activated map tool
+        self.layerindex = None  # for selection mode
+        self.previousLayer = None  # for selection mode
         self.vectorlayerflowids = None
-        self.graphtodo = None       #0 for limni, 1 for flow
-        self.composition = None                 #the composer choosen for movie
+        self.graphtodo = None  # 0 for limni, 1 for flow
+        self.composition = None  # the composer choosen for movie
         self.graphtempdatac = []
         self.graphflowdatac = []
         self.graphvolumedatac = []
-        self.skdtree = None                   #Object that enables nearest point query
-        #self.compareprocess = None
-        #self.initclassgraphtemp = InitGraphTemp()
-        #self.xformutil = None   #for vector crs transformation
+        self.skdtree = None  # Object that enables nearest point query
+        # self.compareprocess = None
+        # self.initclassgraphtemp = InitGraphTemp()
+        # self.xformutil = None   #for vector crs transformation
 
-        
-        
-    #****************************************************************************************************
-    #************* Values***********************************************************
-    #****************************************************************************************************
-    
+    # ****************************************************************************************************
+    # ************* Values***********************************************************
+    # ****************************************************************************************************
+
     """
     
     def valeurs_click(self,qgspointfromcanvas):
@@ -99,15 +98,13 @@ class PostTelemacUtils():
         self.rubberband.addPoint(qgspointfromcanvas)
         
     """
-        
-        
-    #****************************************************************************************************
-    #************* Tools - temporal anf flow graph ***********************************************************
-    #****************************************************************************************************
-    
-    #******************* Tools - temporal anf flow graph - clicktool*********************************************
-    
-    
+
+    # ****************************************************************************************************
+    # ************* Tools - temporal anf flow graph ***********************************************************
+    # ****************************************************************************************************
+
+    # ******************* Tools - temporal anf flow graph - clicktool*********************************************
+
     """
     def computeGraphTemp(self,qgspointfromcanvas=None):
 
@@ -151,7 +148,7 @@ class PostTelemacUtils():
             print str(e)
             
     """
-            
+
     """
     def computeVolume(self):
 
@@ -216,7 +213,7 @@ class PostTelemacUtils():
                 self.launchThread(geomfinal)
                 
     """
-    
+
     """
 
     def computeFlow(self):
@@ -282,9 +279,9 @@ class PostTelemacUtils():
                 
 
     """
-                
+
     # **************Flow map tool*******************************
-                
+
     def connectTool(self):
         QObject.connect(self.tool, SIGNAL("moved"), self.moved)
         QObject.connect(self.tool, SIGNAL("rightClicked"), self.rightClicked)
@@ -292,32 +289,34 @@ class PostTelemacUtils():
         QObject.connect(self.tool, SIGNAL("doubleClicked"), self.doubleClicked)
         QObject.connect(self.tool, SIGNAL("deactivate"), self.deactivate)
 
-    def deactivate(self):		#enable clean exit of the plugin
+    def deactivate(self):  # enable clean exit of the plugin
         QObject.disconnect(self.tool, SIGNAL("moved"), self.moved)
         QObject.disconnect(self.tool, SIGNAL("leftClicked"), self.leftClicked)
         QObject.disconnect(self.tool, SIGNAL("rightClicked"), self.rightClicked)
         QObject.disconnect(self.tool, SIGNAL("doubleClicked"), self.doubleClicked)
 
-    def moved(self,position):			#draw the polyline on the temp layer (rubberband)
+    def moved(self, position):  # draw the polyline on the temp layer (rubberband)
         if self.selectionmethod == 0:
             if len(self.pointstoDraw) > 0:
-                #Get mouse coords
-                mapPos = self.selafinlayer.canvas.getCoordinateTransform().toMapCoordinates(position["x"],position["y"])
-                #Draw on temp layer
+                # Get mouse coords
+                mapPos = self.selafinlayer.canvas.getCoordinateTransform().toMapCoordinates(
+                    position["x"], position["y"]
+                )
+                # Draw on temp layer
                 self.rubberband.reset(QGis.Line)
-                for i in range(0,len(self.pointstoDraw)):
-                    self.rubberband.addPoint(QgsPoint(self.pointstoDraw[i][0],self.pointstoDraw[i][1]))
-                self.rubberband.addPoint(QgsPoint(mapPos.x(),mapPos.y()))
+                for i in range(0, len(self.pointstoDraw)):
+                    self.rubberband.addPoint(QgsPoint(self.pointstoDraw[i][0], self.pointstoDraw[i][1]))
+                self.rubberband.addPoint(QgsPoint(mapPos.x(), mapPos.y()))
         """
         if self.selectionmethod == 1:
             return
         """
 
-    def rightClicked(self,position):	#used to quit the current action
+    def rightClicked(self, position):  # used to quit the current action
         if self.selectionmethod == 0:
-            mapPos = self.selafinlayer.canvas.getCoordinateTransform().toMapCoordinates(position["x"],position["y"])
+            mapPos = self.selafinlayer.canvas.getCoordinateTransform().toMapCoordinates(position["x"], position["y"])
             newPoints = [[mapPos.x(), mapPos.y()]]
-            #if newPoints == self.lastClicked: return # sometimes a strange "double click" is given
+            # if newPoints == self.lastClicked: return # sometimes a strange "double click" is given
             if len(self.pointstoDraw) > 0:
                 self.pointstoDraw = []
                 self.pointstoCal = []
@@ -333,8 +332,8 @@ class PostTelemacUtils():
             self.cleaning()
         """
 
-    def leftClicked(self,position):		#Add point to analyse
-        mapPos = self.selafinlayer.canvas.getCoordinateTransform().toMapCoordinates(position["x"],position["y"])
+    def leftClicked(self, position):  # Add point to analyse
+        mapPos = self.selafinlayer.canvas.getCoordinateTransform().toMapCoordinates(position["x"], position["y"])
         newPoints = [[mapPos.x(), mapPos.y()]]
 
         if self.selectionmethod == 0:
@@ -342,8 +341,8 @@ class PostTelemacUtils():
                 self.dblclktemp = None
                 if self.selafinlayer.propertiesdialog.comboBox_3.currentIndex() != 0:
                     self.cleaning()
-                #return
-            else :
+                # return
+            else:
                 if len(self.pointstoDraw) == 0:
                     self.rubberband.reset(QGis.Line)
                     self.rubberbandpoint.reset(QGis.Point)
@@ -359,67 +358,66 @@ class PostTelemacUtils():
             self.pointstoDraw = []
         """
 
-
-    def doubleClicked(self,position):
+    def doubleClicked(self, position):
         if self.selectionmethod == 0:
-            #Validation of line
-            mapPos = self.selafinlayer.canvas.getCoordinateTransform().toMapCoordinates(position["x"],position["y"])
+            # Validation of line
+            mapPos = self.selafinlayer.canvas.getCoordinateTransform().toMapCoordinates(position["x"], position["y"])
             newPoints = [[mapPos.x(), mapPos.y()]]
             self.pointstoDraw += newPoints
-            #convert points to pluginlayer crs
+            # convert points to pluginlayer crs
             xform = self.selafinlayer.xform
-            pointstoDrawfinal=[]
+            pointstoDrawfinal = []
             for point in self.pointstoDraw:
-                qgspoint = xform.transform(QgsPoint(point[0],point[1]),QgsCoordinateTransform.ReverseTransform)
-                pointstoDrawfinal.append([qgspoint.x(),qgspoint.y()])
-            #launch analyses
+                qgspoint = xform.transform(QgsPoint(point[0], point[1]), QgsCoordinateTransform.ReverseTransform)
+                pointstoDrawfinal.append([qgspoint.x(), qgspoint.y()])
+            # launch analyses
             self.launchThread([pointstoDrawfinal])
-            #Reset
+            # Reset
             self.lastFreeHandPoints = self.pointstoDraw
             self.pointstoDraw = []
-            #temp point to distinct leftclick and dbleclick
+            # temp point to distinct leftclick and dbleclick
             self.dblclktemp = newPoints
-            #iface.mainWindow().statusBar().showMessage(self.textquit0)
+            # iface.mainWindow().statusBar().showMessage(self.textquit0)
         """
         if self.selectionmethod == 1:
             return
         """
 
-    #*****************Thread Launcher********************************
+    # *****************Thread Launcher********************************
 
-    def launchThread(self,geom):
-        if self.graphtodo ==0:
+    def launchThread(self, geom):
+        if self.graphtodo == 0:
             self.rubberbandpoint.reset(QGis.Point)
-            if not self.selafinlayer.propertiesdialog.checkBox.isChecked() and self.rubberband :
+            if not self.selafinlayer.propertiesdialog.checkBox.isChecked() and self.rubberband:
                 self.rubberband.reset(QGis.Point)
-            self.initclass=InitGraphTemp()
-            #self.initclass = self.initclassgraphtemp
-        elif self.graphtodo ==1:
-            self.initclass=InitComputeFlow()
-        elif self.graphtodo ==2:
-            self.initclass=InitComputeVolume()
-            
+            self.initclass = InitGraphTemp()
+            # self.initclass = self.initclassgraphtemp
+        elif self.graphtodo == 1:
+            self.initclass = InitComputeFlow()
+        elif self.graphtodo == 2:
+            self.initclass = InitComputeVolume()
+
         self.initclass.status.connect(self.selafinlayer.propertiesdialog.textBrowser_2.append)
         self.initclass.error.connect(self.selafinlayer.propertiesdialog.errorMessage)
         self.initclass.emitpoint.connect(self.addPointRubberband)
         self.initclass.emitprogressbar.connect(self.updateProgressBar)
         self.initclass.finished1.connect(self.workerFinished)
-        
-        if self.graphtodo ==0:
-            self.initclass.start(self.selafinlayer,  geom)
+
+        if self.graphtodo == 0:
+            self.initclass.start(self.selafinlayer, geom)
             self.graphtempactive = True
             self.selafinlayer.propertiesdialog.pushButton_limni.setEnabled(False)
-        elif self.graphtodo ==1:
+        elif self.graphtodo == 1:
             self.rubberbandpoint.reset(QGis.Point)
-            if self.selafinlayer.propertiesdialog.comboBox_flowmethod.currentIndex()==0:
+            if self.selafinlayer.propertiesdialog.comboBox_flowmethod.currentIndex() == 0:
                 self.rubberband.reset(QGis.Line)
-            elif self.selafinlayer.propertiesdialog.comboBox_flowmethod.currentIndex()==1:
+            elif self.selafinlayer.propertiesdialog.comboBox_flowmethod.currentIndex() == 1:
                 self.rubberband.reset(QGis.Point)
-            #self.selafinlayer.propertiesdialog.textBrowser_main.append(str(ctime() + ' - Computing flow'))
-            self.selafinlayer.propertiesdialog.normalMessage('Start computing flow')
-            self.initclass.start(self.selafinlayer,geom)
+            # self.selafinlayer.propertiesdialog.textBrowser_main.append(str(ctime() + ' - Computing flow'))
+            self.selafinlayer.propertiesdialog.normalMessage("Start computing flow")
+            self.initclass.start(self.selafinlayer, geom)
             self.selafinlayer.propertiesdialog.pushButton_flow.setEnabled(False)
-        elif self.graphtodo ==2:
+        elif self.graphtodo == 2:
             """
             if self.selafinlayer.propertiesdialog.comboBox_flowmethod.currentIndex()==0:
                 self.rubberband.reset(QGis.Line)
@@ -428,143 +426,166 @@ class PostTelemacUtils():
             """
             self.rubberbandpoint.reset(QGis.Point)
             self.rubberband.reset(QGis.Line)
-            #self.selafinlayer.propertiesdialog.textBrowser_main.append(str(ctime() + ' - Computing flow'))
-            self.selafinlayer.propertiesdialog.normalMessage('Start computing volume')
-            self.initclass.start(self.selafinlayer,geom)
+            # self.selafinlayer.propertiesdialog.textBrowser_main.append(str(ctime() + ' - Computing flow'))
+            self.selafinlayer.propertiesdialog.normalMessage("Start computing volume")
+            self.initclass.start(self.selafinlayer, geom)
             self.selafinlayer.propertiesdialog.pushButton_volume.setEnabled(False)
-    
-    
-    def workerFinished(self,list1,list2,list3 = None):
-        #print 'finished ' + str(self.graphtodo)
-        #print 'wf ' + str(np.array(list1).shape) +' ' +str(np.array(list2).shape)
-        
-        if self.graphtodo ==0:
+
+    def workerFinished(self, list1, list2, list3=None):
+        # print 'finished ' + str(self.graphtodo)
+        # print 'wf ' + str(np.array(list1).shape) +' ' +str(np.array(list2).shape)
+
+        if self.graphtodo == 0:
             ax = self.selafinlayer.propertiesdialog.ax
             if not self.selafinlayer.propertiesdialog.checkBox.isChecked():
                 ax.cla()
-                if  len(self.graphtempdatac)>0:
+                if len(self.graphtempdatac) > 0:
                     for datacu in self.graphtempdatac:
                         datacu.hide()
                         datacu.disable()
                     self.graphtempdatac = []
-        elif self.graphtodo ==1:
+        elif self.graphtodo == 1:
             ax = self.selafinlayer.propertiesdialog.ax2
             if not self.selafinlayer.propertiesdialog.checkBox_7.isChecked():
                 ax.cla()
-                if  len(self.graphflowdatac)>0:
+                if len(self.graphflowdatac) > 0:
                     for datacu in self.graphflowdatac:
                         datacu.hide()
                         datacu.disable()
                     self.graphflowdatac = []
-                    
-        elif self.graphtodo ==2:
+
+        elif self.graphtodo == 2:
             ax = self.selafinlayer.propertiesdialog.ax3
             if not self.selafinlayer.propertiesdialog.checkBox_12.isChecked():
                 ax.cla()
-                if  len(self.graphvolumedatac)>0:
+                if len(self.graphvolumedatac) > 0:
                     for datacu in self.graphvolumedatac:
                         datacu.hide()
                         datacu.disable()
                     self.graphvolumedatac = []
 
-        maxtemp=None
+        maxtemp = None
         mintemp = None
 
-        grid2 = ax.grid(color='0.5', linestyle='-', linewidth=0.5)
+        grid2 = ax.grid(color="0.5", linestyle="-", linewidth=0.5)
         for i in range(len(list1)):
-            test2 = ax.plot(list1[i], list2[i], linewidth = 3, visible = True)
+            test2 = ax.plot(list1[i], list2[i], linewidth=3, visible=True)
             if not maxtemp:
                 maxtemp = max(np.array(list2[i]))
             else:
-                if max(np.array(list2[i]))>maxtemp:
+                if max(np.array(list2[i])) > maxtemp:
                     maxtemp = max(np.array(list2[i]))
             if not mintemp:
                 mintemp = min(np.array(list2[i]))
             else:
-                if min(np.array(list2[i]))<mintemp:
+                if min(np.array(list2[i])) < mintemp:
                     mintemp = min(np.array(list2[i]))
-        if self.graphtodo ==0:
-            self.graphtempdatac.append(datacursor(test2,formatter="temps:{x:.0f}\nparametre:{y:.2f}".format,bbox=dict(fc='white'),arrowprops=dict(arrowstyle='->', fc='white', alpha=0.5)))
-            self.selafinlayer.propertiesdialog.label_21.setText('Max : ' + str('{:,}'.format(maxtemp).replace(',', ' ') ))
-            self.selafinlayer.propertiesdialog.label_20.setText('Min : ' + str('{:,}'.format(mintemp).replace(',', ' ') ))
+        if self.graphtodo == 0:
+            self.graphtempdatac.append(
+                datacursor(
+                    test2,
+                    formatter="temps:{x:.0f}\nparametre:{y:.2f}".format,
+                    bbox=dict(fc="white"),
+                    arrowprops=dict(arrowstyle="->", fc="white", alpha=0.5),
+                )
+            )
+            self.selafinlayer.propertiesdialog.label_21.setText(
+                "Max : " + str("{:,}".format(maxtemp).replace(",", " "))
+            )
+            self.selafinlayer.propertiesdialog.label_20.setText(
+                "Min : " + str("{:,}".format(mintemp).replace(",", " "))
+            )
             self.selafinlayer.propertiesdialog.canvas1.draw()
-            if self.selectionmethod == 1 :
+            if self.selectionmethod == 1:
                 self.selafinlayer.propertiesdialog.checkBox.setChecked(False)
             self.graphtempactive = False
             if self.selafinlayer.propertiesdialog.comboBox_2.currentIndex() != 0:
                 self.selafinlayer.propertiesdialog.pushButton_limni.setEnabled(True)
-        elif self.graphtodo == 1 :
-            self.graphflowdatac.append(datacursor(test2,formatter="temps:{x:.0f}\ndebit{y:.2f}".format,bbox=dict(fc='white'),arrowprops=dict(arrowstyle='->', fc='white', alpha=0.5)))
-            self.selafinlayer.propertiesdialog.label_flow_resultmax.setText('Max : ' + str('{:,}'.format(maxtemp).replace(',', ' ') ))
-            self.selafinlayer.propertiesdialog.label__flow_resultmin.setText('Min : ' + str('{:,}'.format(mintemp).replace(',', ' ') ))
+        elif self.graphtodo == 1:
+            self.graphflowdatac.append(
+                datacursor(
+                    test2,
+                    formatter="temps:{x:.0f}\ndebit{y:.2f}".format,
+                    bbox=dict(fc="white"),
+                    arrowprops=dict(arrowstyle="->", fc="white", alpha=0.5),
+                )
+            )
+            self.selafinlayer.propertiesdialog.label_flow_resultmax.setText(
+                "Max : " + str("{:,}".format(maxtemp).replace(",", " "))
+            )
+            self.selafinlayer.propertiesdialog.label__flow_resultmin.setText(
+                "Min : " + str("{:,}".format(mintemp).replace(",", " "))
+            )
             self.selafinlayer.propertiesdialog.canvas2.draw()
-            self.selafinlayer.propertiesdialog.normalMessage('Computing flow finished')
+            self.selafinlayer.propertiesdialog.normalMessage("Computing flow finished")
             if self.selafinlayer.propertiesdialog.comboBox_3.currentIndex() != 0:
                 self.selafinlayer.propertiesdialog.pushButton_flow.setEnabled(True)
-        elif self.graphtodo == 2 :
-            #self.graphvolumedatac.append(datacursor(test2,formatter="temps:{x:.0f}\ndebit{y:.2f}".format,bbox=dict(fc='white'),arrowprops=dict(arrowstyle='->', fc='white', alpha=0.5)))
-            self.selafinlayer.propertiesdialog.label_volume_resultmax.setText('Max : '  + str('{:,}'.format(maxtemp).replace(',', ' ') ))
-            self.selafinlayer.propertiesdialog.label_volume_resultmin.setText('Min : ' + str('{:,}'.format(mintemp).replace(',', ' ') ))
+        elif self.graphtodo == 2:
+            # self.graphvolumedatac.append(datacursor(test2,formatter="temps:{x:.0f}\ndebit{y:.2f}".format,bbox=dict(fc='white'),arrowprops=dict(arrowstyle='->', fc='white', alpha=0.5)))
+            self.selafinlayer.propertiesdialog.label_volume_resultmax.setText(
+                "Max : " + str("{:,}".format(maxtemp).replace(",", " "))
+            )
+            self.selafinlayer.propertiesdialog.label_volume_resultmin.setText(
+                "Min : " + str("{:,}".format(mintemp).replace(",", " "))
+            )
             self.selafinlayer.propertiesdialog.canvas3.draw()
-            self.selafinlayer.propertiesdialog.normalMessage('Computing volume finished')
+            self.selafinlayer.propertiesdialog.normalMessage("Computing volume finished")
             if self.selafinlayer.propertiesdialog.comboBox_4.currentIndex() != 0:
                 self.selafinlayer.propertiesdialog.pushButton_volume.setEnabled(True)
-                
+
         self.selafinlayer.propertiesdialog.progressBar.reset()
-            
-    
+
     def copygraphclipboard(self):
         source = self.selafinlayer.propertiesdialog.sender()
         if source == self.selafinlayer.propertiesdialog.pushButton_graphtemp_pressepapier:
             ax = self.selafinlayer.propertiesdialog.ax
         elif source == self.selafinlayer.propertiesdialog.pushButton_4:
             ax = self.selafinlayer.propertiesdialog.ax2
-        
+
         self.clipboard = QApplication.clipboard()
-        strtemp=''
-        datatemp=[]
-        max=0
+        strtemp = ""
+        datatemp = []
+        max = 0
         for line in ax.get_lines():
             data = line.get_xydata()
-            if len(data)>0:
+            if len(data) > 0:
                 datatemp.append(data)
                 maxtemp = len(data)
-                if maxtemp>max:
+                if maxtemp > max:
                     max = maxtemp
         if self.vectorlayerflowids:
             for flowid in self.vectorlayerflowids:
-                strtemp = strtemp + 'id : '+str(flowid)+ "\t"+ "\t"
+                strtemp = strtemp + "id : " + str(flowid) + "\t" + "\t"
             strtemp += "\n"
         for i in range(maxtemp):
             for j in range(len(datatemp)):
-                strtemp += str(datatemp[j][i][0])+ "\t" +str(datatemp[j][i][1])+"\t"
+                strtemp += str(datatemp[j][i][0]) + "\t" + str(datatemp[j][i][1]) + "\t"
             strtemp += "\n"
         self.clipboard.setText(strtemp)
-        
 
-    def cleaning(self):     #used on right click
+    def cleaning(self):  # used on right click
         self.selafinlayer.canvas.setMapTool(self.selafinlayer.propertiesdialog.maptooloriginal)
-        iface.mainWindow().statusBar().showMessage( "" )
-            
-    def addPointRubberband(self,x,y):
-        
-        if isinstance(x,list):
+        iface.mainWindow().statusBar().showMessage("")
+
+    def addPointRubberband(self, x, y):
+
+        if isinstance(x, list):
             points = []
-            if len(x)>1:
+            if len(x) > 1:
                 for i in range(len(x)):
-                    points.append(self.selafinlayer.xform.transform(QgsPoint(x[i],y[i])))
+                    points.append(self.selafinlayer.xform.transform(QgsPoint(x[i], y[i])))
                 self.rubberband.addGeometry(QgsGeometry.fromPolygon([points]), None)
             else:
-                qgspoint = self.selafinlayer.xform.transform(QgsPoint(x[0],y[0]))
-                #self.rubberband.addPoint(qgspoint)
+                qgspoint = self.selafinlayer.xform.transform(QgsPoint(x[0], y[0]))
+                # self.rubberband.addPoint(qgspoint)
                 self.rubberbandpoint.addPoint(qgspoint)
         else:
-            qgspoint = self.selafinlayer.xform.transform(QgsPoint(x,y))
+            qgspoint = self.selafinlayer.xform.transform(QgsPoint(x, y))
             self.rubberband.addPoint(qgspoint)
-            
-    def updateProgressBar(self,float1):
+
+    def updateProgressBar(self, float1):
         self.selafinlayer.propertiesdialog.progressBar.setValue(int(float1))
-        
+
     """
     #****************************************************************************************************
     #************* Tools - compare***********************************************************
@@ -640,10 +661,10 @@ class PostTelemacUtils():
             print str(e)
             
     """
-        
-    #****************************************************************************************************
-    #************* Tools - Movie***********************************************************
-    #****************************************************************************************************
+
+    # ****************************************************************************************************
+    # ************* Tools - Movie***********************************************************
+    # ****************************************************************************************************
     """
     def makeAnimation(self):
         self.initclass = PostTelemacAnimation(self.selafinlayer)
@@ -654,10 +675,10 @@ class PostTelemacUtils():
         self.selafinlayer.propertiesdialog.label_tempsvideo.setText(str(lenght))
         
     """
-    #****************************************************************************************************
-    #************* Tools - max res ***********************************************************
-    #****************************************************************************************************
-    
+    # ****************************************************************************************************
+    # ************* Tools - max res ***********************************************************
+    # ****************************************************************************************************
+
     """
     def calculMaxRes(self):
         if True:   #thread way
@@ -691,10 +712,10 @@ class PostTelemacUtils():
             QgsMapLayerRegistry.instance().addMapLayer(slf)
         
     """
-    #****************************************************************************************************
-    #************* Tools - 2shape***********************************************************
-    #****************************************************************************************************
-        
+    # ****************************************************************************************************
+    # ************* Tools - 2shape***********************************************************
+    # ****************************************************************************************************
+
     """
         
     def create_points(self):
@@ -806,8 +827,7 @@ class PostTelemacUtils():
 
         
     """
-        
-        
+
     """
         
     def rasterCreation(self):
@@ -817,7 +837,7 @@ class PostTelemacUtils():
         self.selafinlayer.propertiesdialog.normalMessage('Raster creation started')
         self.initclass.start(self.selafinlayer)
     """
-    
+
     """
     layerstring = self.selafinlayer.hydraufilepath+'[' + str(self.selafinlayer.time_displayed) + ']'
     print layerstring
@@ -897,7 +917,7 @@ class PostTelemacUtils():
     except Exception, e:
         print str(e)
     """
-        
+
     """
     def rasterCreationFinished(self,strpath):
         if strpath != None:
@@ -907,24 +927,22 @@ class PostTelemacUtils():
         
     """
 
-    #****************************************************************************************************
-    #************* Basic functions***********************************************************
-    #****************************************************************************************************
-        
+    # ****************************************************************************************************
+    # ************* Basic functions***********************************************************
+    # ****************************************************************************************************
+
     def createRubberband(self):
         self.rubberband = QgsRubberBand(self.selafinlayer.canvas, QGis.Line)
         self.rubberband.setWidth(2)
         self.rubberband.setColor(QColor(Qt.red))
-        
-    def translate_non_alphanumerics(self, to_translate, translate_to=u'_'):
-        not_letters_or_digits = u'!"#%\'()*+,-./:;<=>?@[\]^_`{|}~'
+
+    def translate_non_alphanumerics(self, to_translate, translate_to="_"):
+        not_letters_or_digits = "!\"#%'()*+,-./:;<=>?@[\]^_`{|}~"
         translate_table = dict((ord(char), translate_to) for char in not_letters_or_digits)
         return to_translate.translate(translate_table)
-        
-        
-        
-    def isFileLocked(self,file, readLockCheck=False):
-        '''
+
+    def isFileLocked(self, file, readLockCheck=False):
+        """
         Checks to see if a file is locked. Performs three checks
             1. Checks if the file even exists
             2. Attempts to open the file for reading. This will determine if the file has a write lock.
@@ -934,18 +952,18 @@ class PostTelemacUtils():
                 or deleted.
         @param file:
         @param readLockCheck:
-        '''
-        if(not(os.path.exists(file))):
+        """
+        if not (os.path.exists(file)):
             return False
         try:
-            f = open(file, 'r')
+            f = open(file, "r")
             f.close()
         except IOError:
             return True
-       
-        if(readLockCheck):
+
+        if readLockCheck:
             lockFile = file + ".lckchk"
-            if(os.path.exists(lockFile)):
+            if os.path.exists(lockFile):
                 os.remove(lockFile)
             try:
                 os.rename(file, lockFile)
@@ -953,22 +971,22 @@ class PostTelemacUtils():
                 os.rename(lockFile, file)
             except WindowsError:
                 return True
-              
-        return False   
-        
-    def getParameterName(self,param):
+
+        return False
+
+    def getParameterName(self, param):
         trouve = False
-        f = open(os.path.join(os.path.dirname(__file__),'..', 'config','parametres.txt'), 'r')
-        #f = open(os.path.join(self.selafinlayer.propertiesdialog.posttelemacdir,'parametres.txt'), 'r')
+        f = open(os.path.join(os.path.dirname(__file__), "..", "config", "parametres.txt"), "r")
+        # f = open(os.path.join(self.selafinlayer.propertiesdialog.posttelemacdir,'parametres.txt'), 'r')
         for line in f:
-            #print str(param) + ' ' + str(line.split("=")[0])
-            if  param == line.split("=")[0]:
-                tabtemp=[]
+            # print str(param) + ' ' + str(line.split("=")[0])
+            if param == line.split("=")[0]:
+                tabtemp = []
                 for txt in line.split("=")[1].split("\n")[0].split(";"):
                     tabtemp.append(str(txt))
-                
+
                 for paramtemp in self.selafinlayer.hydrauparser.parametres:
-                    #print str(paramtemp[1]) + ' ' +str(tabtemp)
+                    # print str(paramtemp[1]) + ' ' +str(tabtemp)
                     if paramtemp[1] in tabtemp:
                         trouve = True
                         return paramtemp
@@ -976,11 +994,11 @@ class PostTelemacUtils():
                     return None
         if not trouve:
             return None
-            
-    def tr(self, message):  
+
+    def tr(self, message):
         """Used for translation"""
-        return QCoreApplication.translate('PostTelemacUtils', message, None, QApplication.UnicodeUTF8)
-        
+        return QCoreApplication.translate("PostTelemacUtils", message, None, QApplication.UnicodeUTF8)
+
     ""
     """
     def getNearest(self,pointfromcanvas):
@@ -998,30 +1016,27 @@ class PostTelemacUtils():
         numfinal = self.skdtree.query(point1,k=1)[1][0]
         return numfinal
     """
-        
-    
-    
+
+
 class ThreadLaucnher(QtCore.QObject):
-    
     def __init__(self):
         QtCore.QObject.__init__(self)
         self.thread = None
         self.worker = None
         self.processtype = 0
-        #self.selafin = selafin
-        #self.graphtemp = graphTemp(selafin)
+        # self.selafin = selafin
+        # self.graphtemp = graphTemp(selafin)
         self.compare = False
         self.method = None
 
-    def start(self, selafin, method,
-                 qgspoints ):
-                 
-        #Launch worker
+    def start(self, selafin, method, qgspoints):
+
+        # Launch worker
         self.thread = QtCore.QThread()
-        self.worker = graphTemp(selafin, qgspoints,self.compare)
-        #self.graphtemp.points = qgspoints
-        #self.worker = self.graphtemp
-        
+        self.worker = graphTemp(selafin, qgspoints, self.compare)
+        # self.graphtemp.points = qgspoints
+        # self.worker = self.graphtemp
+
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.createGraphTemp)
         self.worker.status.connect(self.writeOutput)
@@ -1032,30 +1047,26 @@ class ThreadLaucnher(QtCore.QObject):
         self.thread.finished.connect(self.thread.deleteLater)
         self.worker.finished.connect(self.thread.quit)
         self.thread.start()
-        
 
-    
-    def raiseError(self,str):
-        if self.processtype ==0:
+    def raiseError(self, str):
+        if self.processtype == 0:
             self.status.emit(str)
-        elif self.processtype in [1,2,3]:
+        elif self.processtype in [1, 2, 3]:
             raise GeoAlgorithmExecutionException(str)
         elif self.processtype == 4:
             print str
             sys.exit(0)
-            
-    def writeOutput(self,str1):
-        self.status.emit(str(str1))
-        
-    def workerFinished(self,list1,list2):
-        self.finished1.emit(list1,list2)
-        
-    def emitPoint(self,x,y):
-        self.emitpoint.emit(x,y)
 
-        
-            
+    def writeOutput(self, str1):
+        self.status.emit(str(str1))
+
+    def workerFinished(self, list1, list2):
+        self.finished1.emit(list1, list2)
+
+    def emitPoint(self, x, y):
+        self.emitpoint.emit(x, y)
+
     status = QtCore.pyqtSignal(str)
     error = QtCore.pyqtSignal(str)
-    finished1 = QtCore.pyqtSignal(list,list)
-    emitpoint = QtCore.pyqtSignal(float,float)
+    finished1 = QtCore.pyqtSignal(list, list)
+    emitpoint = QtCore.pyqtSignal(float, float)

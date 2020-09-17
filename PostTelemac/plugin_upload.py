@@ -11,10 +11,10 @@ import xmlrpclib
 from optparse import OptionParser
 
 # Configuration
-PROTOCOL = 'http'
-SERVER = 'plugins.qgis.org'
-PORT = '80'
-ENDPOINT = '/plugins/RPC2/'
+PROTOCOL = "http"
+SERVER = "plugins.qgis.org"
+PORT = "80"
+ENDPOINT = "/plugins/RPC2/"
 VERBOSE = False
 
 
@@ -30,14 +30,14 @@ def main(parameters, arguments):
         parameters.password,
         parameters.server,
         parameters.port,
-        ENDPOINT)
+        ENDPOINT,
+    )
     print "Connecting to: %s" % hide_password(address)
 
     server = xmlrpclib.ServerProxy(address, verbose=VERBOSE)
 
     try:
-        plugin_id, version_id = server.plugin.upload(
-            xmlrpclib.Binary(open(arguments[0]).read()))
+        plugin_id, version_id = server.plugin.upload(xmlrpclib.Binary(open(arguments[0]).read()))
         print "Plugin ID: %s" % plugin_id
         print "Version ID: %s" % version_id
     except xmlrpclib.ProtocolError, err:
@@ -61,28 +61,17 @@ def hide_password(url, start=6):
     :param start: Position of start of password.
     :type start: int
     """
-    start_position = url.find(':', start) + 1
-    end_position = url.find('@')
-    return "%s%s%s" % (
-        url[:start_position],
-        '*' * (end_position - start_position),
-        url[end_position:])
+    start_position = url.find(":", start) + 1
+    end_position = url.find("@")
+    return "%s%s%s" % (url[:start_position], "*" * (end_position - start_position), url[end_position:])
 
 
 if __name__ == "__main__":
     parser = OptionParser(usage="%prog [options] plugin.zip")
-    parser.add_option(
-        "-w", "--password", dest="password",
-        help="Password for plugin site", metavar="******")
-    parser.add_option(
-        "-u", "--username", dest="username",
-        help="Username of plugin site", metavar="user")
-    parser.add_option(
-        "-p", "--port", dest="port",
-        help="Server port to connect to", metavar="80")
-    parser.add_option(
-        "-s", "--server", dest="server",
-        help="Specify server name", metavar="plugins.qgis.org")
+    parser.add_option("-w", "--password", dest="password", help="Password for plugin site", metavar="******")
+    parser.add_option("-u", "--username", dest="username", help="Username of plugin site", metavar="user")
+    parser.add_option("-p", "--port", dest="port", help="Server port to connect to", metavar="80")
+    parser.add_option("-s", "--server", dest="server", help="Specify server name", metavar="plugins.qgis.org")
     options, args = parser.parse_args()
     if len(args) != 1:
         print "Please specify zip file.\n"

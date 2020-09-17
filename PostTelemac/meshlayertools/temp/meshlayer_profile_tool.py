@@ -24,29 +24,30 @@ Versions :
 """
 
 
-#from PyQt4 import uic, QtCore, QtGui
-from qgis.PyQt import uic, QtCore, QtGui
+# from PyQt4 import uic, QtCore, QtGui
+from qgis.PyQt import QtCore
+
+try:  # qt4
+    from qgis.PyQt.QtGui import QApplication
+except:  # qt5
+    from qgis.PyQt.QtWidgets import QApplication
 from .meshlayer_abstract_tool import *
 
 
-FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ProfileTool.ui'))
+FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ProfileTool.ui"))
 
 
+class ProfileTool(AbstractMeshLayerTool, FORM_CLASS):
 
-class ProfileTool(AbstractMeshLayerTool,FORM_CLASS):
+    NAME = "PROFILETOOL"
 
-    NAME = 'PROFILETOOL'
+    def __init__(self, meshlayer, dialog):
+        AbstractMeshLayerTool.__init__(self, meshlayer, dialog)
 
-
-    def __init__(self, meshlayer,dialog):
-        AbstractMeshLayerTool.__init__(self,meshlayer,dialog)
-        
     def initTool(self):
         self.setupUi(self)
-        self.iconpath = os.path.join(os.path.dirname(__file__),'..','icons','tools','Line_Graph_48x48_spatial.png' )
-        
+        self.iconpath = os.path.join(os.path.dirname(__file__), "..", "icons", "tools", "Line_Graph_48x48_spatial.png")
 
-        
     def onActivation(self):
         pass
 

@@ -32,4 +32,5 @@ def classFactory(iface):  # pylint: disable=invalid-name
     """
     #
     from .PostTelemac import PostTelemac
+
     return PostTelemac(iface)

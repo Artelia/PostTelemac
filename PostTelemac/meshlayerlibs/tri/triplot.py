@@ -5,6 +5,7 @@ from matplotlib.path import Path
 from matplotlib.tri.triangulation import Triangulation
 import numpy as np
 
+
 def triplot(ax, *args, **kwargs):
     """
     Draw a unstructured triangular grid as lines and/or markers.
@@ -50,21 +51,21 @@ def triplot(ax, *args, **kwargs):
     # Hence draw lines and markers separately.
 
     # Decode plot format string, e.g., 'ro-'
-    fmt = ''
+    fmt = ""
     if len(args) > 0:
         fmt = args[0]
     linestyle, marker, color = matplotlib.axes._process_plot_format(fmt)
 
     # Draw lines without markers, if lines are required.
-    if linestyle is not None and linestyle is not 'None':
+    if linestyle is not None and linestyle is not "None":
         kw = kwargs.copy()
-        kw.pop('marker', None)     # Ignore marker if set.
-        kw['linestyle'] = ls_mapper[linestyle]
-        kw['edgecolor'] = color
-        kw['facecolor'] = None
+        kw.pop("marker", None)  # Ignore marker if set.
+        kw["linestyle"] = ls_mapper[linestyle]
+        kw["edgecolor"] = color
+        kw["facecolor"] = None
 
         vertices = np.column_stack((x[edges].flatten(), y[edges].flatten()))
-        codes = ([Path.MOVETO] + [Path.LINETO])*len(edges)
+        codes = ([Path.MOVETO] + [Path.LINETO]) * len(edges)
 
         path = Path(vertices, codes)
         pathpatch = PathPatch(path, **kw)
@@ -73,5 +74,5 @@ def triplot(ax, *args, **kwargs):
 
     # Draw markers without lines.
     # Should avoid drawing markers for points that are not in any triangle?
-    kwargs['linestyle'] = ''
+    kwargs["linestyle"] = ""
     ax.plot(x, y, *args, **kwargs)

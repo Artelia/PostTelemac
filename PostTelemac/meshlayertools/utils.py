@@ -31,16 +31,4 @@ def getQgisVersion():
         version = qgis.core.QGis.QGIS_VERSION
     except:
         version = qgis.core.Qgis.QGIS_VERSION
-    return float('.'.join(version.split('.')[0:2]))
-
-        
-
-            
-        
-        
-        
-        
-
-        
-        
-        
+    return float(".".join(version.split(".")[0:2]))
