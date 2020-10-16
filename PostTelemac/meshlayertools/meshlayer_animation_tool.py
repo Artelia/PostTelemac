@@ -126,9 +126,12 @@ class AnimationTool(AbstractMeshLayerTool, FORM_CLASS):
         # print name
         try:
             composition = None
-            for composeurview in qgis.utils.iface.activeComposers():
-                if composeurview.composerWindow().windowTitle() == name:
-                    composition = composeurview.composition()
+            for composeurview in qgis.core.QgsProject.instance().layoutManager().layouts():
+                composition = (
+                    qgis.core.QgsProject.instance()
+                    .layoutManager()
+                    .layoutByName(name)
+                )
 
             self.comboBox_8.addItems([self.tr("no picture")])
 
@@ -136,7 +139,7 @@ class AnimationTool(AbstractMeshLayerTool, FORM_CLASS):
                 images = [
                     item.id()
                     for item in composition.items()
-                    if item.type() == qgis.core.QgsComposerItem.ComposerPicture and item.scene()
+                    if isinstance(item, qgis._core.QgsLayoutItemPicture) and item.scene()
                 ]
                 images = [str(image) for image in images]
                 self.comboBox_8.addItems(images)
