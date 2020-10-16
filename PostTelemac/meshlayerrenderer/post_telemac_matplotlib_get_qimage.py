@@ -513,7 +513,7 @@ class MeshRenderer(AbstractMeshRenderer):
                 if ratio > 1.0:
                     image = image.scaled(image.width() * ratio, image.height() * ratio)
             else:
-                buf = cStringIO.StringIO()
+                buf = StringIO()
                 # canvas = FigureCanvasAgg(self.fig)
                 # self.canvas.draw()
                 # self.canvas.print_figure(buf, dpi = dpi2)
