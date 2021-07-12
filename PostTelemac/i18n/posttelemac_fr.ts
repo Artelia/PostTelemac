@@ -16,7 +16,7 @@
     <message>
         <location filename="../ui/def_variable.ui" line="52"/>
         <source>Parameter setup</source>
-        <translation>Confiuration du paramètre virtuel</translation>
+        <translation>Configuration du paramètre virtuel</translation>
     </message>
     <message>
         <location filename="../ui/def_variable.ui" line="77"/>
@@ -137,7 +137,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../PostTelemac.py" line="236"/>
         <source>Click properties to load selafin file</source>
-        <translation>Ouvrir les proprietes pour charger le fichier selafin</translation>
+        <translation>Ouvrir les propriétés pour charger le fichier selafin</translation>
     </message>
     <message>
         <location filename="../PostTelemac.py" line="268"/>

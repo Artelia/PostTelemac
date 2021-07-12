@@ -13,11 +13,12 @@
 """
 
 # import QT
-# from PyQt4 import QtCore ,QtGui
-from qgis.PyQt import QtCore, QtGui
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QAction, QToolBar
 
 # import qgis
-import qgis
+from qgis.core import QgsProject, QgsApplication, QgsProcessingAlgorithm
 
 # Other standart libs import
 import os.path
@@ -25,35 +26,20 @@ import time
 import sys
 import subprocess
 
-# sys.path.append(os.path.join(os.path.dirname(__file__),'libs_telemac'))
 # Posttelemac library import
-# import .resources_rc
 from . import resources_rc
-
 from .meshlayer.post_telemac_pluginlayer import SelafinPluginLayer
 from .meshlayer.post_telemac_pluginlayer_type import SelafinPluginLayerType
 from .meshlayerdialogs.posttelemac_about import aboutDialog
 
-from .meshlayertools import utils
-
 # Processing
-DOPROCESSING = False  # set to false to make the plugin reloader work
+DOPROCESSING = True  # set to false to make the plugin reloader work
 if DOPROCESSING:
-    from processing.core.Processing import Processing
-    from posttelemacprovider.PostTelemacProvider import PostTelemacProvider
+    from .meshlayerprovider.PostTelemacProvider import PostTelemacProvider
 
-    cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
-    if cmd_folder not in sys.path:
-        sys.path.insert(0, cmd_folder)
-
-
-"""
-/***************************************************************************
-
-Main Class
-
- ***************************************************************************/
-"""
+    # cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
+    # if cmd_folder not in sys.path:
+        # sys.path.insert(0, cmd_folder)
 
 
 class PostTelemac:
@@ -61,7 +47,7 @@ class PostTelemac:
 
     def __init__(self, iface):
         """Constructor.
-    
+
         :param iface: An interface instance that will be passed to this class
             which provides the hook by which you can manipulate the QGIS
             application at run time.
@@ -74,56 +60,36 @@ class PostTelemac:
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
-        locale = QtCore.QSettings().value("locale/userLocale")[0:2]
+        locale = QSettings().value("locale/userLocale")[0:2]
         locale_path = os.path.join(self.plugin_dir, "i18n", "posttelemac_{}.qm".format(locale))
-
         if os.path.exists(locale_path):
-            # app=QApplication([''])
-            self.translator = QtCore.QTranslator()
-            # self.translator = QTranslator(app)
+            self.translator = QTranslator()
             self.translator.load(locale_path)
-            QtCore.QCoreApplication.installTranslator(self.translator)
-            """
+            QCoreApplication.installTranslator(self.translator)
 
-            if qVersion() > '4.3.3':
-                print 'ok'
-                QCoreApplication.installTranslator(self.translator)
-                #app.installTranslator(self.translator)
-            """
         # ***********************************************************************
 
         self.pluginLayerType = None
+        self.provider = None
         self.addToRegistry()
         self.slf = []
-
         # Declare instance attributes
         self.actions = []
-        self.menu = self.tr(u"&PostTelemac")
-        # TODO: We are going to let the user set this up in a future iteration
+        self.menu = self.tr("&PostTelemac")
         # toolbar
-        try:
-            from qgis.PyQt.QtGui import QToolBar
-        except:
-            from qgis.PyQt.QtWidgets import QToolBar
         toolbars = self.iface.mainWindow().findChildren(QToolBar)
-
         test = True
         for toolbar1 in toolbars:
-            if toolbar1.windowTitle() == u"Telemac":
+            if toolbar1.windowTitle() == "Telemac":
                 self.toolbar = toolbar1
                 test = False
                 break
         if test:
-            self.toolbar = self.iface.addToolBar(u"Telemac")
-            self.toolbar.setObjectName(u"Telemac")
+            self.toolbar = self.iface.addToolBar("Telemac")
+            self.toolbar.setObjectName("Telemac")
 
         self.dlg_about = None
 
-        # Processing
-        if DOPROCESSING:
-            self.provider = PostTelemacProvider()
-
-    # noinspection PyMethodMayBeStatic
     def tr(self, message):
         """Get the translation for a string using Qt translation API.
         We implement this ourselves since we do not inherit QObject.
@@ -132,8 +98,7 @@ class PostTelemac:
         :returns: Translated version of message.
         :rtype: QString
         """
-        # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-        return QtCore.QCoreApplication.translate("PostTelemac", message)
+        return QCoreApplication.translate("PostTelemac", message)
 
     def add_action(
         self,
@@ -186,12 +151,7 @@ class PostTelemac:
         :rtype: QAction
         """
 
-        icon = QtGui.QIcon(icon_path)
-
-        try:
-            from qgis.PyQt.QtGui import QAction
-        except:
-            from qgis.PyQt.QtWidgets import QAction
+        icon = QIcon(icon_path)
 
         action = QAction(icon, text, parent)
         action.triggered.connect(callback)
@@ -210,24 +170,27 @@ class PostTelemac:
             self.iface.addPluginToMenu(self.menu, action)
 
         self.actions.append(action)
-
         return action
+
+    def initProcessing(self):
+        self.provider = PostTelemacProvider()
+        QgsApplication.processingRegistry().addProvider(self.provider)
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
         icon_path = ":/plugins/PostTelemac/icons/posttelemac.png"
-        self.add_action(icon_path, text=self.tr(u"PostTelemac"), callback=self.run, parent=self.iface.mainWindow())
+        self.add_action(icon_path, text=self.tr("PostTelemac"), callback=self.run, parent=self.iface.mainWindow())
         self.add_action(
             icon_path,
-            text=self.tr(u"PostTelemac Help"),
+            text=self.tr("PostTelemac Help"),
             add_to_toolbar=False,
             callback=self.showHelp,
             parent=self.iface.mainWindow(),
         )
         self.add_action(
             icon_path,
-            text=self.tr(u"PostTelemac About"),
+            text=self.tr("PostTelemac About"),
             add_to_toolbar=False,
             callback=self.showAbout,
             parent=self.iface.mainWindow(),
@@ -235,32 +198,26 @@ class PostTelemac:
 
         # Processing thing
         if DOPROCESSING:
-            Processing.addProvider(self.provider)
+            self.initProcessing()
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
-            self.iface.removePluginMenu(self.tr(u"&PostTelemac"), action)
+            self.iface.removePluginMenu(self.tr("&PostTelemac"), action)
             self.toolbar.removeAction(action)
         # remove the toolbar
         if len(self.toolbar.actions()) == 0:
             del self.toolbar
         if DOPROCESSING:
-            Processing.removeProvider(self.provider)
+            QgsApplication.processingRegistry().removeProvider(self.provider)
 
     def run(self):
         """Run method that performs all the real work"""
-        self.slf.append(
-            SelafinPluginLayer(self.tr("Click properties to load selafin file"))
-        )  # add selafin to list otherwise it can not work with multiple selafin files
-        self.slf[len(self.slf) - 1].setRealCrs(
-            self.iface.mapCanvas().mapSettings().destinationCrs()
-        )  # to prevent weird bug with weird crs
-        qgis.core.QgsProject.instance().addMapLayer(self.slf[len(self.slf) - 1])
-        # try:
-        # qgis.core.QgsMapLayerRegistry.instance().addMapLayer(self.slf[len(self.slf)-1])
-        # except:
-        # qgis.core.QgsProject.instance().addMapLayer(self.slf[len(self.slf)-1])
+        # add selafin to list otherwise it can not work with multiple selafin files
+        self.slf.append(SelafinPluginLayer(self.tr("Click properties to load selafin file")))
+        # to prevent weird bug with weird crs
+        self.slf[len(self.slf) - 1].setRealCrs(self.iface.mapCanvas().mapSettings().destinationCrs())
+        QgsProject.instance().addMapLayer(self.slf[len(self.slf) - 1])
         self.iface.showLayerProperties(self.slf[len(self.slf) - 1])
 
     def showHelp(self):
@@ -278,18 +235,8 @@ class PostTelemac:
     # Specific functions
     def addToRegistry(self):
         # Add telemac_viewer in QgsPluginLayerRegistry
-        if utils.getQgisVersion() < 2.20:
-            reg = qgis.core.QgsPluginLayerRegistry.instance()
-        else:
-            reg = qgis.core.QgsApplication.pluginLayerRegistry()
-        if False:
-            if u"selafin_viewer" in qgis.core.QgsPluginLayerRegistry.instance().pluginLayerTypes():
-                qgis.core.QgsPluginLayerRegistry.instance().removePluginLayerType("selafin_viewer")
-            self.pluginLayerType = SelafinPluginLayerType()
-            qgis.core.QgsPluginLayerRegistry.instance().addPluginLayerType(self.pluginLayerType)
-
-        if True:
-            if u"selafin_viewer" in reg.pluginLayerTypes():
-                reg.removePluginLayerType("selafin_viewer")
-            self.pluginLayerType = SelafinPluginLayerType()
-            reg.addPluginLayerType(self.pluginLayerType)
+        reg = QgsApplication.instance().pluginLayerRegistry()
+        if "selafin_viewer" in reg.pluginLayerTypes():
+            reg.removePluginLayerType("selafin_viewer")
+        self.pluginLayerType = SelafinPluginLayerType()
+        reg.addPluginLayerType(self.pluginLayerType)

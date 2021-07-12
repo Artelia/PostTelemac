@@ -23,18 +23,12 @@
 # unicode behaviour
 from __future__ import unicode_literals
 
-# from PyQt4 import uic, QtGui
-from qgis.PyQt import uic, QtCore, QtGui
-
-try:
-    from qgis.PyQt.QtGui import QDialog, QTreeWidgetItem
-except:
-    from qgis.PyQt.QtWidgets import QDialog, QTreeWidgetItem
-
+from qgis.PyQt import uic
+from qgis.PyQt.QtGui import QStandardItemModel, QStandardItem
+from qgis.PyQt.QtWidgets import QDialog, QTreeWidgetItem
 
 import os.path
 import pickle
-
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "..", "ui", "def_variable.ui"))
 
@@ -43,16 +37,8 @@ class DefVariablesDialog(QDialog, FORM_CLASS):
     def __init__(self, lst_param, lst_var, parent=None):
         """Constructor."""
         super(DefVariablesDialog, self).__init__(parent)
-        # Set up the user interface from Designer.
-        # After setupUI you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
         self.setFixedSize(400, 475)
-
-        # icTool = QIcon(os.path.dirname(os.path.realpath(__file__)) + "\\icones\\btn_tools.png")
-        # self.btn_open_classe.setIcon(icTool)
 
         lst_fn = [
             "+",
@@ -86,7 +72,6 @@ class DefVariablesDialog(QDialog, FORM_CLASS):
         self.fill_tab(self.tab_variables, lst_var, 0)
         self.fill_tab(self.tab_variables_2, lst_var, 1)
         self.fill_list(self.lst_fonctions, lst_fn)
-        # self.init_cb_classe("")
 
         self.txt_nom_variable.setText(lst_param[0])
         self.txt_formule.setText(lst_param[1])
@@ -106,8 +91,6 @@ class DefVariablesDialog(QDialog, FORM_CLASS):
             new_var["nom"] = self.txt_nom_variable.text()
             new_var["formule"] = self.txt_formule.toPlainText()
             new_var["formuleparam"] = new_var["formule"][new_var["formule"].index("V") + 1]
-            # new_var["classe"] = self.cb_classe.currentText()
-            # return (new_var)
             return [
                 self.txt_nom_variable.text(),
                 self.txt_formule.toPlainText(),
@@ -135,10 +118,9 @@ class DefVariablesDialog(QDialog, FORM_CLASS):
             self.lbl_classe.setText(str(self.classe_val[nom_classe]))
 
     def fill_list(self, name_list, lst_var):
-
-        model = QtGui.QStandardItemModel(name_list)
+        model = QStandardItemModel(name_list)
         for i, elt in enumerate(lst_var):
-            item = QtGui.QStandardItem(str(elt))
+            item = QStandardItem(str(elt))
             item.setEditable(False)
             model.appendRow(item)
         name_list.setModel(model)
@@ -162,9 +144,7 @@ class DefVariablesDialog(QDialog, FORM_CLASS):
     def add_fonction(self, itm):
         item = self.lst_fonctions.model().item(itm.row())
         txt = item.text()
-
         txtCurs = self.txt_formule.textCursor()
-
         if txtCurs.hasSelection():
             txt = txt.replace("()", "(" + txtCurs.selectedText() + ")")
             self.txt_formule.insertPlainText(txt)

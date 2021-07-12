@@ -11,7 +11,7 @@ CALL "%OSGEO4W_ROOT%\bin\o4w_env.bat"
 
 REM Python Setup********************************************
 set PATH=%OSGEO4W_ROOT%\bin;%QGIS%\bin;%PATH%
-SET PYTHONHOME=%OSGEO4W_ROOT%\apps\Python27
+SET PYTHONHOME=%OSGEO4W_ROOT%\apps\Python37
 set PYTHONPATH=%QGIS%\python;%PYTHONPATH%
 
 REM If we want verbose...

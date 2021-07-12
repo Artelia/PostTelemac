@@ -3,20 +3,18 @@
 # unicode behaviour
 from __future__ import unicode_literals
 
-import qgis.core
+from qgis.core import QgsMapLayerRenderer
 
-# from PyQt4 import QtGui, QtCore
-from qgis.PyQt import QtGui, QtCore
+from qgis.PyQt.QtGui import QImage
 
 
-class PostTelemacPluginLayerRenderer(qgis.core.QgsMapLayerRenderer):
+class PostTelemacPluginLayerRenderer(QgsMapLayerRenderer):
     def __init__(self, meshlayer, rendererContext):
-        qgis.core.QgsMapLayerRenderer.__init__(self, meshlayer.id())
+        QgsMapLayerRenderer.__init__(self, meshlayer.id())
         self.meshlayer = meshlayer
         self.rendererContext = rendererContext
 
     def render(self):
-
         try:
             if (
                 self.meshlayer.hydrauparser != None
@@ -25,21 +23,19 @@ class PostTelemacPluginLayerRenderer(qgis.core.QgsMapLayerRenderer):
             ):
                 bool1, image1, image2 = self.meshlayer.meshrenderer.getimage(self.meshlayer, self.rendererContext)
             else:
-                image1 = QtGui.QImage()
+                image1 = QImage()
                 image2 = None
                 bool1 = True
-
             painter = self.rendererContext.painter()
             painter.save()
             painter.drawImage(0, 0, image1)
             if image2:
                 painter.drawImage(0, 0, image2)
             painter.restore()
-
             return bool1
 
         except Exception as e:
-            self.meshlayer.propertiesdialog.errorMessage("Renderer Error")
+            self.meshlayer.propertiesdialog.errorMessage("Renderer Error : " + str(e))
             return False
 
     def onTimeout(self):

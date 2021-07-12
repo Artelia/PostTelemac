@@ -102,12 +102,12 @@ class ProgressBarWidget(object):
     # TIME_SENSITIVE = False
     # __slots__ = ()
     """
-   Returns the string representing the widget.
-   The parameter pbar is a reference to the calling ProgressBar,
-      where one can access attributes of the class for knowing how
-      the update must be made.
-   At least this function must be overriden.
-   """
+    Returns the string representing the widget.
+    The parameter pbar is a reference to the calling ProgressBar,
+       where one can access attributes of the class for knowing how
+       the update must be made.
+    At least this function must be overriden.
+    """
 
     def update(self, pbar):
         pass
@@ -129,14 +129,14 @@ class ProgressBarWidget(object):
 class ProgressBarWidgetHFill(object):
     # class WidgetHFill(Widget):
     """
-   Returns the string representing the widget.
-   The parameter pbar is a reference to the calling ProgressBar,
-      where one can access attributes of the class for knowing how
-      the update must be made. The parameter width is the total
-      horizontal width the widget must have.
+    Returns the string representing the widget.
+    The parameter pbar is a reference to the calling ProgressBar,
+       where one can access attributes of the class for knowing how
+       the update must be made. The parameter width is the total
+       horizontal width the widget must have.
 
-   At least this function must be overriden.
-   """
+    At least this function must be overriden.
+    """
 
     def update(self, pbar, width):
         pass

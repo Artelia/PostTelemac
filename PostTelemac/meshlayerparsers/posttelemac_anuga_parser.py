@@ -63,7 +63,7 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
 
         def getRawValues(self, time1):
             """
-            return array : 
+            return array :
             array[param number][node value for param number]
             """
             result = []
@@ -162,9 +162,9 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
     def getVarNames(self):
         """
         return np.array[varname, typevar (0 : elem, 1 : facenode, 2 : face)]
-        
+
         self.varnames : array[..[name, timedependant or not, ?, typevar]]
-        
+
         """
         # self.hydraufile = gdal.Open('NETCDF:"'+self.path+'"')
 
@@ -205,9 +205,9 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
     def getVarNames2(self):
         """
         return np.array[varname, typevar (0 : elem, 1 : facenode, 2 : face)]
-        
+
         self.varnames : array[..[name, timedependant or not, ?, typevar]]
-        
+
         """
         # self.hydraufile = gdal.Open('NETCDF:"'+self.path+'"')
 
@@ -252,7 +252,7 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
         xyz
         3T : /
         hec : Cells_Center_Coordinate
-        
+
         return (np.array(x), np.array(y) )
         """
         return (np.array([]), np.array([]))
@@ -261,17 +261,17 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
         """
         3T : /
         hec : value
-        
+
         return np.array[param number][node value for param number]
-        
+
         """
         return np.array([])
 
     def getElemRawTimeSerie(self, arraynumelemnode, arrayparam, layerparametres=None):
         """
-        
+
         return np.array[param][numelem][value for time t]
-        
+
         """
         return np.array([])
 
@@ -281,9 +281,9 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
         """
         3T : xyz
         hec : FacePoints_Coordinate
-        
+
         return (np.array(x), np.array(y) )
-        
+
         """
         return (np.array(self.get1DVar(MESHX)) + self.translatex, np.array(self.get1DVar(MESHY)) + self.translatey)
 
@@ -292,7 +292,7 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
         It's the mesh
         3T : ikle
         hec : Faces_FacePoint_Indexes
-        
+
         return np.array([facenodeindex linked with the elem ])
         """
         if self.ikle == None:
@@ -306,9 +306,9 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
     def getFacesNodesRawValues(self, time1):
         """
         3T : getvalues
-        
+
         return np.array[param number][node value for param number]
-        
+
         """
         result = []
         for var in self.varnames:
@@ -325,9 +325,9 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
     def getFacesNodesRawTimeSeries(self, arraynumelemnode, arrayparam, layerparametres=None):
         """
         3T : getvalues
-        
+
         return np.array[param][numelem][value for time t]
-        
+
         """
         result = []
         for param in arrayparam:
@@ -392,7 +392,7 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
         3T : /
         hec : velocity
         return np.array[param number][node value for param number]
-        
+
         """
         return np.array([])
 
@@ -400,9 +400,9 @@ class PostTelemacSWWParser(PostTelemacAbstractParser):
         """
         3T : /
         hec : velocity
-        
+
         return np.array[param][numelem][value for time t]
-        
+
         """
         return np.array([])
 

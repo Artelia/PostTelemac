@@ -17,101 +17,71 @@
 ***************************************************************************
 """
 
-__author__ = "Victor Olaya"
-__date__ = "July 2013"
-__copyright__ = "(C) 2013, Victor Olaya"
+from qgis.core import QgsProcessingProvider
+from qgis.PyQt.QtGui import QIcon
 
-# This will get replaced with a git SHA1 when you do a git archive
-
-__revision__ = "$Format:%H$"
-
-from processing.core.AlgorithmProvider import AlgorithmProvider
-from processing.core.ProcessingConfig import Setting, ProcessingConfig
-
-# from exampleprovider.ExampleAlgorithm import ExampleAlgorithm
-from ExampleAlgorithm import ExampleAlgorithm
-from shp_contour_Algorithm import ShpContourAlgorithm
+from .ExtractMax_Algorithm import PostTelemacExtractMax
+from .PointsShapeTool_Algorithm import PostTelemacPointsShapeTool
+from .ContourShapeTool_Algorithm import PostTelemacContourShapeTool
+from .PostControlSections_Algorithm import PostTelemacControlSections
+from .ExtractTSFromSortie_Algorithm import ExtractTSFromSortie
 
 # ExampleAlgorithmProvider
 
 
-class PostTelemacProvider(AlgorithmProvider):
-
-    MY_DUMMY_SETTING = "MY_DUMMY_SETTING"
-
+class PostTelemacProvider(QgsProcessingProvider):
     def __init__(self):
-        AlgorithmProvider.__init__(self)
-
-        # Deactivate provider by default
-        self.activate = True
-
-        # Load algorithms
-        self.alglist = [ShpContourAlgorithm()]
-
-        for alg in self.alglist:
-            alg.provider = self
-
-    def initializeSettings(self):
-        """In this method we add settings needed to configure our
-        provider.
-
-        Do not forget to call the parent method, since it takes care
-        or automatically adding a setting for activating or
-        deactivating the algorithms in the provider.
         """
-        AlgorithmProvider.initializeSettings(self)
-
+        Default constructor.
         """
-        ProcessingConfig.addSetting(Setting('Example algorithms',
-            PostTelemacProvider.MY_DUMMY_SETTING,
-            'Example setting', 'Default value'))
-        """
-
-        ProcessingConfig.addSetting(
-            Setting(
-                "PostTelemac algorithms", PostTelemacProvider.MY_DUMMY_SETTING, "PostTelemac setting", "Default value"
-            )
-        )
+        QgsProcessingProvider.__init__(self)
 
     def unload(self):
-        """Setting should be removed here, so they do not appear anymore
-        when the plugin is unloaded.
         """
-
-        AlgorithmProvider.unload(self)
-
-        ProcessingConfig.removeSetting(PostTelemacProvider.MY_DUMMY_SETTING)
-
-    def getName(self):
-        """This is the name that will appear on the toolbox group.
-
-        It is also used to create the command line name of all the
-        algorithms from this provider.
+        Unloads the provider. Any tear-down steps required by the provider
+        should be implemented here.
         """
-        return "PostTelamac provider"
+        pass
 
-    def getDescription(self):
-        """This is the provired full name.
+    def loadAlgorithms(self):
         """
-        return "PostTelemac algorithms"
-
-    def getIcon(self):
-        """We return the default icon.
+        Loads all algorithms belonging to this provider.
         """
-        return AlgorithmProvider.getIcon(self)
+        self.addAlgorithm(PostTelemacExtractMax())
+        self.addAlgorithm(PostTelemacPointsShapeTool())
+        self.addAlgorithm(PostTelemacContourShapeTool())
+        self.addAlgorithm(PostTelemacControlSections())
+        self.addAlgorithm(ExtractTSFromSortie())
 
-    def _loadAlgorithms(self):
-        """Here we fill the list of algorithms in self.algs.
-
-        This method is called whenever the list of algorithms should
-        be updated. If the list of algorithms can change (for instance,
-        if it contains algorithms from user-defined scripts and a new
-        script might have been added), you should create the list again
-        here.
-
-        In this case, since the list is always the same, we assign from
-        the pre-made list. This assignment has to be done in this method
-        even if the list does not change, since the self.algs list is
-        cleared before calling this method.
+    def id(self):
         """
-        self.algs = self.alglist
+        Returns the unique provider id, used for identifying the provider. This
+        string should be a unique, short, character only string, eg "qgis" or
+        "gdal". This string should not be localised.
+        """
+        return "posttelemac"
+
+    def name(self):
+        """
+        Returns the provider name, which is used to describe the provider
+        within the GUI.
+
+        This string should be short (e.g. "Lastools") and localised.
+        """
+        return "PostTelemac"
+
+    def icon(self):
+        """
+        Should return a QIcon which is used for your provider inside
+        the Processing toolbox.
+        """
+        return QIcon(":/plugins/PostTelemac/icons/posttelemac.png")
+
+    def longName(self):
+        """
+        Returns the a longer version of the provider name, which can include
+        extra details such as version numbers. E.g. "Lastools LIDAR tools
+        (version 2.2.1)". This string should be localised. The default
+        implementation returns the same string as name().
+        """
+        return self.name()

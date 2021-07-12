@@ -14,6 +14,18 @@
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>5</number>
+   </property>
+   <property name="topMargin">
+    <number>5</number>
+   </property>
+   <property name="rightMargin">
+    <number>5</number>
+   </property>
+   <property name="bottomMargin">
+    <number>5</number>
+   </property>
    <item>
     <widget class="QGroupBox" name="groupBox_24">
      <property name="sizePolicy">
@@ -32,6 +44,18 @@
       <string/>
      </property>
      <layout class="QGridLayout" name="gridLayout_26">
+      <property name="leftMargin">
+       <number>5</number>
+      </property>
+      <property name="topMargin">
+       <number>5</number>
+      </property>
+      <property name="rightMargin">
+       <number>5</number>
+      </property>
+      <property name="bottomMargin">
+       <number>5</number>
+      </property>
       <property name="horizontalSpacing">
        <number>20</number>
       </property>
@@ -67,6 +91,18 @@
       <string>GroupBox</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_6">
+      <property name="leftMargin">
+       <number>5</number>
+      </property>
+      <property name="topMargin">
+       <number>5</number>
+      </property>
+      <property name="rightMargin">
+       <number>5</number>
+      </property>
+      <property name="bottomMargin">
+       <number>5</number>
+      </property>
       <item row="0" column="0">
        <widget class="QLabel" name="label_37">
         <property name="text">

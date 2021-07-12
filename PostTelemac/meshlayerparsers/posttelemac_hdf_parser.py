@@ -22,13 +22,11 @@ Versions :
 """
 import time
 import numpy as np
-import gdal
+from osgeo import gdal
 
-# import gdal_array
 import subprocess
 
 from .posttelemac_abstract_parser import PostTelemacAbstractParser
-
 
 MESHX = "x"
 MESHY = "y"
@@ -37,14 +35,6 @@ TIME = "time"
 BATHY = "elevation"
 
 TYPENDVAR = 1  # 0 for 1d array 1 for ReadAsArray
-
-"""
-try:
-    #import h5py
-    import h5py
-except Exception as e :
-    print('error h5py ' + str(e))
-"""
 
 
 class PostTelemacHDFParser(PostTelemacAbstractParser):
@@ -59,7 +49,7 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
         self.time = None
         self.onedvar = {}
         self.bottomvalue = None
-        self.rawvaluetotal = []
+        self.rawvaluetotal = None
         self.facenodes = None
         self.facesrawvalues = []
 
@@ -77,7 +67,7 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
         """
         # return np.array(range(100))
 
-        if self.time == None:
+        if self.time is None:
             hdf_ds = gdal.Open(self.path, gdal.GA_ReadOnly)
             # print hdf_ds.GetSubDatasets()
             lensubdataset = len(hdf_ds.GetSubDatasets())
@@ -90,7 +80,6 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
                 str1 = str(var.split(":")[-1])
                 param = str1.split("//")[1].split("/")
                 if "Unsteady_Time_Series" in param:
-
                     band_ds = gdal.Open(var, gdal.GA_ReadOnly)
                     array = band_ds.ReadAsArray()
                     band_ds = None
@@ -107,11 +96,11 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
 
     def getVarNames(self):
         """
-        
+
         var 0 : bottom
-        
+
         self.varnames : [..., [ varname, type : 0 : elem 1 : facenode 2 : face , varnameinhdffile ], ...]
-        
+
         return np.array[varname, typevar (0 : elem, 1 : facenode, 2 : face)]
         """
         # return np.array([['test',0]])
@@ -163,7 +152,7 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
         print parser.itertimecount
         """
 
-        if self.varnames == None:
+        if self.varnames is None:
 
             hdf_ds = gdal.Open(self.path, gdal.GA_ReadOnly)
             # print hdf_ds.GetSubDatasets()
@@ -213,7 +202,7 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
         xyz
         3T : /
         hec : Cells_Center_Coordinate
-        
+
         return (np.array(x), np.array(y) )
         """
         return (np.array([]), np.array([]))
@@ -222,9 +211,9 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
         """
         3T : /
         hec : value
-        
+
         return np.array[param number][node value for param number]
-        
+
         """
         # first : bottom
 
@@ -233,7 +222,7 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
 
         rawvalue = []
 
-        if self.bottomvalue == None:
+        if self.bottomvalue is None:
 
             hdf_ds = gdal.Open(self.path, gdal.GA_ReadOnly)
             # print hdf_ds.GetSubDatasets()
@@ -288,7 +277,7 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
             print("fbottom value : " + str(round(time.clock() - timestart, 3)))
 
         if False:
-            if self.rawvaluetotal == None:
+            if self.rawvaluetotal is None:
 
                 for param in self.varnames:
                     if param[1] == 0:
@@ -452,13 +441,13 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
 
     def getElemRawTimeSerie(self, arraynumelemnode, arrayparam, layerparametres=None):
         """
-        
+
         return np.array[param][numelem][value for time t]
-        
+
         """
         # print 'getElemRawTimeSerie'
 
-        if self.rawvaluetotal == None:
+        if self.rawvaluetotal is None:
             self.getElemRawValue(0)
 
         result = []
@@ -487,11 +476,11 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
         """
         3T : xyz
         hec : FacePoints_Coordinate
-        
+
         return (np.array(x), np.array(y) )
-        
+
         """
-        if self.facenodes == None:
+        if self.facenodes is None:
             FacePoints_Coordinate = []
 
             hdf_ds = gdal.Open(self.path, gdal.GA_ReadOnly)
@@ -522,10 +511,10 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
         It's the mesh
         3T : ikle
         hec : Faces_FacePoint_Indexes
-        
+
         return np.array([facenodeindex linked with the elem ])
         """
-        if self.elemfacesindex == None:
+        if self.elemfacesindex is None:
             Cells_FacePoint_Indexes = []
             hdf_ds = gdal.Open(self.path, gdal.GA_ReadOnly)
             # print hdf_ds.GetSubDatasets()
@@ -563,9 +552,9 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
     def getFacesNodesRawValues(self, time1):
         """
         3T : getvalues
-        
+
         return np.array[param number][node value for param number]
-        
+
         """
         """
         temp =  np.array( [np.array([0.0]*self.facesnodescount)] )
@@ -622,9 +611,9 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
     def getFacesNodesRawTimeSeries(self, arraynumelemnode, arrayparam, layerparametres=None):
         """
         3T : getvalues
-        
+
         return np.array[param][numelem][value for time t]
-        
+
         """
         return np.array([])
 
@@ -634,7 +623,7 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
         """
         return np.array([facenodeindex linked with the face ])
         """
-        if self.facesindex == None:
+        if self.facesindex is None:
             Faces_FacePoint_Indexes = []
 
             hdf_ds = gdal.Open(self.path, gdal.GA_ReadOnly)
@@ -680,7 +669,7 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
         3T : /
         hec : velocity
         return np.array[param number][node value for param number]
-        
+
         """
         # return np.array([])
         if False:
@@ -772,13 +761,13 @@ class PostTelemacHDFParser(PostTelemacAbstractParser):
         """
         3T : /
         hec : velocity
-        
+
         return np.array[param][numelem][value for time t]
-        
+
         """
         # print 'getElemRawTimeSerie'
 
-        if self.facesrawvalues == None:
+        if self.facesrawvalues is None:
             self.getElemRawValue(0)
 
         result = []

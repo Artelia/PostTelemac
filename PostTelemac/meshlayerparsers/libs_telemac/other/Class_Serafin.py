@@ -198,15 +198,9 @@ class Serafin:
         self.nbvar2 = unpack(">i", self.file.read(4))[0]  # nbvar2
         self.file.read(4)  ## fin encadrement
 
-        # Python2/3
-        try:
-            xrange
-        except NameError:
-            xrange = range
-
         ##Lecture du nom des variables
         self.nomvar = []
-        for j in xrange(self.nbvar):
+        for j in range(self.nbvar):
             self.file.read(4)  ## debut encadrement
             nomvar_tempo = self.file.read(32)
             self.file.read(4)  ## fin encadrement
@@ -308,41 +302,29 @@ class Serafin:
         ## Cette liste permet par la suite de lire le bloc entier des variables
         ## et ensuite de supprimer tous les octets d'encadrement
         self.liste2del = []
-        for n in xrange(self.nbvar):
+        for n in range(self.nbvar):
             self.liste2del.extend([n * self.npoin + 2 * n, n * self.npoin + 2 * (n + 1)])
 
-    ##        ## Recuperation des infos
-    ##        self.get_info()
-
     def get_temps(self, pdt_variable=False):
-
-        # Python2/3
-        try:
-            xrange
-        except NameError:
-            xrange = range
-
-        if sys.version_info.major == 3:
-            self.nb_pdt = int(self.nb_pdt)
-
+        self.nb_pdt = int(self.nb_pdt)
         if not pdt_variable:
             if self.nb_pdt < 3:
-                for num_time in xrange(self.nb_pdt):
+                for num_time in range(self.nb_pdt):
                     self.file.seek(self.entete + 4 + num_time * self.taille_pdt, 0)
                     self.temps.append(unpack(">f", self.file.read(4))[0])
             else:
                 t = []
-                for num_time in xrange(3):
+                for num_time in range(3):
                     self.file.seek(self.entete + 4 + num_time * self.taille_pdt, 0)
                     t.append(unpack(">f", self.file.read(4))[0])
                 self.temps.append(t[0])
-                for i in xrange(self.nb_pdt - 1):
+                for i in range(self.nb_pdt - 1):
                     self.temps.append(t[1] + i * (t[2] - t[1]))
         else:
             ## Recuperation de tous les pas de temps
             self.temps = []
             self.file.seek(self.entete, 0)  ## On se positionne a la fin de l'entete du fichier (debut des PDT)
-            for num_time in xrange(self.nb_pdt):
+            for num_time in range(self.nb_pdt):
                 self.file.seek(4, 1)
                 self.temps.append(unpack(">f", self.file.read(4))[0])
                 self.file.seek(self.taille_pdt - 8, 1)
@@ -356,15 +338,8 @@ class Serafin:
     ##  - La plus petite et la plus grande surface d'un elements
     ##  - La surface total du modele
     def get_info(self):
-
-        # Python2/3
-        try:
-            xrange
-        except NameError:
-            xrange = range
-
         ikle2 = np.reshape(self.ikle, (self.nelem, -1))
-        for i in xrange(self.nelem):
+        for i in range(self.nelem):
             L1 = (
                 (self.x[ikle2[i][0] - 1] - self.x[ikle2[i][1] - 1]) ** 2
                 + (self.y[ikle2[i][0] - 1] - self.y[ikle2[i][1] - 1]) ** 2
@@ -417,17 +392,11 @@ class Serafin:
         self.temps = resname.temps
 
     def write_header(self):
-
-        if sys.version_info.major == 2:
-            spacetemp = " "
-        elif sys.version_info.major == 3:
-            spacetemp = b" "
+        spacetemp = b" "
 
         ## Lecture du titre
         self.file.write(pack(">i", 80))  ## debut encadrement
-
         self.file.write(self.title + spacetemp * (80 - len(self.title)))
-
         self.file.write(pack(">i", 80))  ## fin encadrement
 
         ## Lecture de nbvar et de nbvar2
@@ -436,14 +405,8 @@ class Serafin:
         self.file.write(pack(">i", self.nbvar2))  # nbvar2
         self.file.write(pack(">i", 2 * 4))  ## fin encadrement
 
-        # Python2/3
-        try:
-            xrange
-        except NameError:
-            xrange = range
-
         ##Lecture du nom des variables
-        for j in xrange(self.nbvar):
+        for j in range(self.nbvar):
             self.file.write(pack(">i", 32))  ## debut encadrement
             if sys.version_info.major == 3:
                 if isinstance(self.nomvar[j], str):

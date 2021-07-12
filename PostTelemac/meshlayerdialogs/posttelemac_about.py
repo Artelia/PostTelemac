@@ -24,12 +24,8 @@ Impl
 from __future__ import unicode_literals
 
 # import Qt
-from qgis.PyQt import uic, QtCore, QtGui
-
-try:  # qt4
-    from qgis.PyQt.QtGui import QDialog
-except:  # qt5
-    from qgis.PyQt.QtWidgets import QDialog
+from qgis.PyQt import uic
+from qgis.PyQt.QtWidgets import QDialog
 
 import os
 

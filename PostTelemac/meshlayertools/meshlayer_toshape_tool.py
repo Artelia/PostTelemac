@@ -23,17 +23,18 @@ Versions :
  ***************************************************************************/
 """
 
+from qgis.PyQt import uic
 
-# from PyQt4 import uic, QtCore, QtGui
-from qgis.PyQt import uic, QtCore, QtGui
-from .meshlayer_abstract_tool import *
+from qgis.core import QgsProject, QgsVectorLayer
+from qgis.gui import QgsProjectionSelectionDialog
+from qgis.utils import iface
+
 import os
-import qgis, qgis.utils
 
+from .meshlayer_abstract_tool import *
 from .toshape.posttelemac_util_extractshp import *
 from .toshape.posttelemac_util_extractmesh import *
 from .toshape.posttelemac_util_extractpts import *
-
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), "ToshapeTool.ui"))
 
@@ -49,24 +50,14 @@ class ToShapeTool(AbstractMeshLayerTool, FORM_CLASS):
     def initTool(self):
         self.setupUi(self)
         self.iconpath = os.path.join(os.path.dirname(__file__), "..", "icons", "tools", "layer_add.png")
-
         self.checkBox_contourcrs.stateChanged.connect(self.enablecheckbox)
         self.pushButton_contourcrs.clicked.connect(self.set_utilcrs)
         self.pushButton_contourcreate.clicked.connect(self.create_shp)
-        # 2shape mesh
         self.checkBox_3.stateChanged.connect(self.enablecheckbox)
-        # self.checkBox_2.stateChanged.connect(self.enablecheckbox)
-        # self.pushButton_7.clicked.connect(self.set_utilcrs)
         self.pushButton_10.clicked.connect(self.create_shp_maillage)
-        # 2shape  Points
-        # self.checkBox_4.stateChanged.connect(self.enablecheckbox)
         self.checkBox_5.stateChanged.connect(self.enablecheckbox)
-        # self.pushButton_9.clicked.connect(self.set_utilcrs)
         self.pushButton_2.clicked.connect(self.create_shp_points)
-        if sys.version_info.major == 2:
-            self.crsselector = qgis.gui.QgsGenericProjectionSelector()
-        elif sys.version_info.major == 3:
-            self.crsselector = qgis.gui.QgsProjectionSelectionDialog()
+        self.crsselector = QgsProjectionSelectionDialog()
 
     def onActivation(self):
         pass
@@ -98,13 +89,6 @@ class ToShapeTool(AbstractMeshLayerTool, FORM_CLASS):
         self.crsselector.exec_()
         crs = self.crsselector.selectedAuthId()
         source = self.sender()
-        # print str(source.name())
-        """
-        if source == self.pushButton_crs:
-            self.label_selafin_crs.setText(crs)
-        else:
-            source.setText(crs)
-        """
         source.setText(crs)
 
     def create_shp_maillage(self):
@@ -127,14 +111,10 @@ class ToShapeTool(AbstractMeshLayerTool, FORM_CLASS):
 
     def create_points(self):
         self.initclass = InitSelafinMesh2Pts()
-        """
-        self.initclass.status.connect(self.propertiesdialog.textBrowser_2.append)
-        self.initclass.finished1.connect(self.workershapePointFinished)
-        """
         self.initclass.status.connect(self.propertiesdialog.logMessage)
         self.initclass.error.connect(self.propertiesdialog.errorMessage)
 
-        if qgis.utils.iface is None:
+        if iface is None:
             self.initclass.status.connect(print)
             self.initclass.error.connect(print)
 
@@ -143,13 +123,12 @@ class ToShapeTool(AbstractMeshLayerTool, FORM_CLASS):
 
         self.initclass.start(
             0,  # 0 : thread inside qgis (plugin) - 1 : thread processing - 2 : modeler (no thread) - 3 : modeler + shpouput - 4: outsideqgis
-            os.path.normpath(self.meshlayer.hydraufilepath),  # path to selafin file
+            self.meshlayer,
             self.meshlayer.time_displayed,  # time to process (selafin time in interation if int, or second if str)
             self.spinBox.value(),  # space step
             self.checkBox_5.isChecked(),  # bool for comuting velocity
             self.meshlayer.hydrauparser.parametrevx if self.checkBox_5.isChecked() else None,
             self.meshlayer.hydrauparser.parametrevy if self.checkBox_5.isChecked() else None,
-            # [self.selafinlayer.hydrauparser.getValues(self.selafinlayer.time_displayed)[i] for i in range(len([param for param in self.selafinlayer.hydrauparser.parametres if not param[2]]))],                          #tab of values
             [
                 self.meshlayer.hydrauparser.getValues(self.meshlayer.time_displayed)[i]
                 for i in range(len([param for param in self.meshlayer.hydrauparser.parametres]))
@@ -161,18 +140,14 @@ class ToShapeTool(AbstractMeshLayerTool, FORM_CLASS):
             outputshpname=None,  # change generic outputname to specific one
             outputshppath=None,  # if not none, create shp in this directory
             outputprocessing=None,
-        )  # needed for toolbox processing
+        )
 
     def create_shp(self):
         self.initclass = InitSelafinContour2Shp()
-        """
-        self.initclass.status.connect(self.propertiesdialog.textBrowser_2.append)
-        self.initclass.error.connect(self.propertiesdialog.textBrowser_2.append)
-        """
         self.initclass.status.connect(self.propertiesdialog.logMessage)
         self.initclass.error.connect(self.propertiesdialog.errorMessage)
 
-        if qgis.utils.iface is None:
+        if iface is None:
             self.initclass.status.connect(print)
             self.initclass.error.connect(print)
 
@@ -180,10 +155,6 @@ class ToShapeTool(AbstractMeshLayerTool, FORM_CLASS):
         self.propertiesdialog.normalMessage(self.tr("2Shape - coutour creation launched - watch progress on log tab"))
 
         if self.lineEdit_contourname.text() == "":
-            """
-            name = (str(self.selafinlayer.hydrauparser.parametres[self.selafinlayer.param_displayed][1]).translate(None, "?,!.;")
-                             +"_t_"+str(int(self.selafinlayer.time_displayed)) )
-            """
             name = (
                 self.meshlayer.hydrauparser.parametres[self.meshlayer.param_displayed][1]
                 + "_t_"
@@ -195,41 +166,35 @@ class ToShapeTool(AbstractMeshLayerTool, FORM_CLASS):
 
         self.initclass.start(
             0,  # 0 : thread inside qgis (plugin) - 1 : thread processing - 2 : modeler (no thread) - 3 : modeler + shpouput - 4: outsideqgis
-            os.path.normpath(self.meshlayer.hydraufilepath),  # path to selafin file
-            int(self.meshlayer.time_displayed),  # time to process (selafin time iteration)
-            self.meshlayer.hydrauparser.parametres[self.meshlayer.param_displayed][
-                1
-            ],  # parameter to process name (string) or id (int)
-            self.meshlayer.meshrenderer.lvl_contour,  # levels to create
-            self.meshlayer.crs().authid(),  # selafin crs
+            self.meshlayer,
+            int(self.meshlayer.time_displayed),
+            self.meshlayer.hydrauparser.parametres[self.meshlayer.param_displayed][1],
+            self.meshlayer.meshrenderer.lvl_contour,
+            self.meshlayer.crs().authid(),
             translatex=self.meshlayer.hydrauparser.translatex,
             translatey=self.meshlayer.hydrauparser.translatey,
-            selafintransformedcrs=self.pushButton_contourcrs.text()
-            if self.checkBox_contourcrs.isChecked()
-            else None,  # if no none, specify crs of output file
-            quickprocessing=False,  # quickprocess option - don't make ring
-            outputshpname=name,  # change generic outputname to specific one
-            outputshppath=None,  # if not none, create shp in this directory
-            forcedvalue=self.meshlayer.value,  # force value for plugin
+            selafintransformedcrs=self.pushButton_contourcrs.text() if self.checkBox_contourcrs.isChecked() else None,
+            quickprocessing=False,
+            outputshpname=name,
+            outputshppath=None,
+            forcedvalue=self.meshlayer.value,
             outputprocessing=None,
         )
 
     def create_shp_maillage(self):
         self.initclass = InitSelafinMesh2Shp()
-        # self.initclass.status.connect(self.propertiesdialog.textBrowser_2.append)
-
         self.initclass.status.connect(self.propertiesdialog.logMessage)
 
         if self.checkBox_3.isChecked():
             self.initclass.finished1.connect(self.workerFinishedHillshade)
         else:
             self.initclass.finished1.connect(self.workershapeFinished)
+
         self.propertiesdialog.normalMessage(self.tr("2Shape - mesh creation launched - watch progress on log tab"))
         self.initclass.start(
             0,  # 0 : thread inside qgis (plugin) - 1 : thread processing - 2 : modeler (no thread) - 3 : modeler + shpouput - 4: outsideqgis
-            os.path.normpath(self.meshlayer.hydraufilepath),  # path to selafin file
+            self.meshlayer,
             int(self.meshlayer.time_displayed),  # time to process (selafin time iteration)
-            # parameter = str(self.getParameterName('BATHYMETRIE')[0]) if self.checkBox_3.isChecked() else None,     #parameter to process name (string) or id (int)
             parameter=str(self.meshlayer.hydrauparser.parametres[self.meshlayer.hydrauparser.parambottom][1])
             if self.checkBox_3.isChecked()
             else None,
@@ -248,35 +213,23 @@ class ToShapeTool(AbstractMeshLayerTool, FORM_CLASS):
         )
 
     def workershapeFinished(self, strpath):
-        vlayer = qgis.core.QgsVectorLayer(strpath, os.path.basename(strpath).split(".")[0], "ogr")
-        if sys.version_info.major == 2:
-            qgis.core.QgsMapLayerRegistry.instance().addMapLayer(vlayer)
-        elif sys.version_info.major == 3:
-            qgis.core.QgsProject.instance().addMapLayer(vlayer)
-        # self.selafinlayer.propertiesdialog.textBrowser_main.append(ctime() + " - "+ str(os.path.basename(strpath).split('.')[0]) + self.tr(" created"))
+        vlayer = QgsVectorLayer(strpath, os.path.basename(strpath).split(".")[0], "ogr")
+        QgsProject.instance().addMapLayer(vlayer)
         self.propertiesdialog.normalMessage(str(os.path.basename(strpath).split(".")[0]) + self.tr(" created"))
 
     def workershapePointFinished(self, strpath):
-        vlayer = qgis.core.QgsVectorLayer(strpath, os.path.basename(strpath).split(".")[0], "ogr")
+        vlayer = QgsVectorLayer(strpath, os.path.basename(strpath).split(".")[0], "ogr")
         if self.checkBox_5.isChecked():
             pathpointvelocityqml = os.path.join(
                 os.path.dirname(__file__), "..", "styles", "00_Points_Vmax_vecteur_champ_vectoriel.qml"
             )
             vlayer.loadNamedStyle(pathpointvelocityqml)
-        if sys.version_info.major == 2:
-            qgis.core.QgsMapLayerRegistry.instance().addMapLayer(vlayer)
-        elif sys.version_info.major == 3:
-            qgis.core.QgsProject.instance().addMapLayer(vlayer)
-        # self.selafinlayer.propertiesdialog.textBrowser_main.append(ctime() + " - "+ str(os.path.basename(strpath).split('.')[0]) + self.tr(" created"))
+        QgsProject.instance().addMapLayer(vlayer)
         self.propertiesdialog.normalMessage(str(os.path.basename(strpath).split(".")[0]) + self.tr(" created"))
 
     def workerFinishedHillshade(self, strpath):
-        vlayer = qgis.core.QgsVectorLayer(strpath, os.path.basename(strpath).split(".")[0], "ogr")
+        vlayer = QgsVectorLayer(strpath, os.path.basename(strpath).split(".")[0], "ogr")
         pathhillshadeqml = os.path.join(os.path.dirname(__file__), "..", "styles", "00_Polygon_Hillshade.qml")
         vlayer.loadNamedStyle(pathhillshadeqml)
-        if sys.version_info.major == 2:
-            qgis.core.QgsMapLayerRegistry.instance().addMapLayer(vlayer)
-        elif sys.version_info.major == 3:
-            qgis.core.QgsProject.instance().addMapLayer(vlayer)
-        # self.selafinlayer.propertiesdialog.textBrowser_main.append(ctime() + " - "+ str(os.path.basename(strpath).split('.')[0]) + self.tr(" created"))
+        QgsProject.instance().addMapLayer(vlayer)
         self.propertiesdialog.normalMessage(str(os.path.basename(strpath).split(".")[0]) + self.tr(" created"))

@@ -1,6 +1,6 @@
 """@author Sebastien E. Bourban
 """
-"""@note ... this work is based on a collaborative effort between
+r"""@note ... this work is based on a collaborative effort between
   .________.                                                          ,--.
   |        |                                                      .  (  (
   |,-.    /   HR Wallingford                EDF - LNHE           / \_ \_/ .--.
