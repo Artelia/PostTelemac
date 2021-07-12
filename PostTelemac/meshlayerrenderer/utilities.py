@@ -21,13 +21,13 @@ def multiplier(value):
     the specified range"""
 
     multiplyers = {
-        1e-9: u" x 10⁻⁹",
-        1e-6: u" x 10⁻⁶",
-        1e-3: u" x 10⁻³",
-        1.0: u"",
-        1e3: u" x 10³",
-        1e6: u" x 10⁶",
-        1e9: u" x 10⁹",
+        1e-9: " x 10⁻⁹",
+        1e-6: " x 10⁻⁶",
+        1e-3: " x 10⁻³",
+        1.0: "",
+        1e3: " x 10³",
+        1e6: " x 10⁶",
+        1e9: " x 10⁹",
     }
     mult = 1e-9
     for x in sorted(multiplyers.keys()):
@@ -58,7 +58,6 @@ def linemerge(lines):
     nxt = graph.iterkeys().next()
     out = [[nxt]]
     while len(graph):
-        # assert len(graph[nxt]) == 1 or len(graph[nxt]) == 2
         prev = nxt
         nxt = None
         while len(graph[prev]) and nxt not in graph:

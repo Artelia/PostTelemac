@@ -9,10 +9,10 @@
 [general]
 name=PostTelemac
 about= Post treatment of open Telemac results (and Anuga , HECRAS 2D as experimental). Requires matplotlib, shapely, numpy, scipy, networkx, ffmpeg and opengl libraries.
-qgisMinimumVersion=3.0
+qgisMinimumVersion=3.16
 qgisMaximumVersion=3.99
 description=Post Treatment for Telemac (and Anuga , HECRAS 2D as experimental)
-version=1.1.6
+version=1.2.1
 author=Artelia Eau et Environnement
 email=patrice.verchere@arteliagroup.com
 
@@ -22,6 +22,7 @@ email=patrice.verchere@arteliagroup.com
 
 # Uncomment the following line and add your changelog:
 changelog= 
+    1.2.1 : Drop Qgis2 support and fixes
     1.1.6 : Fix animation creation issue #21 and issue#22 by nicogodet
     1.1.5 : Fix ToShape contour creation (rings were not process)
     1.1.4 : Fix Samplingtool
@@ -67,6 +68,7 @@ category=Plugins
 icon=icons/posttelemac.png
 # experimental flag
 experimental=False
+hasProcessingProvider=yes
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False

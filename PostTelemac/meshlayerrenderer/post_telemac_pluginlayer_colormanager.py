@@ -23,22 +23,19 @@ Versions :
 # unicode behaviour
 from __future__ import unicode_literals
 
+from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtGui import QPixmap, QColor
+from qgis.PyQt.QtWidgets import QApplication
+
+import os
+import numpy as np
+
 try:
     import matplotlib.colors
 
     MATPLOTLIBOK = True
 except:
     MATPLOTLIBOK = False
-import os
-
-# from PyQt4 import  QtGui,  QtCore
-from qgis.PyQt import QtGui, QtCore
-import numpy as np
-
-try:
-    from qgis.PyQt.QtGui import QApplication
-except:
-    from qgis.PyQt.QtWidgets import QApplication
 
 
 class PostTelemacColorManager:
@@ -105,7 +102,6 @@ class PostTelemacColorManager:
             )
             if inverse:
                 otherscol.sort()
-            # return self.arrayStepRGBAToCmap(otherscol)
             return otherscol
 
         elif str(temp1.__class__.__name__) == "QgsCptCityColorRampV2":
@@ -160,7 +156,6 @@ class PostTelemacColorManager:
             )
             if inverse:
                 otherscol.sort()
-            # return self.arrayStepRGBAToCmap(otherscol)
             return otherscol
 
         else:
@@ -180,19 +175,18 @@ class PostTelemacColorManager:
             identcolors = ["red", "green", "blue", "alpha"]
             for col in range(len(identcolors)):
                 dict[identcolors[col]] = []
-                if True:
-                    lendict = len(otherscol)
+                lendict = len(otherscol)
+                dict[identcolors[col]].append(
+                    (0, float(otherscol[0][col + 1]) / 255.0, float(otherscol[0][col + 1]) / 255.0)
+                )
+                for i in range(1, lendict - 1):
                     dict[identcolors[col]].append(
-                        (0, float(otherscol[0][col + 1]) / 255.0, float(otherscol[0][col + 1]) / 255.0)
-                    )
-                    for i in range(1, lendict - 1):
-                        dict[identcolors[col]].append(
-                            (
-                                float(otherscol[i][0]),
-                                float(otherscol[i][col + 1]) / 255.0,
-                                float(otherscol[i][col + 1]) / 255.0,
-                            )
+                        (
+                            float(otherscol[i][0]),
+                            float(otherscol[i][col + 1]) / 255.0,
+                            float(otherscol[i][col + 1]) / 255.0,
                         )
+                    )
                 dict[identcolors[col]].append(
                     (1, float(otherscol[lendict - 1][col + 1]) / 255.0, float(otherscol[lendict - 1][col + 1]) / 255.0)
                 )
@@ -203,95 +197,6 @@ class PostTelemacColorManager:
 
         else:
             return None
-
-    # *********************** layer symbology generator ******************************************************
-
-    def generateSymbologyItemsCaduc(self, iconSize):
-        try:
-            if (
-                self.meshlayer.hydrauparser != None
-                and self.meshlayer.hydrauparser.hydraufile != None
-                and self.meshlayer.meshrenderer.cmap_contour_leveled != None
-            ):
-                lst = [
-                    ((str(self.meshlayer.hydrauparser.parametres[self.meshlayer.param_displayed][1]), QtGui.QPixmap()))
-                ]
-                for i in range(len(self.meshrenderer.lvl_contour) - 1):
-                    pix = QtGui.QPixmap(iconSize)
-                    r, g, b, a = (
-                        self.meshlayer.meshrenderer.cmap_contour_leveled[i][0] * 255,
-                        self.meshlayer.meshrenderer.cmap_contour_leveled[i][1] * 255,
-                        self.meshlayer.meshrenderer.cmap_contour_leveled[i][2] * 255,
-                        self.meshlayer.meshrenderer.cmap_contour_leveled[i][3] * 255,
-                    )
-                    pix.fill(QtGui.QColor(r, g, b, a))
-                    lst.append(
-                        (str(self.meshrenderer.lvl_contour[i]) + "/" + str(self.meshrenderer.lvl_contour[i + 1]), pix)
-                    )
-
-                if self.meshlayer.propertiesdialog.groupBox_schowvel.isChecked():
-                    lst.append((self.tr("VELOCITY"), QtGui.QPixmap()))
-                    for i in range(len(self.meshrenderer.lvl_vel) - 1):
-                        pix = QtGui.QPixmap(iconSize)
-                        r, g, b, a = (
-                            self.meshlayer.meshrenderer.color_mpl_vel[i][0] * 255,
-                            self.meshlayer.meshrenderer.color_mpl_vel[i][1] * 255,
-                            self.meshlayer.meshrenderer.color_mpl_vel[i][2] * 255,
-                            self.meshlayer.meshrenderer.color_mpl_vel[i][3] * 255,
-                        )
-                        pix.fill(QtGui.QColor(r, g, b, a))
-                        lst.append(
-                            (str(self.meshrenderer.lvl_vel[i]) + "/" + str(self.meshrenderer.lvl_vel[i + 1]), pix)
-                        )
-                return lst
-            else:
-                return []
-        except Exception as e:
-            return []
-
-    def generateSymbologyItems(self, iconSize):
-        try:
-            if (
-                self.meshlayer.hydrauparser != None
-                and self.meshlayer.hydrauparser.hydraufile != None
-                and self.meshlayer.meshrenderer.cmap_contour_leveled != None
-            ):
-                lst = [
-                    ((str(self.meshlayer.hydrauparser.parametres[self.meshlayer.param_displayed][1]), QtGui.QPixmap()))
-                ]
-                for i in range(len(self.meshrenderer.lvl_contour) - 1):
-                    pix = QtGui.QPixmap(iconSize)
-                    r, g, b, a = (
-                        self.meshlayer.meshrenderer.cmap_contour_leveled[i][0] * 255,
-                        self.meshlayer.meshrenderer.cmap_contour_leveled[i][1] * 255,
-                        self.meshlayer.meshrenderer.cmap_contour_leveled[i][2] * 255,
-                        self.meshlayer.meshrenderer.cmap_contour_leveled[i][3] * 255,
-                    )
-                    pix.fill(QtGui.QColor(r, g, b, a))
-                    lst.append(
-                        (str(self.meshrenderer.lvl_contour[i]) + "/" + str(self.meshrenderer.lvl_contour[i + 1]), pix)
-                    )
-
-                if self.meshlayer.propertiesdialog.groupBox_schowvel.isChecked():
-                    lst.append((self.tr("VELOCITY"), QtGui.QPixmap()))
-                    for i in range(len(self.meshrenderer.lvl_vel) - 1):
-                        pix = QtGui.QPixmap(iconSize)
-                        r, g, b, a = (
-                            self.meshlayer.meshrenderer.cmap_vel_leveled[i][0] * 255,
-                            self.meshlayer.meshrenderer.cmap_vel_leveled[i][1] * 255,
-                            self.meshlayer.meshrenderer.cmap_vel_leveled[i][2] * 255,
-                            self.meshlayer.meshrenderer.cmap_vel_leveled[i][3] * 255,
-                        )
-                        pix.fill(QtGui.QColor(r, g, b, a))
-                        lst.append(
-                            (str(self.meshrenderer.lvl_vel[i]) + "/" + str(self.meshrenderer.lvl_vel[i + 1]), pix)
-                        )
-                return lst
-            else:
-                return []
-        except Exception as e:
-            self.meshlayer.propertiesdialog.errorMessage("colormanager - generateSymbologyItems : " + str(e))
-            return []
 
     # *********************** .Clr sparser ******************************************************
 
@@ -314,13 +219,11 @@ class PostTelemacColorManager:
                 levels = [float(elem) for elem in line.split(";")]
         f.close()
         if colors and levels:
-            # return (self.arrayStepRGBAToCmap(colors),levels)
             return (colors, levels)
         else:
             return (None, None)
 
     def saveClrColorRamp(self, name, colors, levels):
-        # path = os.path.join(os.path.dirname(__file__),'..', 'config', str(name) +'.clr')
         path = os.path.join(self.meshlayer.propertiesdialog.posttelemacdir, str(name) + ".clr")
         f = open(path, "w")
         f.write(str(name) + "\n")
@@ -332,7 +235,6 @@ class PostTelemacColorManager:
         f.close()
 
     def changeColorMap(self, cm, levels1):
-
         if MATPLOTLIBOK and len(levels1) >= 2:
             lvls = levels1
             tab1 = []
@@ -342,7 +244,6 @@ class PostTelemacColorManager:
             else:
                 tab1 = [int(max1 * i / (len(lvls) - 2)) for i in range(len(lvls) - 1)]
             color_mpl_contour = cm(tab1)
-            # self.cmap_mpl_contour,self.norm_mpl_contour = matplotlib.colors.from_levels_and_colors(lvls,self.color_mpl_contour)
             cmap_mpl, norm_mpl = matplotlib.colors.from_levels_and_colors(lvls, color_mpl_contour)
             return (cmap_mpl, norm_mpl, color_mpl_contour)
         else:
@@ -367,9 +268,6 @@ class PostTelemacColorManager:
                 while normalizedvalue >= float(arraycolorrampraw[j][0]) and j < len(arraycolorrampraw) - 1:
                     j += 1
 
-                # so j is index of arraycolorrampraw previous to normalizedvalue
-                # linear interpolate color
-
                 colortemp = np.array(arraycolorrampraw[j - 1][1:5]) + (
                     normalizedvalue - arraycolorrampraw[j - 1][0]
                 ) / (arraycolorrampraw[j][0] - arraycolorrampraw[j - 1][0]) * (
@@ -392,7 +290,6 @@ class PostTelemacColorManager:
 
             return arraycolorresult
         except Exception as e:
-            # print( 'error cmap ' + str(e) )
             self.meshlayer.propertiesdialog.errorMessage("colormanager - fromColorrampAndLevels : " + str(e))
             return [[0.0, 0.0, 0.0, 0.0]] * (levelclasscount + 1)
 
@@ -402,4 +299,4 @@ class PostTelemacColorManager:
 
     def tr(self, message):
         """Used for translation"""
-        return QtCore.QCoreApplication.translate("PostTelemacColorManager", message, None, QApplication.UnicodeUTF8)
+        return QCoreApplication.translate("PostTelemacColorManager", message, None, QApplication.UnicodeUTF8)

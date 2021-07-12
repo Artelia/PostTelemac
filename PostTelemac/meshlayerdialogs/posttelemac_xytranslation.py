@@ -23,13 +23,8 @@ Impl
 # unicode behaviour
 from __future__ import unicode_literals
 
-# from PyQt4 import uic, QtGui
-from qgis.PyQt import uic, QtCore, QtGui
-
-try:
-    from qgis.PyQt.QtGui import QDialog
-except:
-    from qgis.PyQt.QtWidgets import QDialog
+from qgis.PyQt import uic
+from qgis.PyQt.QtWidgets import QDialog
 
 import os
 
