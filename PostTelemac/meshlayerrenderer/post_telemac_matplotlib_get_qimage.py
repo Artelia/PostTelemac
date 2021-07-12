@@ -384,6 +384,7 @@ class MeshRenderer(AbstractMeshRenderer):
             image = QImage.fromData(buf.getvalue())
             if ratio > 1.0:
                 image = image.scaled(image.width() * ratio, image.height() * ratio)
+
             return image
         except Exception as e:
             self.meshlayer.propertiesdialog.textBrowser_2.append("getqimagesave : " + str(e))
