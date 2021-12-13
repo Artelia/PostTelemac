@@ -297,9 +297,9 @@ class ppSELAFIN:
         self.temp = temp
 
         # write the time
-        self.f.write(pack(">i", 4))
+        self.f.write(pack(">i", self.float_size))
         self.f.write(pack(">" + self.float_type, time))
-        self.f.write(pack(">i", 4))
+        self.f.write(pack(">i", self.float_size))
 
         # writes the rest of the variables
         for j in range(self.NBV1):
