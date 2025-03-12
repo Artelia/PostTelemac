@@ -245,8 +245,6 @@ class runGetMax(QObject):
                         var_max[self.selafinlayer.hydrauparser.parametrevy][pos_vmax] = var[
                             self.selafinlayer.hydrauparser.parametrevy
                         ][pos_vmax]
-                        if 4134 in pos_max:
-                            print(timeslf, vit_max[4134],vit[4134])
                         vit_max[pos_vmax] = vit[pos_vmax]
                         
             if (
