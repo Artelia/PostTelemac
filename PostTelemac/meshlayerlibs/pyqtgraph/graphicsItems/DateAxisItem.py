@@ -18,7 +18,7 @@ MONTH_SPACING = 30 * DAY_SPACING
 YEAR_SPACING = 365 * DAY_SPACING
 
 if sys.platform == 'win32':
-    _epoch = datetime.utcfromtimestamp(0)
+    _epoch = datetime.fromtimestamp(0, datetime.UTC)
     def utcfromtimestamp(timestamp):
         return _epoch + timedelta(seconds=timestamp)
 else:

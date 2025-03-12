@@ -69,26 +69,30 @@ class PostTelemacColorManager:
                     int(firstcol.split(",")[3]),
                 ]
             ]
-
+            print(temp1.properties())
             try:
                 otherscoltemp = temp1.properties()["stops"].split(":")
+                
                 bool_stops = True
             except Exception as e:
                 bool_stops = False
-
             if bool_stops:
                 for col in otherscoltemp:
+                    part = col.split(";")
+                    if part[-1] =='ccw':
+                        continue
                     if inverse:
-                        intv = 1.0 - float(col.split(";")[0])
+                        intv = 1.0 - float(part[0])
                     else:
-                        intv = float(col.split(";")[0])
+                        intv = float(part[0])
+                    part2 = part[1].split(",")
                     otherscol.append(
                         [
                             intv,
-                            int(col.split(";")[1].split(",")[0]),
-                            int(col.split(";")[1].split(",")[1]),
-                            int(col.split(";")[1].split(",")[2]),
-                            int(col.split(";")[1].split(",")[3]),
+                            int(part2[0]),
+                            int(part2[1]),
+                            int(part2[2]),
+                            int(part2[3]),
                         ]
                     )
             otherscol.append(
@@ -132,17 +136,21 @@ class PostTelemacColorManager:
 
             if bool_stops:
                 for col in otherscoltemp:
+                    part = col.split(";")
+                    if part[-1] =='ccw':
+                        continue
                     if inverse:
-                        intv = 1.0 - float(col.split(";")[0])
+                        intv = 1.0 - float(part[0])
                     else:
-                        intv = float(col.split(";")[0])
+                        intv = float(part[0])
+                    part2 = part[1].split(",")
                     otherscol.append(
                         [
                             intv,
-                            int(col.split(";")[1].split(",")[0]),
-                            int(col.split(";")[1].split(",")[1]),
-                            int(col.split(";")[1].split(",")[2]),
-                            int(col.split(";")[1].split(",")[3]),
+                            int(part2[0]),
+                            int(part2[1]),
+                            int(part2[2]),
+                            int(part2[3]),
                         ]
                     )
             otherscol.append(
