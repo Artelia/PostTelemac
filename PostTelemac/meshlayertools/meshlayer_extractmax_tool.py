@@ -195,13 +195,13 @@ class runGetMax(QObject):
                     if self.duree > -1 and self.selafinlayer.hydrauparser.parametreh != None:
                         var_dur = np.array([0.0] * self.selafinlayer.hydrauparser.facesnodescount)
                         previoustime = timeslf
-
+                    vit_max = np.array([0.0] * self.selafinlayer.hydrauparser.facesnodescount)
                     initialisation = False
                 else:
                     var = self.selafinlayer.hydrauparser.getValues(num_time)
 
                     for num_var, val_var in enumerate(var):
-                        if (
+                        if not (
                             self.selafinlayer.hydrauparser.parametrevx != None
                             and self.selafinlayer.hydrauparser.parametrevy != None
                             and (
@@ -209,11 +209,6 @@ class runGetMax(QObject):
                                 or num_var == self.selafinlayer.hydrauparser.parametrevy
                             )
                         ):
-                            # On recherche tous les indicides du tableau ou les nouvelles valeurs sont supérieurs aux anciennes
-                            pos_max = np.where(var[num_var] > var_max[num_var])[0]
-                            var_max[num_var][pos_max] = val_var[pos_max]
-
-                        else:
                             if (
                                 (self.submersion > -1 or self.duree > -1)
                                 and self.selafinlayer.hydrauparser.parametreh != None
@@ -243,12 +238,6 @@ class runGetMax(QObject):
                             + np.power(var[self.selafinlayer.hydrauparser.parametrevy], 2),
                             0.5,
                         )
-                        vit_max = np.power(
-                            np.power(var_max[self.selafinlayer.hydrauparser.parametrevx], 2)
-                            + np.power(var_max[self.selafinlayer.hydrauparser.parametrevy], 2),
-                            0.5,
-                        )
-
                         pos_vmax = np.where(vit > vit_max)[0]
                         var_max[self.selafinlayer.hydrauparser.parametrevx][pos_vmax] = var[
                             self.selafinlayer.hydrauparser.parametrevx
@@ -256,7 +245,10 @@ class runGetMax(QObject):
                         var_max[self.selafinlayer.hydrauparser.parametrevy][pos_vmax] = var[
                             self.selafinlayer.hydrauparser.parametrevy
                         ][pos_vmax]
-
+                        if 4134 in pos_max:
+                            print(timeslf, vit_max[4134],vit[4134])
+                        vit_max[pos_vmax] = vit[pos_vmax]
+                        
             if (
                 self.selafinlayer.hydrauparser.parametrevx != None
                 and self.selafinlayer.hydrauparser.parametrevy != None

@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from .AxisItem import AxisItem
 from ..pgcollections import OrderedDict
@@ -18,7 +18,7 @@ MONTH_SPACING = 30 * DAY_SPACING
 YEAR_SPACING = 365 * DAY_SPACING
 
 if sys.platform == 'win32':
-    _epoch = datetime.fromtimestamp(0, datetime.UTC)
+    _epoch = datetime.fromtimestamp(0, timezone.utc)
     def utcfromtimestamp(timestamp):
         return _epoch + timedelta(seconds=timestamp)
 else:

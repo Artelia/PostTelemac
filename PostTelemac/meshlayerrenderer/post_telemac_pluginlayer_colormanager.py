@@ -69,7 +69,6 @@ class PostTelemacColorManager:
                     int(firstcol.split(",")[3]),
                 ]
             ]
-            print(temp1.properties())
             try:
                 otherscoltemp = temp1.properties()["stops"].split(":")
                 
